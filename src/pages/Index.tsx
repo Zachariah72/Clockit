@@ -159,7 +159,12 @@ const Index = () => {
               <Button variant="ghost" size="icon" onClick={() => window.location.href = '/music'}>
                 <Music className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="touch-manipulation">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="touch-manipulation"
+                onClick={() => navigate('/music', { state: { activeTab: 'search' } })}
+              >
                 <Search className="w-5 h-5" />
               </Button>
               <div className="relative">

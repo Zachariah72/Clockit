@@ -345,6 +345,7 @@ const Music = () => {
       playSong?: any;
       songIndex?: number;
       fromHome?: boolean;
+      activeTab?: string;
     };
     if (state) {
       if (state.selectedPlaylist) {
@@ -362,6 +363,14 @@ const Music = () => {
         setActiveTab("all");
         // The song will be played automatically by the SongCard onClick handler
         // which is triggered when navigating from home
+      } else if (state.activeTab === 'search') {
+        // Navigate from home page search icon
+        setActiveTab("search");
+        // Focus the search input after a short delay
+        setTimeout(() => {
+          const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+          if (searchInput) searchInput.focus();
+        }, 100);
       }
     }
   }, [location.state]);
@@ -466,24 +475,7 @@ const Music = () => {
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-foreground">Music</h1>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setActiveTab("search");
-                    // Focus the search input after a short delay
-                    setTimeout(() => {
-                      const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-                      if (searchInput) searchInput.focus();
-                    }, 100);
-                  }}
-                  className="touch-manipulation"
-                >
-                  <Search className="w-5 h-5" />
-                </Button>
-                <ThemeToggle />
-              </div>
+              <ThemeToggle />
             </div>
 
             {/* Mood Selector */}
