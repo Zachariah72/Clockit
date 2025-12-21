@@ -12,13 +12,17 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: ["https://clockit-sage.vercel.app", "http://localhost:3000", "http://localhost:5173"],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["https://clockit-sage.vercel.app", "http://localhost:3000", "http://localhost:5173"],
+  credentials: true
+}));
 app.use(express.json());
 
 // Connect to MongoDB
