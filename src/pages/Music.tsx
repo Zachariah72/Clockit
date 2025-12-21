@@ -237,7 +237,7 @@ const playlists = [
 ];
 
 const moodModes = [
-  { key: 'All', icon: MusicIcon, color: 'bg-primary' },
+  { key: 'All', icon: MusicIcon, color: 'bg-[#2B2A2A]', textColor: 'text-[#016B61]' },
   { key: 'Chill', icon: Moon, color: 'bg-blue-500' },
   { key: 'Meditating', icon: Moon, color: 'bg-purple-500' },
   { key: 'Happy', icon: Smile, color: 'bg-yellow-500' },
@@ -492,7 +492,8 @@ const Music = () => {
                     variant={selectedMood === mood.key ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedMood(mood.key)}
-                    className="gap-1 flex-shrink-0"
+                    className={`gap-1 flex-shrink-0 ${mood.key === 'All' && selectedMood === 'All' ? mood.textColor : ''}`}
+                    style={mood.key === 'All' && selectedMood === 'All' ? { backgroundColor: '#2B2A2A', borderColor: '#2B2A2A' } : {}}
                   >
                     <mood.icon className="w-4 h-4" />
                     {mood.key}
