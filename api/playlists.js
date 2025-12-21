@@ -70,3 +70,7 @@ module.exports = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+module.exports.config = {
+  runtime: 'nodejs18.x'
+};
