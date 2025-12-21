@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 // Settings sections
 const settingsSections = [
@@ -93,6 +95,7 @@ const settingsSections = [
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
@@ -105,6 +108,17 @@ const Settings = () => {
     setSelectedSection(sectionId);
     // Navigate to specific settings section
     navigate(`/settings/${sectionId}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully!");
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Failed to logout. Please try again.");
+    }
   };
 
   return (
@@ -184,6 +198,7 @@ const Settings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
+            onClick={handleLogout}
             className="flex items-center gap-4 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/20 transition-colors"
           >
             <div className="p-3 rounded-xl bg-destructive/20">
