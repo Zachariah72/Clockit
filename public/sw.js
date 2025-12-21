@@ -8,10 +8,7 @@ const MUSIC_CACHE = 'clockit-music-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.webmanifest',
   '/favicon.ico',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
   '/robots.txt'
 ];
 
@@ -158,8 +155,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || 'New notification from Clockit',
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
+    icon: '/pwa-192x192.svg',
+    badge: '/pwa-192x192.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -169,12 +166,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'View',
-        icon: '/pwa-192x192.png'
+        icon: '/pwa-192x192.svg'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/pwa-192x192.png'
+        icon: '/pwa-192x192.svg'
       }
     ]
   };
