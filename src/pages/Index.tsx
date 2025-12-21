@@ -156,9 +156,6 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Stories & Music</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/music'}>
-                <Music className="w-5 h-5" />
-              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -166,6 +163,9 @@ const Index = () => {
                 onClick={() => navigate('/music', { state: { activeTab: 'search' } })}
               >
                 <Search className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/music'}>
+                <Music className="w-5 h-5" />
               </Button>
               <div className="relative">
                 <Button
