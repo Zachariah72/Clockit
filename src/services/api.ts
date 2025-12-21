@@ -73,6 +73,43 @@ class ApiService {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
+  async getPublic<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+      method: 'GET',
+    };
+
+    // Don't add auth token for public endpoints
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiError(response.status, errorData.message || 'API request failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status >= 500) {
+          toast.error('Server error. Please try again later.');
+        } else {
+          toast.error(error.message);
+        }
+        throw error;
+      } else {
+        toast.error('Network error. Please check your connection.');
+        throw error;
+      }
+    }
+  }
+
   async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,

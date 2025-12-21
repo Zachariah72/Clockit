@@ -60,7 +60,12 @@ exports.updateProfile = async (req, res) => {
 // Get followers
 exports.getFollowers = async (req, res) => {
   try {
-    const userId = req.params.userId || req.user.id;
+    const userId = req.params.userId || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID required' });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -91,7 +96,12 @@ exports.getFollowers = async (req, res) => {
 // Get following
 exports.getFollowing = async (req, res) => {
   try {
-    const userId = req.params.userId || req.user.id;
+    const userId = req.params.userId || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID required' });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;

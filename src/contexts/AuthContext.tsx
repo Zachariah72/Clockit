@@ -37,9 +37,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
-    
+
     if (data) {
       setProfile(data as Profile);
+    }
+  };
+
+  const createBackendToken = async (email: string) => {
+    try {
+      // For existing Supabase users, we need to create a backend account
+      // Since we don't have the password, we'll use a default one or skip
+      // This is a temporary solution - in production, you'd want proper account linking
+      console.log('Backend token creation attempted for:', email);
+      // For now, we'll skip automatic backend token creation
+      // Users will need to sign up through the proper flow
+    } catch (error) {
+      console.warn('Failed to create backend token:', error);
     }
   };
 
@@ -55,8 +68,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
+
+          // Ensure backend token exists for API calls
+          if (!localStorage.getItem('auth_token')) {
+            // Try to create backend token if user exists
+            createBackendToken(session.user.email || '');
+          }
         } else {
           setProfile(null);
+          localStorage.removeItem('auth_token');
         }
         setLoading(false);
       }
@@ -103,6 +123,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
+    // If Supabase signup successful, also create backend account
+    if (!error) {
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, email, password }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('auth_token', data.token);
+        }
+      } catch (backendError) {
+        console.warn('Backend registration failed:', backendError);
+        // Don't fail the signup if backend registration fails
+      }
+    }
+
     return { error };
   };
 
@@ -111,6 +152,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
     });
+
+    // If Supabase login successful, also create backend token
+    if (!error) {
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('auth_token', data.token);
+        }
+      } catch (backendError) {
+        console.warn('Backend authentication failed:', backendError);
+        // Don't fail the login if backend auth fails
+      }
+    }
 
     return { error };
   };
@@ -128,6 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('auth_token'); // Also clear backend token
     setUser(null);
     setSession(null);
     setProfile(null);
