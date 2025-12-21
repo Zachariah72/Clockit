@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, Phone, Camera, Check, ArrowLeft, Chrome, Apple, Facebook } from "lucide-react";
@@ -14,7 +15,7 @@ const passwordSchema = z.string().min(6, "Password must be at least 6 characters
 const usernameSchema = z.string().min(3, "Username must be at least 3 characters").max(20, "Username must be less than 20 characters");
 const phoneSchema = z.string().optional();
 
-const Auth = () => {
+const Auth = React.memo(() => {
   const [screen, setScreen] = useState<'hub' | 'signup' | 'signin'>('hub');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +27,25 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
-  
+
   const { signIn, signUp, signInWithOAuth, user, session } = useAuth();
   const navigate = useNavigate();
+
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  }, []);
+
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  }, []);
+
+  const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
+  }, []);
+
+  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(e.target.value);
+  }, []);
 
   const saveOnboardingPreferences = async () => {
     const preferences = localStorage.getItem('onboardingPreferences');
@@ -261,7 +278,7 @@ const Auth = () => {
               type="text"
               placeholder="Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={handleUsernameChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
           </div>
@@ -279,7 +296,7 @@ const Auth = () => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
           </div>
@@ -297,7 +314,7 @@ const Auth = () => {
               type="tel"
               placeholder="Phone (optional)"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={handlePhoneChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
           </div>
@@ -313,7 +330,7 @@ const Auth = () => {
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               className="pl-10 pr-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
             <button
@@ -431,7 +448,7 @@ const Auth = () => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
           </div>
@@ -447,7 +464,7 @@ const Auth = () => {
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               className="pl-10 pr-10 h-12 rounded-xl bg-muted/50 border-border/50"
             />
             <button
@@ -556,6 +573,6 @@ const Auth = () => {
       </motion.div>
     </div>
   );
-};
+});
 
 export default Auth;
