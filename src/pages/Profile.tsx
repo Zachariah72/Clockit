@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Layout } from "@/components/layout/Layout";
 import { Insights } from "@/components/Insights";
+import { useNavigate } from "react-router-dom";
 import avatar1 from "@/assets/avatar-1.jpg";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
@@ -27,6 +28,8 @@ const recentPosts = [
 ];
 
 const Profile = () => {
+  const navigate = useNavigate();
+
   return (
     <Layout>
       <div className="min-h-screen">
@@ -40,7 +43,7 @@ const Profile = () => {
             <h1 className="text-2xl font-bold text-foreground">Profile</h1>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
                 <Settings className="w-5 h-5" />
               </Button>
             </div>
