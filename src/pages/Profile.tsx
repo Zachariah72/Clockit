@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3 } from "lucide-react";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,22 @@ const recentPosts = [
   { id: "4", image: album1, type: "story" },
   { id: "5", image: album2, type: "music" },
   { id: "6", image: album3, type: "story" },
+];
+
+const savedItems = [
+  { id: "s1", image: album1, type: "reel", title: "Amazing Dance Moves", savedAt: "2 days ago" },
+  { id: "s2", image: album2, type: "song", title: "Neon Dreams", artist: "Midnight Wave", savedAt: "1 week ago" },
+  { id: "s3", image: album3, type: "post", title: "Beautiful Sunset", savedAt: "3 days ago" },
+  { id: "s4", image: album1, type: "reel", title: "Cooking Tutorial", savedAt: "5 days ago" },
+  { id: "s5", image: album2, type: "song", title: "Electric Soul", artist: "Nova", savedAt: "1 day ago" },
+  { id: "s6", image: album3, type: "post", title: "Travel Memories", savedAt: "4 days ago" },
+];
+
+const draftItems = [
+  { id: "d1", type: "story", progress: 30, lastEdited: "2 hours ago", preview: "Unfinished story with amazing filter" },
+  { id: "d2", type: "post", progress: 60, lastEdited: "1 day ago", preview: "Half-written post about music" },
+  { id: "d3", type: "reel", progress: 15, lastEdited: "3 days ago", preview: "Draft video with cool effects" },
+  { id: "d4", type: "story", progress: 80, lastEdited: "5 hours ago", preview: "Almost complete story series" },
 ];
 
 const Profile = () => {
@@ -131,17 +147,25 @@ const Profile = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mx-4 mt-8">
-            <TabsTrigger value="posts" className="flex items-center gap-2">
-              <Grid3X3 className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-5 mx-4 mt-8">
+            <TabsTrigger value="posts" className="flex items-center gap-1 text-xs">
+              <Grid3X3 className="w-3 h-3" />
               Posts
             </TabsTrigger>
-            <TabsTrigger value="insights" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
+            <TabsTrigger value="saved" className="flex items-center gap-1 text-xs">
+              <Bookmark className="w-3 h-3" />
+              Saved
+            </TabsTrigger>
+            <TabsTrigger value="drafts" className="flex items-center gap-1 text-xs">
+              <FileText className="w-3 h-3" />
+              Drafts
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-1 text-xs">
+              <BarChart3 className="w-3 h-3" />
               Insights
             </TabsTrigger>
-            <TabsTrigger value="playlists" className="flex items-center gap-2">
-              <Heart className="w-4 h-4" />
+            <TabsTrigger value="playlists" className="flex items-center gap-1 text-xs">
+              <Heart className="w-3 h-3" />
               Playlists
             </TabsTrigger>
           </TabsList>
@@ -182,6 +206,117 @@ const Profile = () => {
                       ) : (
                         <Camera className="w-6 h-6 text-secondary" />
                       )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.section>
+          </TabsContent>
+
+          <TabsContent value="saved" className="mt-6">
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="px-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Bookmark className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Saved Items</h3>
+                </div>
+                <Button variant="ghost" size="sm" className="text-primary">
+                  See all
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {savedItems.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.05 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                  >
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        {item.type === "song" ? (
+                          <Music className="w-5 h-5 text-white" />
+                        ) : item.type === "reel" ? (
+                          <Camera className="w-5 h-5 text-white" />
+                        ) : (
+                          <Grid3X3 className="w-5 h-5 text-white" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-foreground truncate">{item.title}</h4>
+                      {item.artist && (
+                        <p className="text-sm text-muted-foreground truncate">{item.artist}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Saved {item.savedAt}</p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Bookmark className="w-4 h-4 text-primary fill-current" />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.section>
+          </TabsContent>
+
+          <TabsContent value="drafts" className="mt-6">
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="px-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Drafts</h3>
+                </div>
+                <Button variant="ghost" size="sm" className="text-primary">
+                  Manage
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {draftItems.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.05 }}
+                    className="p-4 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {item.type === "story" ? (
+                          <Camera className="w-4 h-4 text-secondary" />
+                        ) : item.type === "reel" ? (
+                          <Camera className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Grid3X3 className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span className="text-sm font-medium text-foreground capitalize">{item.type} Draft</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{item.progress}% complete</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">{item.preview}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Edited {item.lastEdited}</span>
+                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-300"
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
                     </div>
                   </motion.div>
                 ))}
