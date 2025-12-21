@@ -58,11 +58,11 @@ export const Insights = ({ userId }: InsightsProps) => {
     try {
       setLoading(true);
       const [statsRes, contentRes, audienceRes, activityRes, musicRes] = await Promise.all([
-        fetch(`/api/analytics/stats/${userId}?period=${period}`),
-        fetch(`/api/analytics/content/${userId}?period=${period}`),
-        fetch(`/api/analytics/audience/${userId}`),
-        fetch(`/api/analytics/activity/${userId}?period=${period}`),
-        fetch(`/api/analytics/music/${userId}?period=${period}`)
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/stats/${userId}?period=${period}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/content/${userId}?period=${period}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/audience/${userId}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/activity/${userId}?period=${period}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/music/${userId}?period=${period}`)
       ]);
 
       const [statsData, contentData, audienceData, activityData, musicData] = await Promise.all([

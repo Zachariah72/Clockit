@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     if (session?.access_token) {
       // Assuming backend accepts Supabase token or we have JWT
       // For now, use session.access_token as token
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io(import.meta.env.VITE_API_URL, {
         query: {
           userId: session.user.id, // Assuming user.id is the ID
         },

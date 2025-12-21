@@ -51,7 +51,7 @@ const Auth = React.memo(() => {
     const preferences = localStorage.getItem('onboardingPreferences');
     if (preferences && session?.access_token) {
       try {
-        const response = await fetch('http://localhost:3000/api/users/onboarding', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/onboarding`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
