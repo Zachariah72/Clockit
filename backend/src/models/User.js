@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
+  displayName: { type: String, default: '' },
   email: { type: String, required: true, unique: true },
+  phone: { type: String },
   password: { type: String }, // Optional for OAuth users
   providers: [{
     provider: { type: String, enum: ['google', 'facebook', 'apple'], required: true },
@@ -12,13 +14,27 @@ const userSchema = new mongoose.Schema({
   }],
   resetToken: String,
   resetTokenExpiry: Date,
+
   // Profile fields
-  bio: String,
-  avatar: String,
-  linkInBio: String,
+  bio: { type: String, maxlength: 150 },
+  avatar: { type: String },
+  linkInBio: { type: String },
   pinnedContent: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
-  // Safety settings
+
+  // Social stats (computed fields)
+  followersCount: { type: Number, default: 0 },
+  followingCount: { type: Number, default: 0 },
+  storiesCount: { type: Number, default: 0 },
+  streakCount: { type: Number, default: 0 },
+
+  // Account status
+  isActive: { type: Boolean, default: true },
+  isVerified: { type: Boolean, default: false },
   isPrivate: { type: Boolean, default: false },
+  markedForDeletion: { type: Boolean, default: false },
+  deletionRequestedAt: Date,
+
+  // Safety settings
   commentControls: { type: String, enum: ['everyone', 'friends', 'no_one'], default: 'everyone' },
   duetPermissions: { type: String, enum: ['everyone', 'friends', 'no_one'], default: 'everyone' },
   stitchPermissions: { type: String, enum: ['everyone', 'friends', 'no_one'], default: 'everyone' },
@@ -26,9 +42,13 @@ const userSchema = new mongoose.Schema({
   sensitiveContent: { type: Boolean, default: false },
   twoFactorEnabled: { type: Boolean, default: false },
   screenTimeLimit: Number, // in minutes
+
+  // Premium features
   isPremium: { type: Boolean, default: false },
   premiumExpiresAt: Date,
-  createdAt: { type: Date, default: Date.now }
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('User', userSchema);

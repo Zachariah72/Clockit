@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText } from "lucide-react";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { StoriesModal } from "@/components/profile/StoriesModal";
 import { ShareMusicModal } from "@/components/profile/ShareMusicModal";
+import { profileApi, User, Story, SavedItem, DraftItem } from "@/services/profileApi";
 import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
@@ -19,11 +20,11 @@ import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
 import album3 from "@/assets/album-3.jpg";
 
-const stats = [
-  { label: "Stories", value: "248", icon: Camera, action: "stories" },
-  { label: "Followers", value: "12.5K", icon: Users, action: "followers" },
-  { label: "Following", value: "892", icon: Heart, action: "following" },
-  { label: "Streak", value: "45", icon: Flame, action: "streak" },
+const getStats = (profile: User | null) => [
+  { label: "Stories", value: profile?.storiesCount?.toString() || "0", icon: Camera, action: "stories" },
+  { label: "Followers", value: profile?.followersCount?.toString() || "0", icon: Users, action: "followers" },
+  { label: "Following", value: profile?.followingCount?.toString() || "0", icon: Heart, action: "following" },
+  { label: "Streak", value: profile?.streakCount?.toString() || "0", icon: Flame, action: "streak" },
 ];
 
 // Mock data for followers/following
@@ -79,6 +80,15 @@ const draftItems = [
 const Profile = () => {
   const navigate = useNavigate();
 
+  // Loading and data states
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<User | null>(null);
+  const [followers, setFollowers] = useState<User[]>([]);
+  const [following, setFollowing] = useState<User[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [savedContent, setSavedContent] = useState<SavedItem[]>([]);
+  const [drafts, setDrafts] = useState<DraftItem[]>([]);
+
   // Modal states
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isShareMusicOpen, setIsShareMusicOpen] = useState(false);
@@ -88,46 +98,100 @@ const Profile = () => {
   });
   const [isStoriesModalOpen, setIsStoriesModalOpen] = useState(false);
 
-  // Current profile data
-  const [currentProfile, setCurrentProfile] = useState({
-    username: "sarahmitch",
-    displayName: "Sarah Mitchell",
-    bio: "Music lover 🎵 | Night owl 🌙 | Creating vibes since '99",
-    avatar: avatar1
-  });
+  // Load profile data on mount
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const [profileRes, followersRes, followingRes, storiesRes, savedRes, draftsRes] = await Promise.all([
+        profileApi.getProfile(),
+        profileApi.getFollowers(),
+        profileApi.getFollowing(),
+        profileApi.getStories(),
+        profileApi.getSavedContent(),
+        profileApi.getDrafts()
+      ]);
+
+      setProfile(profileRes.data);
+      setFollowers(followersRes.data.followers);
+      setFollowing(followingRes.data.following);
+      setStories(storiesRes.data);
+      setSavedContent(savedRes.data.savedContent);
+      setDrafts(draftsRes.data);
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handlers
   const handleEditProfile = () => {
     setIsEditProfileOpen(true);
   };
 
-  const handleSaveProfile = (updatedProfile: any) => {
-    setCurrentProfile(updatedProfile);
-    toast.success("Profile updated successfully!");
+  const handleSaveProfile = async (updatedProfile: any) => {
+    try {
+      const response = await profileApi.updateProfile(updatedProfile);
+      setProfile(response.data);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Failed to update profile");
+    }
   };
 
   const handleShareMusic = () => {
     setIsShareMusicOpen(true);
   };
 
-  const handleStatClick = (action: string) => {
+  const handleStatClick = async (action: string) => {
     switch (action) {
       case 'stories':
         setIsStoriesModalOpen(true);
         break;
       case 'followers':
-        setFollowersModal({ isOpen: true, type: 'followers' });
+        try {
+          const response = await profileApi.getFollowers();
+          setFollowers(response.data.followers);
+          setFollowersModal({ isOpen: true, type: 'followers' });
+        } catch (error) {
+          toast.error("Failed to load followers");
+        }
         break;
       case 'following':
-        setFollowersModal({ isOpen: true, type: 'following' });
+        try {
+          const response = await profileApi.getFollowing();
+          setFollowing(response.data.following);
+          setFollowersModal({ isOpen: true, type: 'following' });
+        } catch (error) {
+          toast.error("Failed to load following");
+        }
         break;
       case 'streak':
-        toast.info("Streak: 45 days! Keep it up! 🔥");
+        toast.info(`Streak: ${profile?.streakCount || 0} days! Keep it up! 🔥`);
         break;
       default:
         break;
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -179,12 +243,14 @@ const Profile = () => {
 
             {/* Name & Bio */}
             <h2 className="text-xl font-bold text-foreground mt-4">
-              Sarah Mitchell
+              {profile?.displayName || profile?.username}
             </h2>
-            <p className="text-sm text-muted-foreground">@sarahmitch</p>
-            <p className="text-sm text-center text-muted-foreground mt-2 max-w-xs">
-              Music lover 🎵 | Night owl 🌙 | Creating vibes since '99
-            </p>
+            <p className="text-sm text-muted-foreground">@{profile?.username}</p>
+            {profile?.bio && (
+              <p className="text-sm text-center text-muted-foreground mt-2 max-w-xs">
+                {profile.bio}
+              </p>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
@@ -208,7 +274,7 @@ const Profile = () => {
           className="px-4 mt-8"
         >
           <div className="grid grid-cols-4 gap-2">
-            {stats.map((stat, index) => (
+            {getStats(profile).map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -314,42 +380,49 @@ const Profile = () => {
                 </Button>
               </div>
               <div className="space-y-4">
-                {savedItems.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-                  >
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        {item.type === "song" ? (
-                          <Music className="w-5 h-5 text-white" />
-                        ) : item.type === "reel" ? (
-                          <Camera className="w-5 h-5 text-white" />
-                        ) : (
-                          <Grid3X3 className="w-5 h-5 text-white" />
-                        )}
+                {savedContent.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Bookmark className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No saved items yet</p>
+                  </div>
+                ) : (
+                  savedContent.map((item, index) => (
+                    <motion.div
+                      key={item._id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + index * 0.05 }}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                    >
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        <img
+                          src={item.contentData.image}
+                          alt={item.contentData.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                          {item.contentType === "song" ? (
+                            <Music className="w-5 h-5 text-white" />
+                          ) : item.contentType === "reel" ? (
+                            <Camera className="w-5 h-5 text-white" />
+                          ) : (
+                            <Grid3X3 className="w-5 h-5 text-white" />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-foreground truncate">{item.title}</h4>
-                      {item.artist && (
-                        <p className="text-sm text-muted-foreground truncate">{item.artist}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">Saved {item.savedAt}</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <Bookmark className="w-4 h-4 text-primary fill-current" />
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-foreground truncate">{item.contentData.title}</h4>
+                        {item.contentData.artist && (
+                          <p className="text-sm text-muted-foreground truncate">{item.contentData.artist}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">Saved {new Date(item.savedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Bookmark className="w-4 h-4 text-primary fill-current" />
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.section>
           </TabsContent>
@@ -371,39 +444,46 @@ const Profile = () => {
                 </Button>
               </div>
               <div className="space-y-4">
-                {draftItems.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    className="p-4 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {item.type === "story" ? (
-                          <Camera className="w-4 h-4 text-secondary" />
-                        ) : item.type === "reel" ? (
-                          <Camera className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Grid3X3 className="w-4 h-4 text-muted-foreground" />
-                        )}
-                        <span className="text-sm font-medium text-foreground capitalize">{item.type} Draft</span>
+                {drafts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No drafts yet</p>
+                  </div>
+                ) : (
+                  drafts.map((item, index) => (
+                    <motion.div
+                      key={item._id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + index * 0.05 }}
+                      className="p-4 rounded-xl bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {item.contentType === "story" ? (
+                            <Camera className="w-4 h-4 text-secondary" />
+                          ) : item.contentType === "reel" ? (
+                            <Camera className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Grid3X3 className="w-4 h-4 text-muted-foreground" />
+                          )}
+                          <span className="text-sm font-medium text-foreground capitalize">{item.contentType} Draft</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{item.completionPercentage}% complete</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{item.progress}% complete</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{item.preview}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Edited {item.lastEdited}</span>
-                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-300"
-                          style={{ width: `${item.progress}%` }}
-                        />
+                      <p className="text-sm text-muted-foreground mb-2">{item.description || item.title || 'Untitled draft'}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Edited {new Date(item.lastEditedAt).toLocaleDateString()}</span>
+                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-300"
+                            style={{ width: `${item.completionPercentage}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.section>
           </TabsContent>
@@ -465,7 +545,17 @@ const Profile = () => {
         <EditProfileModal
           isOpen={isEditProfileOpen}
           onClose={() => setIsEditProfileOpen(false)}
-          currentProfile={currentProfile}
+          currentProfile={profile ? {
+            username: profile.username,
+            displayName: profile.displayName || '',
+            bio: profile.bio || '',
+            avatar: profile.avatar || avatar1
+          } : {
+            username: '',
+            displayName: '',
+            bio: '',
+            avatar: avatar1
+          }}
           onSave={handleSaveProfile}
         />
 
@@ -478,13 +568,13 @@ const Profile = () => {
           isOpen={followersModal.isOpen}
           onClose={() => setFollowersModal({ isOpen: false, type: 'followers' })}
           type={followersModal.type}
-          users={followersModal.type === 'followers' ? mockFollowers : mockFollowing}
+          users={followersModal.type === 'followers' ? followers : following}
         />
 
         <StoriesModal
           isOpen={isStoriesModalOpen}
           onClose={() => setIsStoriesModalOpen(false)}
-          stories={mockUserStories}
+          stories={stories}
         />
       </div>
     </Layout>

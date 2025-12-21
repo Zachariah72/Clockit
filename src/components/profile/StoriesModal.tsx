@@ -8,13 +8,14 @@ import album2 from "@/assets/album-2.jpg";
 import album3 from "@/assets/album-3.jpg";
 
 interface Story {
-  id: string;
-  image: string;
+  _id: string;
+  contentType: 'image' | 'video';
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  viewsCount: number;
+  likesCount: number;
   createdAt: string;
-  views: number;
-  likes: number;
-  comments: number;
-  type: 'image' | 'video';
 }
 
 interface StoriesModalProps {
@@ -72,7 +73,7 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {stories.map((story, index) => (
                       <motion.div
-                        key={story.id}
+                        key={story._id}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
@@ -80,7 +81,7 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
                         className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
                       >
                         <img
-                          src={story.image}
+                          src={story.mediaUrl}
                           alt="Story"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
@@ -90,23 +91,19 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
                           <div className="flex items-center gap-3 text-white text-xs">
                             <div className="flex items-center gap-1">
                               <Eye className="w-3 h-3" />
-                              {story.views}
+                              {story.viewsCount}
                             </div>
                             <div className="flex items-center gap-1">
                               <Heart className="w-3 h-3" />
-                              {story.likes}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MessageCircle className="w-3 h-3" />
-                              {story.comments}
+                              {story.likesCount}
                             </div>
                           </div>
-                          <p className="text-white text-xs mt-1">{story.createdAt}</p>
+                          <p className="text-white text-xs mt-1">{new Date(story.createdAt).toLocaleDateString()}</p>
                         </div>
 
                         {/* Story type indicator */}
                         <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                          {story.type === 'video' ? (
+                          {story.contentType === 'video' ? (
                             <div className="w-2 h-2 bg-white rounded-full" />
                           ) : (
                             <div className="w-2 h-2 bg-white rounded-sm" />
@@ -140,7 +137,7 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={selectedStory.image}
+                src={selectedStory.mediaUrl}
                 alt="Story"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
@@ -151,18 +148,14 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
-                      {selectedStory.views}
+                      {selectedStory.viewsCount}
                     </div>
                     <div className="flex items-center gap-1">
                       <Heart className="w-4 h-4" />
-                      {selectedStory.likes}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageCircle className="w-4 h-4" />
-                      {selectedStory.comments}
+                      {selectedStory.likesCount}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-300">{selectedStory.createdAt}</span>
+                  <span className="text-xs text-gray-300">{new Date(selectedStory.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
 

@@ -1,0 +1,100 @@
+import { api } from './api';
+
+export interface User {
+  _id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+  avatar?: string;
+  linkInBio?: string;
+  followersCount: number;
+  followingCount: number;
+  storiesCount: number;
+  streakCount: number;
+  isVerified: boolean;
+  isPrivate: boolean;
+  createdAt: string;
+}
+
+export interface Story {
+  _id: string;
+  contentType: 'image' | 'video';
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  viewsCount: number;
+  likesCount: number;
+  createdAt: string;
+}
+
+export interface SavedItem {
+  _id: string;
+  contentType: 'reel' | 'song' | 'post' | 'story';
+  contentData: {
+    title: string;
+    artist?: string;
+    image: string;
+    creator?: User;
+  };
+  savedAt: string;
+}
+
+export interface DraftItem {
+  _id: string;
+  contentType: 'story' | 'reel' | 'post';
+  title?: string;
+  description?: string;
+  completionPercentage: number;
+  lastEditedAt: string;
+  createdAt: string;
+}
+
+// Profile API functions
+export const profileApi = {
+  // Get user profile
+  getProfile: (userId?: string) =>
+    api.get<User>(`/profile/${userId || ''}`),
+
+  // Update profile
+  updateProfile: (data: Partial<User>) =>
+    api.put<User>('/profile', data),
+
+  // Social features
+  getFollowers: (userId?: string, page = 1, limit = 20) =>
+    api.get<{ followers: User[]; pagination: any }>(`/profile/${userId || ''}/followers?page=${page}&limit=${limit}`),
+
+  getFollowing: (userId?: string, page = 1, limit = 20) =>
+    api.get<{ following: User[]; pagination: any }>(`/profile/${userId || ''}/following?page=${page}&limit=${limit}`),
+
+  toggleFollow: (userId: string) =>
+    api.post<{ action: 'followed' | 'unfollowed' }>(`/profile/${userId}/follow`),
+
+  // Content features
+  getStories: (userId?: string) =>
+    api.get<Story[]>(`/profile/${userId || ''}/stories`),
+
+  getSavedContent: (type: 'reel' | 'song' | 'post' | 'story' | 'all' = 'all', page = 1, limit = 20) =>
+    api.get<{ savedContent: SavedItem[]; pagination: any }>(`/profile/saved?type=${type}&page=${page}&limit=${limit}`),
+
+  toggleSaveContent: (data: {
+    contentId: string;
+    contentType: 'reel' | 'song' | 'post' | 'story';
+    contentModel: string;
+    contentData?: any;
+  }) =>
+    api.post<{ action: 'saved' | 'unsaved'; data?: SavedItem }>(`/profile/save`, data),
+
+  getDrafts: (type: 'story' | 'reel' | 'post' | 'all' = 'all') =>
+    api.get<DraftItem[]>(`/profile/drafts?type=${type}`),
+
+  // Music sharing
+  shareMusic: (data: {
+    songId: string;
+    shareType: 'messages' | 'social' | 'friends' | 'link';
+    platform?: string;
+    recipientUsers?: string[];
+  }) =>
+    api.post<{ message: string; share: any }>(`/profile/share-music`, data),
+};

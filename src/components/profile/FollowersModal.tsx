@@ -8,10 +8,11 @@ import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 
 interface User {
-  id: string;
+  _id: string;
   username: string;
   displayName: string;
-  avatar: string;
+  avatar?: string;
+  bio?: string;
   isFollowing?: boolean;
   isFollower?: boolean;
 }
@@ -86,7 +87,7 @@ export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalP
               ) : (
                 filteredUsers.map((user, index) => (
                   <motion.div
-                    key={user.id}
+                    key={user._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
@@ -94,12 +95,12 @@ export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalP
                   >
                     <div className="flex items-center gap-3">
                       <img
-                        src={user.avatar}
+                        src={user.avatar || '/default-avatar.png'}
                         alt={user.username}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                       <div>
-                        <p className="font-medium text-foreground">{user.displayName}</p>
+                        <p className="font-medium text-foreground">{user.displayName || user.username}</p>
                         <p className="text-sm text-muted-foreground">@{user.username}</p>
                       </div>
                     </div>
@@ -108,7 +109,7 @@ export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalP
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleFollowToggle(user.id)}
+                        onClick={() => handleFollowToggle(user._id)}
                         className="text-destructive hover:text-destructive"
                       >
                         <UserMinus className="w-4 h-4 mr-1" />
@@ -120,7 +121,7 @@ export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalP
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleFollowToggle(user.id)}
+                        onClick={() => handleFollowToggle(user._id)}
                       >
                         <UserPlus className="w-4 h-4 mr-1" />
                         Follow
