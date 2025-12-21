@@ -237,6 +237,7 @@ const playlists = [
 ];
 
 const moodModes = [
+  { key: 'All', icon: MusicIcon, color: 'bg-primary' },
   { key: 'Chill', icon: Moon, color: 'bg-blue-500' },
   { key: 'Meditating', icon: Moon, color: 'bg-purple-500' },
   { key: 'Happy', icon: Smile, color: 'bg-yellow-500' },
@@ -255,7 +256,7 @@ const Music = () => {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"search" | "all" | "playlists" | "liked">("all");
-  const [selectedMood, setSelectedMood] = useState("Chill");
+  const [selectedMood, setSelectedMood] = useState("All");
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -270,7 +271,8 @@ const Music = () => {
     (song) =>
       (song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       song.artist.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (selectedGenre === "All" || song.genre === selectedGenre)
+      (selectedGenre === "All" || song.genre === selectedGenre) &&
+      (selectedMood === "All" || song.mood === selectedMood)
   );
 
   // Auto-switch to search results when user starts typing
