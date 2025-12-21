@@ -4,7 +4,8 @@ const profileController = require('../controllers/profileController');
 const auth = require('../middlewares/auth');
 
 // Profile viewing (public)
-router.get('/:userId?', profileController.getProfile);
+router.get('/', profileController.getProfile);
+router.get('/:userId', profileController.getProfile);
 router.get('/:userId/followers', profileController.getFollowers);
 router.get('/:userId/following', profileController.getFollowing);
 

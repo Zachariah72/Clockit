@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Sparkles, Phone, Camera, Check, ArrowLeft, Chrome, Apple, Facebook } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Phone, Camera, Check, ArrowLeft, Chrome, Apple, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -199,12 +199,9 @@ const Auth = () => {
       className="text-center space-y-8"
     >
       <div>
-        <div className="inline-flex items-center gap-2 mb-4">
-          <Sparkles className="w-12 h-12 text-primary" />
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-            Clockit
-          </h1>
-        </div>
+        <h1 className="text-5xl font-bold text-gradient mb-4">
+          Clockit
+        </h1>
         <p className="text-xl text-muted-foreground mb-8">
           Your ultimate social media and music experience
         </p>
