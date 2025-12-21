@@ -497,16 +497,17 @@ const Music = () => {
               </div>
             </div>
 
-            {/* Search */}
+            {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search songs, artists, albums..."
+                placeholder="Search songs, artists..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setActiveTab("search")}
                 className="w-full h-12 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus={activeTab === "search"}
               />
               {searchQuery && (
                 <button
@@ -516,6 +517,21 @@ const Music = () => {
                   ✕
                 </button>
               )}
+            </div>
+
+            {/* Popular Artists */}
+            <div className="flex flex-wrap gap-2">
+              {['Beyoncé', 'Kendrick Lamar', 'Wizkid', 'Drake', 'Burna Boy'].map((artist) => (
+                <Button
+                  key={artist}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery(artist)}
+                  className="text-xs px-3 py-1 h-8"
+                >
+                  {artist}
+                </Button>
+              ))}
             </div>
 
             {/* Genre Tabs */}
@@ -556,33 +572,82 @@ const Music = () => {
           </div>
         </motion.header>
 
+        {/* Search Results Section */}
+        {activeTab === "search" && searchQuery && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="px-4 mt-6"
+          >
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Search Results for "{searchQuery}"</h4>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredSongs.slice(0, 20).map((song, index) => (
+                  <motion.div
+                    key={song.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                  >
+                    <SongCard
+                      title={song.title}
+                      artist={song.artist}
+                      albumArt={song.albumArt}
+                      duration={song.duration}
+                      trackUrl={song.trackUrl}
+                      playlist={filteredSongs.map(s => ({
+                        id: `${s.title}-${s.artist}`,
+                        title: s.title,
+                        artist: s.artist,
+                        album: 'Search Results',
+                        duration: 180,
+                        url: s.trackUrl,
+                        artwork: s.albumArt,
+                      }))}
+                      currentIndex={index}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+              {filteredSongs.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No songs found matching "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          </motion.section>
+        )}
+
         {/* Discovery Section - Moved to top of Listening Groups */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="px-4 mt-6"
-        >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Discover {selectedGenre}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {playlists.slice(0, 4).map((playlist) => (
-              <motion.div
-                key={playlist.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <FeaturedPlaylist
-                  title={playlist.title}
-                  description={playlist.description}
-                  image={playlist.image}
-                  songCount={playlist.songCount}
-                  onClick={() => handlePlaylistClick(playlist)}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+        {activeTab !== "search" && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="px-4 mt-6"
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Discover {selectedGenre}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {playlists.slice(0, 4).map((playlist) => (
+                <motion.div
+                  key={playlist.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <FeaturedPlaylist
+                    title={playlist.title}
+                    description={playlist.description}
+                    image={playlist.image}
+                    songCount={playlist.songCount}
+                    onClick={() => handlePlaylistClick(playlist)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         {/* Listening Groups */}
         <motion.section
@@ -648,111 +713,6 @@ const Music = () => {
           </div>
         </motion.section>
 
-        {/* Search Section */}
-        {activeTab === "search" && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="px-4 mt-6"
-          >
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-2">Advanced Search</h3>
-                <p className="text-sm text-muted-foreground">Find your favorite songs and artists</p>
-              </div>
-
-              {/* Enhanced Search */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search songs, artists, albums..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-14 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-lg"
-                  autoFocus
-                />
-              </div>
-
-              {/* Search Results */}
-              {searchQuery && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-foreground">Search Results</h4>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {filteredSongs.slice(0, 20).map((song, index) => (
-                      <motion.div
-                        key={song.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.02 }}
-                      >
-                        <SongCard
-                          title={song.title}
-                          artist={song.artist}
-                          albumArt={song.albumArt}
-                          duration={song.duration}
-                          trackUrl={song.trackUrl}
-                          playlist={filteredSongs.map(s => ({
-                            id: `${s.title}-${s.artist}`,
-                            title: s.title,
-                            artist: s.artist,
-                            album: 'Search Results',
-                            duration: 180,
-                            url: s.trackUrl,
-                            artwork: s.albumArt,
-                          }))}
-                          currentIndex={index}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                  {filteredSongs.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">No songs found matching "{searchQuery}"</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Search Suggestions when no query */}
-              {!searchQuery && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-foreground">Quick Search</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['Pop', 'Hip-Hop/Rap', 'Afrobeat', 'Electronic/EDM', 'R&B/Soul', 'Rock'].map((genre) => (
-                      <Button
-                        key={genre}
-                        variant="outline"
-                        onClick={() => setSelectedGenre(genre)}
-                        className="justify-start"
-                      >
-                        {genre}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium text-muted-foreground">Recent Searches</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {['Beyoncé', 'Kendrick Lamar', 'Wizkid', 'Drake', 'Burna Boy'].map((artist) => (
-                        <Button
-                          key={artist}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSearchQuery(artist)}
-                          className="text-xs"
-                        >
-                          {artist}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.section>
-        )}
 
         {/* Playlists Section */}
         {activeTab === "playlists" && (
