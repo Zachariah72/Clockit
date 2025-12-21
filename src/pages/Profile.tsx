@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,16 +7,48 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Layout } from "@/components/layout/Layout";
 import { Insights } from "@/components/Insights";
 import { useNavigate } from "react-router-dom";
+import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { FollowersModal } from "@/components/profile/FollowersModal";
+import { StoriesModal } from "@/components/profile/StoriesModal";
+import { ShareMusicModal } from "@/components/profile/ShareMusicModal";
+import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
+import avatar2 from "@/assets/avatar-2.jpg";
+import avatar3 from "@/assets/avatar-3.jpg";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
 import album3 from "@/assets/album-3.jpg";
 
 const stats = [
-  { label: "Stories", value: "248", icon: Camera },
-  { label: "Followers", value: "12.5K", icon: Users },
-  { label: "Following", value: "892", icon: Heart },
-  { label: "Streak", value: "45", icon: Flame },
+  { label: "Stories", value: "248", icon: Camera, action: "stories" },
+  { label: "Followers", value: "12.5K", icon: Users, action: "followers" },
+  { label: "Following", value: "892", icon: Heart, action: "following" },
+  { label: "Streak", value: "45", icon: Flame, action: "streak" },
+];
+
+// Mock data for followers/following
+const mockFollowers = [
+  { id: "1", username: "musiclover", displayName: "Music Lover", avatar: avatar1, isFollower: true },
+  { id: "2", username: "beatmaker", displayName: "Beat Maker", avatar: avatar2, isFollower: true },
+  { id: "3", username: "djpro", displayName: "DJ Pro", avatar: avatar3, isFollower: true },
+  { id: "4", username: "soundwave", displayName: "Sound Wave", avatar: avatar1, isFollower: true },
+  { id: "5", username: "rhythm", displayName: "Rhythm King", avatar: avatar2, isFollower: true },
+];
+
+const mockFollowing = [
+  { id: "6", username: "producer", displayName: "Music Producer", avatar: avatar3, isFollowing: true },
+  { id: "7", username: "artist", displayName: "The Artist", avatar: avatar1, isFollowing: true },
+  { id: "8", username: "composer", displayName: "Composer X", avatar: avatar2, isFollowing: true },
+  { id: "9", username: "singer", displayName: "Soul Singer", avatar: avatar3, isFollowing: true },
+];
+
+// Mock data for stories
+const mockUserStories = [
+  { id: "s1", image: album1, createdAt: "2 hours ago", views: 245, likes: 23, comments: 5, type: "image" as const },
+  { id: "s2", image: album2, createdAt: "5 hours ago", views: 189, likes: 15, comments: 3, type: "video" as const },
+  { id: "s3", image: album3, createdAt: "1 day ago", views: 456, likes: 67, comments: 12, type: "image" as const },
+  { id: "s4", image: album1, createdAt: "2 days ago", views: 312, likes: 34, comments: 8, type: "video" as const },
+  { id: "s5", image: album2, createdAt: "3 days ago", views: 678, likes: 89, comments: 15, type: "image" as const },
 ];
 
 const recentPosts = [
@@ -45,6 +78,56 @@ const draftItems = [
 
 const Profile = () => {
   const navigate = useNavigate();
+
+  // Modal states
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isShareMusicOpen, setIsShareMusicOpen] = useState(false);
+  const [followersModal, setFollowersModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
+    isOpen: false,
+    type: 'followers'
+  });
+  const [isStoriesModalOpen, setIsStoriesModalOpen] = useState(false);
+
+  // Current profile data
+  const [currentProfile, setCurrentProfile] = useState({
+    username: "sarahmitch",
+    displayName: "Sarah Mitchell",
+    bio: "Music lover 🎵 | Night owl 🌙 | Creating vibes since '99",
+    avatar: avatar1
+  });
+
+  // Handlers
+  const handleEditProfile = () => {
+    setIsEditProfileOpen(true);
+  };
+
+  const handleSaveProfile = (updatedProfile: any) => {
+    setCurrentProfile(updatedProfile);
+    toast.success("Profile updated successfully!");
+  };
+
+  const handleShareMusic = () => {
+    setIsShareMusicOpen(true);
+  };
+
+  const handleStatClick = (action: string) => {
+    switch (action) {
+      case 'stories':
+        setIsStoriesModalOpen(true);
+        break;
+      case 'followers':
+        setFollowersModal({ isOpen: true, type: 'followers' });
+        break;
+      case 'following':
+        setFollowersModal({ isOpen: true, type: 'following' });
+        break;
+      case 'streak':
+        toast.info("Streak: 45 days! Keep it up! 🔥");
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <Layout>
@@ -105,11 +188,11 @@ const Profile = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button variant="gradient" className="gap-2">
+              <Button variant="gradient" className="gap-2" onClick={handleEditProfile}>
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
               </Button>
-              <Button variant="glass" className="gap-2">
+              <Button variant="glass" className="gap-2" onClick={handleShareMusic}>
                 <Music className="w-4 h-4" />
                 Share Music
               </Button>
@@ -131,7 +214,8 @@ const Profile = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 + index * 0.05 }}
-                className="glass-card p-3 rounded-xl text-center"
+                className="glass-card p-3 rounded-xl text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleStatClick(stat.action)}
               >
                 <stat.icon
                   className={`w-5 h-5 mx-auto mb-1 ${
@@ -376,6 +460,32 @@ const Profile = () => {
             </motion.section>
           </TabsContent>
         </Tabs>
+
+        {/* Modals */}
+        <EditProfileModal
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+          currentProfile={currentProfile}
+          onSave={handleSaveProfile}
+        />
+
+        <ShareMusicModal
+          isOpen={isShareMusicOpen}
+          onClose={() => setIsShareMusicOpen(false)}
+        />
+
+        <FollowersModal
+          isOpen={followersModal.isOpen}
+          onClose={() => setFollowersModal({ isOpen: false, type: 'followers' })}
+          type={followersModal.type}
+          users={followersModal.type === 'followers' ? mockFollowers : mockFollowing}
+        />
+
+        <StoriesModal
+          isOpen={isStoriesModalOpen}
+          onClose={() => setIsStoriesModalOpen(false)}
+          stories={mockUserStories}
+        />
       </div>
     </Layout>
   );
