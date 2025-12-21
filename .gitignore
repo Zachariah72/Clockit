@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+dev-dist
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Large media files (GitHub size limit)
+public/assets/*.mp3
+public/assets/*.wav
+public/assets/*.mp4
+public/assets/*.mov
+public/assets/*.avi
+public/assets/*.mkv
+public/assets/*.flv
+public/assets/*.wmv
+public/assets/*.webm
+public/assets/*.m4v
+public/assets/*.3gp
+public/assets/*.mpg
+public/assets/*.mpeg
