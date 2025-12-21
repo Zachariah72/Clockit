@@ -262,6 +262,7 @@ const Music = () => {
   const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState<typeof playlists[0] | null>(null);
   const [showBottomNav, setShowBottomNav] = useState(true);
+  const [showSearchBar, setShowSearchBar] = useState(false);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionRef = useRef<number>(Date.now());
 
@@ -272,7 +273,7 @@ const Music = () => {
       (selectedGenre === "All" || song.genre === selectedGenre)
   );
 
-  // Auto-switch to search tab when user starts typing
+  // Auto-switch to search results when user starts typing
   useEffect(() => {
     if (searchQuery && activeTab !== "search") {
       setActiveTab("search");
@@ -364,7 +365,8 @@ const Music = () => {
         // The song will be played automatically by the SongCard onClick handler
         // which is triggered when navigating from home
       } else if (state.activeTab === 'search') {
-        // Navigate from home page search icon
+        // Navigate from home page search icon - show search bar
+        setShowSearchBar(true);
         setActiveTab("search");
         // Focus the search input after a short delay
         setTimeout(() => {
@@ -497,42 +499,6 @@ const Music = () => {
               </div>
             </div>
 
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search songs, artists..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setActiveTab("search")}
-                className="w-full h-12 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                autoFocus={activeTab === "search"}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Popular Artists */}
-            <div className="flex flex-wrap gap-2">
-              {['Beyoncé', 'Kendrick Lamar', 'Wizkid', 'Drake', 'Burna Boy'].map((artist) => (
-                <Button
-                  key={artist}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSearchQuery(artist)}
-                  className="text-xs px-3 py-1 h-8"
-                >
-                  {artist}
-                </Button>
-              ))}
-            </div>
 
             {/* Genre Tabs */}
             <div className="mt-4">
@@ -551,8 +517,15 @@ const Music = () => {
 
             {/* Tabs */}
             <div className="flex gap-2 mt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSearchBar(!showSearchBar)}
+                className="gap-2"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
               {[
-                { key: "search", label: "Search", icon: Search },
                 { key: "all", label: "All Songs", icon: ListMusic },
                 { key: "playlists", label: "Playlists", icon: Clock },
                 { key: "liked", label: "Liked", icon: Heart },
@@ -569,6 +542,52 @@ const Music = () => {
                 </Button>
               ))}
             </div>
+
+            {/* Search Bar - Show when search icon is clicked */}
+            {showSearchBar && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 space-y-3"
+              >
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search songs, artists..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setActiveTab("search")}
+                    className="w-full h-12 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground hover:text-foreground"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Popular Artists */}
+                <div className="flex flex-wrap gap-2">
+                  {['Beyoncé', 'Kendrick Lamar', 'Wizkid', 'Drake', 'Burna Boy'].map((artist) => (
+                    <Button
+                      key={artist}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchQuery(artist)}
+                      className="text-xs px-3 py-1 h-8"
+                    >
+                      {artist}
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </div>
         </motion.header>
 
