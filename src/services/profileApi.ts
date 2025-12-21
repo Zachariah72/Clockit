@@ -29,6 +29,18 @@ export interface Story {
   createdAt: string;
 }
 
+export interface Reel {
+  _id: string;
+  title?: string;
+  description?: string;
+  thumbnail: string;
+  url: string;
+  views: number;
+  likes: number;
+  duration?: number;
+  createdAt: string;
+}
+
 export interface SavedItem {
   _id: string;
   contentType: 'reel' | 'song' | 'post' | 'story';
@@ -74,6 +86,9 @@ export const profileApi = {
   // Content features
   getStories: (userId?: string) =>
     api.get<Story[]>(`/profile/${userId || ''}/stories`),
+
+  getReels: (userId?: string, page = 1, limit = 20) =>
+    api.get<{ reels: Reel[]; pagination: any }>(`/profile/${userId || ''}/reels?page=${page}&limit=${limit}`),
 
   getSavedContent: (type: 'reel' | 'song' | 'post' | 'story' | 'all' = 'all', page = 1, limit = 20) =>
     api.get<{ savedContent: SavedItem[]; pagination: any }>(`/profile/saved?type=${type}&page=${page}&limit=${limit}`),

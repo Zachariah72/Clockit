@@ -17,6 +17,7 @@ router.post('/:userId/follow', profileController.toggleFollow);
 
 // Content features
 router.get('/:userId/stories', profileController.getStories);
+router.get('/:userId/reels', profileController.getReels);
 router.get('/saved', profileController.getSavedContent);
 router.post('/save', profileController.toggleSaveContent);
 router.get('/drafts', profileController.getDrafts);

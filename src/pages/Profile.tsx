@@ -11,7 +11,7 @@ import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { StoriesModal } from "@/components/profile/StoriesModal";
 import { ShareMusicModal } from "@/components/profile/ShareMusicModal";
-import { profileApi, User, Story, SavedItem, DraftItem } from "@/services/profileApi";
+import { profileApi, User, Story, SavedItem, DraftItem, Reel } from "@/services/profileApi";
 import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
@@ -86,6 +86,7 @@ const Profile = () => {
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
+  const [reels, setReels] = useState<Reel[]>([]);
   const [savedContent, setSavedContent] = useState<SavedItem[]>([]);
   const [drafts, setDrafts] = useState<DraftItem[]>([]);
 
@@ -106,11 +107,12 @@ const Profile = () => {
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      const [profileRes, followersRes, followingRes, storiesRes, savedRes, draftsRes] = await Promise.all([
+      const [profileRes, followersRes, followingRes, storiesRes, reelsRes, savedRes, draftsRes] = await Promise.all([
         profileApi.getProfile(),
         profileApi.getFollowers(),
         profileApi.getFollowing(),
         profileApi.getStories(),
+        profileApi.getReels(),
         profileApi.getSavedContent(),
         profileApi.getDrafts()
       ]);
@@ -119,6 +121,7 @@ const Profile = () => {
       setFollowers(followersRes.data.followers);
       setFollowing(followingRes.data.following);
       setStories(storiesRes.data);
+      setReels(reelsRes.data.reels);
       setSavedContent(savedRes.data.savedContent);
       setDrafts(draftsRes.data);
     } catch (error) {
@@ -330,36 +333,58 @@ const Profile = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Grid3X3 className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold text-foreground">Posts</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Reels</h3>
                 </div>
                 <Button variant="ghost" size="sm" className="text-primary">
                   See all
                 </Button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {recentPosts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
-                  >
-                    <img
-                      src={post.image}
-                      alt="Post"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      {post.type === "music" ? (
-                        <Music className="w-6 h-6 text-primary" />
-                      ) : (
-                        <Camera className="w-6 h-6 text-secondary" />
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {reels.length === 0 ? (
+                <div className="text-center py-12">
+                  <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No reels yet</h3>
+                  <p className="text-muted-foreground">Create your first reel to get started!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {reels.map((reel, index) => (
+                    <motion.div
+                      key={reel._id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5 + index * 0.05 }}
+                      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                    >
+                      <img
+                        src={reel.thumbnail}
+                        alt={reel.title || 'Reel'}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+
+                      {/* Overlay with engagement stats */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                        <div className="flex items-center gap-2 text-white text-xs">
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {reel.views}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" />
+                            {reel.likes}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Play button overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="w-0 h-0 border-l-3 border-l-white border-t-2 border-t-transparent border-b-2 border-b-transparent ml-0.5" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </motion.section>
           </TabsContent>
 

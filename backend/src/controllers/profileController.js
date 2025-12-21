@@ -4,6 +4,7 @@ const Story = require('../models/Story');
 const SavedContent = require('../models/SavedContent');
 const DraftContent = require('../models/DraftContent');
 const MusicShare = require('../models/MusicShare');
+const Video = require('../models/Video');
 
 // Get user profile
 exports.getProfile = async (req, res) => {
@@ -177,6 +178,40 @@ exports.getStories = async (req, res) => {
   } catch (error) {
     console.error('Error fetching stories:', error);
     res.status(500).json({ message: 'Failed to fetch stories' });
+  }
+};
+
+// Get user reels (videos)
+exports.getReels = async (req, res) => {
+  try {
+    const userId = req.params.userId || req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const reels = await Video.find({
+      userId,
+      isDraft: false // Only published reels
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .select('title description thumbnail url views likes duration createdAt');
+
+    const total = await Video.countDocuments({ userId, isDraft: false });
+
+    res.json({
+      reels,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching reels:', error);
+    res.status(500).json({ message: 'Failed to fetch reels' });
   }
 };
 
