@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -254,17 +255,30 @@ const ReelCard = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
 };
 
 const Reels = () => {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showOfflineMode, setShowOfflineMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
   const dragConstraints = { top: 0, bottom: 0 };
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 50;
-    
-    if (info.offset.y < -threshold && currentIndex < mockReels.length - 1) {
+    const verticalThreshold = 50;
+    const horizontalThreshold = 80;
+
+    // Check for horizontal swipe (left/right) for offline mode
+    if (Math.abs(info.offset.x) > horizontalThreshold && Math.abs(info.offset.x) > Math.abs(info.offset.y)) {
+      if (info.offset.x < -horizontalThreshold) {
+        // Swipe left - open offline mode
+        setShowOfflineMode(true);
+      }
+      return;
+    }
+
+    // Vertical swipes for reel navigation
+    if (info.offset.y < -verticalThreshold && currentIndex < mockReels.length - 1) {
       setCurrentIndex((prev) => prev + 1);
-    } else if (info.offset.y > threshold && currentIndex > 0) {
+    } else if (info.offset.y > verticalThreshold && currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
   };
@@ -272,14 +286,7 @@ const Reels = () => {
   return (
     <Layout hidePlayer>
       <div className="h-[calc(100vh-80px)] relative overflow-hidden">
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-center"
-        >
-          <h1 className="text-xl font-bold text-foreground">Reels</h1>
-        </motion.header>
+
 
         {/* Reels Container */}
         <motion.div
@@ -308,29 +315,61 @@ const Reels = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Progress Indicator */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 flex gap-1 z-20">
-          {mockReels.map((_, index) => (
-            <div
-              key={index}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                index === currentIndex ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
 
         {/* Swipe Hint */}
-        {currentIndex === 0 && (
+        {currentIndex === 0 && !showOfflineMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute bottom-28 left-1/2 -translate-x-1/2 text-sm text-muted-foreground z-20"
           >
-            Swipe up for more
+            Swipe up for more • Swipe left for offline
           </motion.div>
         )}
+
+        {/* Offline Mode Overlay */}
+        <AnimatePresence>
+          {showOfflineMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-sm z-30 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="text-center p-8 max-w-sm mx-4"
+              >
+                <div className="w-16 h-16 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CloudOff className="w-8 h-8 text-primary drop-shadow-[0_0_12px_hsl(var(--primary))]" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">Offline Reels</h3>
+                <p className="text-muted-foreground mb-6">
+                  Watch your downloaded reels without an internet connection
+                </p>
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => navigate('/offline-reels')}
+                    className="w-full gap-2"
+                  >
+                    <CloudOff className="w-4 h-4" />
+                    View Offline Reels
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowOfflineMode(false)}
+                    className="w-full"
+                  >
+                    Continue Watching
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Layout>
   );

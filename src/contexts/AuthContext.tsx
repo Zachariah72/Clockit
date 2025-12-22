@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +11,7 @@ interface Profile {
   bio: string | null;
   streak_count: number;
 }
+
 
 interface AuthContextType {
   user: User | null;
@@ -45,12 +46,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const createBackendToken = async (email: string) => {
     try {
-      // For existing Supabase users, we need to create a backend account
-      // Since we don't have the password, we'll use a default one or skip
-      // This is a temporary solution - in production, you'd want proper account linking
-      console.log('Backend token creation attempted for:', email);
-      // For now, we'll skip automatic backend token creation
-      // Users will need to sign up through the proper flow
+      // Check if user already exists in backend
+      const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password: 'supabase_user_temp_password' // Temporary password for Supabase users
+        }),
+      });
+
+      if (loginResponse.ok) {
+        const data = await loginResponse.json();
+        localStorage.setItem('auth_token', data.token);
+        console.log('Backend token created for existing user:', email);
+        return;
+      }
+
+      // If login fails, try to register (this will fail if user exists)
+      const username = email.split('@')[0]; // Use email prefix as username
+      const registerResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password: 'supabase_user_temp_password'
+        }),
+      });
+
+      if (registerResponse.ok) {
+        const data = await registerResponse.json();
+        localStorage.setItem('auth_token', data.token);
+        console.log('Backend account created for:', email);
+      } else {
+        console.warn('Failed to create backend account for:', email);
+      }
     } catch (error) {
       console.warn('Failed to create backend token:', error);
     }
@@ -95,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string, phone?: string, avatar?: File) => {
+  const signUp = useCallback(async (email: string, password: string, username: string, phone?: string, avatar?: File) => {
     const redirectUrl = `${window.location.origin}/`;
 
     let avatarUrl = null;
@@ -145,9 +180,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return { error };
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string, rememberMe?: boolean) => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -175,9 +210,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return { error };
-  };
+  }, []);
 
-  const signInWithOAuth = async (provider: 'google' | 'apple' | 'facebook') => {
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'apple' | 'facebook') => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -186,18 +221,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return { error };
-  };
+  }, []);
 
-  const signOut = async () => {
+
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('auth_token'); // Also clear backend token
     setUser(null);
     setSession(null);
     setProfile(null);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut
+  }), [user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut]);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

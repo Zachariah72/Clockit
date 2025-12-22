@@ -67,7 +67,7 @@ export interface DraftItem {
 export const profileApi = {
   // Get user profile
   getProfile: (userId?: string) =>
-    api.get<User>(`/profile/${userId || ''}`),
+    api.get<User>(userId ? `/profile/${userId}` : '/profile'),
 
   // Update profile
   updateProfile: (data: Partial<User>) =>
@@ -75,20 +75,20 @@ export const profileApi = {
 
   // Social features
   getFollowers: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ followers: User[]; pagination: any }>(`/profile/${userId || ''}/followers?page=${page}&limit=${limit}`),
+    api.getPublic<{ followers: User[]; pagination: any }>(userId ? `/profile/${userId}/followers?page=${page}&limit=${limit}` : `/profile/followers?page=${page}&limit=${limit}`),
 
   getFollowing: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ following: User[]; pagination: any }>(`/profile/${userId || ''}/following?page=${page}&limit=${limit}`),
+    api.getPublic<{ following: User[]; pagination: any }>(userId ? `/profile/${userId}/following?page=${page}&limit=${limit}` : `/profile/following?page=${page}&limit=${limit}`),
 
   toggleFollow: (userId: string) =>
     api.post<{ action: 'followed' | 'unfollowed' }>(`/profile/${userId}/follow`),
 
   // Content features
   getStories: (userId?: string) =>
-    api.get<Story[]>(`/profile/${userId || ''}/stories`),
+    api.get<Story[]>(userId ? `/profile/${userId}/stories` : '/profile/stories'),
 
   getReels: (userId?: string, page = 1, limit = 20) =>
-    api.get<{ reels: Reel[]; pagination: any }>(`/profile/${userId || ''}/reels?page=${page}&limit=${limit}`),
+    api.get<{ reels: Reel[]; pagination: any }>(userId ? `/profile/${userId}/reels?page=${page}&limit=${limit}` : `/profile/reels?page=${page}&limit=${limit}`),
 
   getSavedContent: (type: 'reel' | 'song' | 'post' | 'story' | 'all' = 'all', page = 1, limit = 20) =>
     api.get<{ savedContent: SavedItem[]; pagination: any }>(`/profile/saved?type=${type}&page=${page}&limit=${limit}`),

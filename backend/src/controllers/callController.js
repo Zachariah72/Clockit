@@ -32,6 +32,10 @@ exports.acceptCall = async (req, res) => {
       { new: true }
     );
 
+    if (!callSession) {
+      return res.status(404).json({ error: 'Call session not found' });
+    }
+
     res.json({ callSession });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -48,12 +52,16 @@ exports.rejectCall = async (req, res) => {
       { new: true }
     );
 
+    // Create call history - determine if it's missed or rejected based on who rejected
+    const isCallerRejecting = callSession.caller.toString() === req.user.id;
+    const status = isCallerRejecting ? 'cancelled' : 'missed';
+
     // Create call history
     const history = new CallHistory({
       caller: callSession.caller,
       receiver: callSession.receiver,
       callType: callSession.callType,
-      status: 'rejected',
+      status: status,
       duration: 0,
       startTime: callSession.startTime,
       endTime: new Date(),
@@ -83,11 +91,11 @@ exports.endCall = async (req, res) => {
       { new: true }
     );
 
-    // Create call history
+    // Create call history - assume completed since endCall was called
     const history = new CallHistory({
       caller: callSession.caller,
       receiver: callSession.receiver,
-      callType: callSession.callType,
+      callType: callSession.callType || 'audio', // fallback to audio if not set
       status: 'completed',
       duration,
       startTime: callSession.startTime,

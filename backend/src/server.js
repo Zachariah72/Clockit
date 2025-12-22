@@ -12,16 +12,19 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["https://clockit-sage.vercel.app", "http://localhost:3000", "http://localhost:5173"],
+    origin: ["https://clockit-sage.vercel.app", "https://clockit-gvm2.onrender.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: ["https://clockit-sage.vercel.app", "http://localhost:3000", "http://localhost:5173"],
-  credentials: true
+  origin: ["https://clockit-sage.vercel.app", "https://clockit-gvm2.onrender.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
 app.use(express.json());
 
@@ -53,6 +56,11 @@ app.use('/api/listening', require('./routes/listening'));
 app.use('/api/listening-groups', require('./routes/listeningGroups'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/profile', require('./routes/profile'));
+app.use('/api/spotify', require('./routes/spotify'));
+app.use('/api/lastfm', require('./routes/lastfm'));
+app.use('/api/search', require('./routes/search'));
+app.use('/api/theme', require('./routes/theme'));
+app.use('/api/messages', require('./routes/messages'));
 
 // Socket.IO authentication middleware - temporarily disabled
 // io.use((socket, next) => {
@@ -104,22 +112,133 @@ io.on('connection', async (socket) => {
     socket.broadcast.emit('user_offline', { userId: socket.userId });
   });
 
-  // Handle messaging events here later
+  // Handle messaging events
+  socket.on('send_message', async (data) => {
+    try {
+      const { conversationId, content, type = 'text' } = data;
+
+      // Save message to database
+      const Message = require('./models/Message');
+      const message = new Message({
+        conversation_id: conversationId,
+        sender_id: socket.userId,
+        content,
+        type,
+        is_read: false
+      });
+
+      await message.save();
+
+      // Update conversation's last message
+      const Conversation = require('./models/Conversation');
+      await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: message._id,
+        updatedAt: new Date()
+      });
+
+      // Populate message with sender info
+      const populatedMessage = await Message.findById(message._id)
+        .populate('sender_id', 'username display_name avatar_url');
+
+      // Send to all participants in conversation
+      const conversation = await Conversation.findById(conversationId);
+      conversation.participants.forEach(participantId => {
+        io.to(participantId.toString()).emit('new_message', {
+          conversationId,
+          message: populatedMessage
+        });
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      socket.emit('message_error', { error: 'Failed to send message' });
+    }
+  });
+
+  socket.on('join_conversation', (conversationId) => {
+    socket.join(`conversation_${conversationId}`);
+  });
+
+  socket.on('leave_conversation', (conversationId) => {
+    socket.leave(`conversation_${conversationId}`);
+  });
 
   // WebRTC signaling events
-  socket.on('call-user', (data) => {
+  socket.on('call-user', async (data) => {
     const { to, from, callType } = data; // callType: 'audio' or 'video'
-    io.to(to).emit('incoming-call', { from, callType });
+
+    // Create call session in database
+    try {
+      const CallSession = require('./models/CallSession');
+      const callSession = new CallSession({
+        caller: from,
+        receiver: to,
+        callType,
+        status: 'ringing',
+        startTime: new Date(),
+      });
+      await callSession.save();
+
+      // Send call with session ID
+      io.to(to).emit('incoming-call', {
+        from,
+        callType,
+        callId: callSession._id
+      });
+    } catch (error) {
+      console.error('Error creating call session:', error);
+      socket.emit('call_error', { error: 'Failed to initiate call' });
+    }
   });
 
-  socket.on('accept-call', (data) => {
-    const { to } = data;
-    io.to(to).emit('call-accepted');
+  socket.on('accept-call', async (data) => {
+    const { callId } = data;
+    try {
+      const CallSession = require('./models/CallSession');
+      await CallSession.findByIdAndUpdate(callId, { status: 'active' });
+
+      // Find the call session to get caller
+      const callSession = await CallSession.findById(callId);
+      if (callSession) {
+        io.to(callSession.caller.toString()).emit('call-accepted');
+      }
+    } catch (error) {
+      console.error('Error accepting call:', error);
+    }
   });
 
-  socket.on('reject-call', (data) => {
-    const { to } = data;
-    io.to(to).emit('call-rejected');
+  socket.on('reject-call', async (data) => {
+    const { callId } = data;
+    try {
+      const CallSession = require('./models/CallSession');
+      const callSession = await CallSession.findById(callId);
+
+      if (callSession) {
+        await CallSession.findByIdAndUpdate(callId, {
+          status: 'rejected',
+          endTime: new Date()
+        });
+
+        // Create call history
+        const CallHistory = require('./models/CallHistory');
+        const isCallerRejecting = callSession.caller.toString() === socket.userId;
+        const status = isCallerRejecting ? 'cancelled' : 'missed';
+
+        const history = new CallHistory({
+          caller: callSession.caller,
+          receiver: callSession.receiver,
+          callType: callSession.callType,
+          status: status,
+          duration: 0,
+          startTime: callSession.startTime,
+          endTime: new Date(),
+        });
+        await history.save();
+
+        io.to(callSession.caller.toString()).emit('call-rejected');
+      }
+    } catch (error) {
+      console.error('Error rejecting call:', error);
+    }
   });
 
   socket.on('offer', (data) => {
@@ -137,9 +256,44 @@ io.on('connection', async (socket) => {
     io.to(to).emit('ice-candidate', { from: socket.userId, candidate });
   });
 
-  socket.on('end-call', (data) => {
-    const { to } = data;
-    io.to(to).emit('call-ended');
+  socket.on('end-call', async (data) => {
+    const { callId } = data;
+    try {
+      const CallSession = require('./models/CallSession');
+      const callSession = await CallSession.findById(callId);
+
+      if (callSession) {
+        const endTime = new Date();
+        const duration = Math.floor((endTime - callSession.startTime) / 1000);
+
+        await CallSession.findByIdAndUpdate(callId, {
+          status: 'ended',
+          endTime
+        });
+
+        // Create call history
+        const CallHistory = require('./models/CallHistory');
+        const history = new CallHistory({
+          caller: callSession.caller,
+          receiver: callSession.receiver,
+          callType: callSession.callType,
+          status: 'completed',
+          duration,
+          startTime: callSession.startTime,
+          endTime,
+        });
+        await history.save();
+
+        // Notify the other participant
+        const otherParticipant = callSession.caller.toString() === socket.userId
+          ? callSession.receiver.toString()
+          : callSession.caller.toString();
+
+        io.to(otherParticipant).emit('call-ended');
+      }
+    } catch (error) {
+      console.error('Error ending call:', error);
+    }
   });
 
   socket.on('start-call', async () => {

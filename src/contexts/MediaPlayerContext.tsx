@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Track {
   id: string;
@@ -9,6 +11,9 @@ interface Track {
   duration: number;
   url: string;
   artwork?: string;
+  spotifyUri?: string;
+  previewUrl?: string;
+  source?: 'local' | 'spotify';
 }
 
 interface MediaPlayerState {
@@ -23,6 +28,10 @@ interface MediaPlayerState {
   repeatMode: 'off' | 'one' | 'all';
   deviceConnected: boolean;
   deviceName: string | null;
+  offlineMode: boolean;
+  cachedTracks: Set<string>;
+  playbackSource: 'local' | 'spotify';
+  spotifyPlayerReady: boolean;
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
@@ -41,6 +50,9 @@ interface MediaPlayerContextType extends MediaPlayerState {
   setRepeatMode: (mode: 'off' | 'one' | 'all') => void;
   connectBluetoothDevice: () => Promise<void>;
   disconnectDevice: () => void;
+  toggleOfflineMode: () => void;
+  cacheTrack: (trackId: string) => void;
+  isTrackCached: (trackId: string) => boolean;
 }
 
 const MediaPlayerContext = createContext<MediaPlayerContextType | undefined>(undefined);
@@ -58,6 +70,7 @@ interface MediaPlayerProviderProps {
 }
 
 export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ children }) => {
+  const { spotifyToken } = useAuth();
   const [state, setState] = useState<MediaPlayerState>({
     currentTrack: null,
     isPlaying: false,
@@ -70,10 +83,17 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     repeatMode: 'all', // Default to auto-play next songs
     deviceConnected: false,
     deviceName: null,
+    offlineMode: false,
+    cachedTracks: new Set(),
+    playbackSource: 'local',
+    spotifyPlayerReady: false,
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bluetoothDeviceRef = useRef<any>(null);
+
+  // Spotify player integration
+  const spotifyPlayer = useSpotifyPlayer();
 
   // Initialize audio element
   useEffect(() => {
@@ -118,6 +138,33 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     }
   }, [state.volume, state.isMuted]);
 
+  // Sync Spotify player state
+  useEffect(() => {
+    if (spotifyPlayer.isReady !== state.spotifyPlayerReady) {
+      setState(prev => ({ ...prev, spotifyPlayerReady: spotifyPlayer.isReady }));
+    }
+
+    if (state.playbackSource === 'spotify' && spotifyPlayer.currentTrack) {
+      setState(prev => ({
+        ...prev,
+        currentTrack: {
+          id: spotifyPlayer.currentTrack.id,
+          title: spotifyPlayer.currentTrack.name,
+          artist: spotifyPlayer.currentTrack.artists.map((a: any) => a.name).join(', '),
+          album: spotifyPlayer.currentTrack.album.name,
+          duration: spotifyPlayer.currentTrack.duration_ms,
+          artwork: spotifyPlayer.currentTrack.album.images[0]?.url,
+          url: '',
+          spotifyUri: spotifyPlayer.currentTrack.uri,
+          source: 'spotify',
+        },
+        isPlaying: spotifyPlayer.isPlaying,
+        currentTime: spotifyPlayer.position,
+        duration: spotifyPlayer.duration,
+      }));
+    }
+  }, [spotifyPlayer.isReady, spotifyPlayer.currentTrack, spotifyPlayer.isPlaying, spotifyPlayer.position, spotifyPlayer.duration, state.playbackSource]);
+
   const handleTrackEnd = () => {
     if (state.repeatMode === 'one') {
       // Replay current track
@@ -134,14 +181,18 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   };
 
   const play = () => {
-    if (audioRef.current && state.currentTrack) {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.play();
+    } else if (audioRef.current && state.currentTrack) {
       audioRef.current.play();
       setState(prev => ({ ...prev, isPlaying: true }));
     }
   };
 
   const pause = () => {
-    if (audioRef.current) {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.pause();
+    } else if (audioRef.current) {
       audioRef.current.pause();
       setState(prev => ({ ...prev, isPlaying: false }));
     }
@@ -156,46 +207,60 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   };
 
   const next = () => {
-    if (state.playlist.length === 0) return;
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.next();
+    } else {
+      if (state.playlist.length === 0) return;
 
-    let nextIndex = state.currentIndex + 1;
-    if (nextIndex >= state.playlist.length) {
-      if (state.repeatMode === 'all') {
-        nextIndex = 0;
-      } else {
-        return; // End of playlist
+      let nextIndex = state.currentIndex + 1;
+      if (nextIndex >= state.playlist.length) {
+        if (state.repeatMode === 'all') {
+          nextIndex = 0;
+        } else {
+          return; // End of playlist
+        }
       }
-    }
 
-    const nextTrack = state.playlist[nextIndex];
-    playTrack(nextTrack, state.playlist, nextIndex);
+      const nextTrack = state.playlist[nextIndex];
+      playTrack(nextTrack, state.playlist, nextIndex);
+    }
   };
 
   const previous = () => {
-    if (state.playlist.length === 0) return;
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.previous();
+    } else {
+      if (state.playlist.length === 0) return;
 
-    let prevIndex = state.currentIndex - 1;
-    if (prevIndex < 0) {
-      if (state.repeatMode === 'all') {
-        prevIndex = state.playlist.length - 1;
-      } else {
-        prevIndex = 0;
+      let prevIndex = state.currentIndex - 1;
+      if (prevIndex < 0) {
+        if (state.repeatMode === 'all') {
+          prevIndex = state.playlist.length - 1;
+        } else {
+          prevIndex = 0;
+        }
       }
-    }
 
-    const prevTrack = state.playlist[prevIndex];
-    playTrack(prevTrack, state.playlist, prevIndex);
+      const prevTrack = state.playlist[prevIndex];
+      playTrack(prevTrack, state.playlist, prevIndex);
+    }
   };
 
   const seekTo = (time: number) => {
-    if (audioRef.current) {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.seekTo(time);
+    } else if (audioRef.current) {
       audioRef.current.currentTime = time;
       setState(prev => ({ ...prev, currentTime: time }));
     }
   };
 
   const setVolume = (volume: number) => {
-    setState(prev => ({ ...prev, volume: Math.max(0, Math.min(1, volume)) }));
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.setVolume(clampedVolume);
+    }
+    setState(prev => ({ ...prev, volume: clampedVolume }));
   };
 
   const toggleMute = () => {
@@ -203,20 +268,25 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   };
 
   const playTrack = (track: Track, playlist: Track[] = [], index: number = 0) => {
-    if (audioRef.current) {
+    const finalPlaylist = playlist.length > 0 ? playlist : [track];
+    const playbackSource = track.source === 'spotify' && spotifyToken ? 'spotify' : 'local';
+
+    setState(prev => ({
+      ...prev,
+      currentTrack: track,
+      playlist: finalPlaylist,
+      currentIndex: playlist.length > 0 ? index : 0,
+      currentTime: 0,
+      playbackSource,
+    }));
+
+    if (playbackSource === 'spotify' && spotifyPlayer.isReady && track.spotifyUri) {
+      // Play Spotify track
+      spotifyPlayer.play([track.spotifyUri]);
+    } else if (audioRef.current) {
+      // Play local track
       audioRef.current.src = track.url;
       audioRef.current.load();
-
-      // If no playlist provided, create one from all available songs for continuous play
-      const finalPlaylist = playlist.length > 0 ? playlist : [track];
-
-      setState(prev => ({
-        ...prev,
-        currentTrack: track,
-        playlist: finalPlaylist,
-        currentIndex: playlist.length > 0 ? index : 0,
-        currentTime: 0,
-      }));
 
       // Auto-play after loading
       audioRef.current.addEventListener('canplay', () => {
@@ -286,6 +356,21 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       deviceConnected: false,
       deviceName: null
     }));
+  };
+
+  const toggleOfflineMode = () => {
+    setState(prev => ({ ...prev, offlineMode: !prev.offlineMode }));
+  };
+
+  const cacheTrack = (trackId: string) => {
+    setState(prev => ({
+      ...prev,
+      cachedTracks: new Set([...prev.cachedTracks, trackId])
+    }));
+  };
+
+  const isTrackCached = (trackId: string) => {
+    return state.cachedTracks.has(trackId);
   };
 
   // Media Session integration for mobile media controls
@@ -360,6 +445,9 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     setRepeatMode,
     connectBluetoothDevice,
     disconnectDevice,
+    toggleOfflineMode,
+    cacheTrack,
+    isTrackCached,
   };
 
   return (

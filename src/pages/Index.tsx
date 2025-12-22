@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check } from "lucide-react";
+import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StoriesRow } from "@/components/stories/StoriesRow";
 import { StoryViewer } from "@/components/stories/StoryViewer";
 import { StoryCreator } from "@/components/stories/StoryCreator";
@@ -37,6 +39,19 @@ const Index = () => {
   const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([
+    "electronic music",
+    "workout playlists",
+    "indie artists",
+    "live concerts",
+    "study beats"
+  ]);
+
+
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'new_release', message: 'New album "Midnight Waves" by Synthwave is now available!', isRead: false, time: '2m ago' },
     { id: 2, type: 'follow', message: 'DJ Beats started following you', isRead: false, time: '15m ago' },
@@ -111,6 +126,73 @@ const Index = () => {
     setIsStoryCreatorOpen(true);
   };
 
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.data.results || []);
+      } else {
+        console.error('Search failed:', response.status);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+
+      // Add to search history
+      if (query.trim() && !searchHistory.includes(query.trim())) {
+        setSearchHistory(prev => [query.trim(), ...prev.slice(0, 4)]);
+      }
+    }
+  };
+
+  const handleSearchResultClick = (result: any) => {
+    setIsSearchOpen(false);
+    // Navigate based on result type
+    switch (result.type) {
+      case "music":
+        navigate("/music", { state: { searchQuery: result.title } });
+        break;
+      case "artist":
+        navigate("/music", { state: { artist: result.title } });
+        break;
+      case "playlist":
+        navigate("/music", { state: { playlist: result.id } });
+        break;
+      case "user":
+        navigate(`/profile/${result.id}`);
+        break;
+      case "hashtag":
+        navigate("/reels", { state: { hashtag: result.title } });
+        break;
+      case "reel":
+        navigate("/reels", { state: { reelId: result.id } });
+        break;
+      default:
+        break;
+    }
+  };
+
+  const removeFromHistory = (item: string) => {
+    setSearchHistory(prev => prev.filter(h => h !== item));
+  };
+
   const markAsRead = (id: number) => {
     setNotifications(notifications.map(notif =>
       notif.id === id ? { ...notif, isRead: true } : notif
@@ -141,8 +223,17 @@ const Index = () => {
     };
   }, [isNotificationsOpen]);
 
+  // Debounced search
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
   return (
-    <Layout>
+    <Layout hideFab={isStoryViewerOpen}>
       <div className="min-h-screen">
         {/* Header */}
         <motion.header
@@ -160,7 +251,7 @@ const Index = () => {
                 variant="ghost"
                 size="icon"
                 className="touch-manipulation"
-                onClick={() => navigate('/music', { state: { activeTab: 'search' } })}
+                onClick={() => setIsSearchOpen(true)}
               >
                 <Search className="w-5 h-5" />
               </Button>
@@ -234,7 +325,6 @@ const Index = () => {
               <Button variant="ghost" size="icon" onClick={() => window.location.href = '/profile'}>
                 <User className="w-5 h-5" />
               </Button>
-              <ThemeToggle />
             </div>
           </div>
         </motion.header>
@@ -376,6 +466,168 @@ const Index = () => {
           onClose={() => setIsStoryCreatorOpen(false)}
           onStoryCreated={handleStoryCreated}
         />
+
+        {/* Search Modal */}
+        <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="text-left">Search</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search for songs, artists, users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 h-12"
+                  autoFocus
+                />
+              </div>
+
+              {/* Content */}
+              <div className="max-h-96 overflow-y-auto">
+                {searchQuery.trim() === "" ? (
+                  /* Search History */
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 text-foreground">Recent Searches</h3>
+                    <div className="space-y-2">
+                      {searchHistory.map((item, index) => (
+                        <motion.div
+                          key={item}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer"
+                          onClick={() => setSearchQuery(item)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-foreground">{item}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromHistory(item);
+                            }}
+                            className="w-6 h-6"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Popular Searches */}
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-4 text-foreground">Popular Searches</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {["Pop Music", "Rock Bands", "Jazz Artists", "Hip Hop", "Classical", "Electronic", "R&B", "Country"].map((tag, index) => (
+                          <motion.div
+                            key={tag}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <Badge
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                              onClick={() => setSearchQuery(tag)}
+                            >
+                              {tag}
+                            </Badge>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Search Results */
+                  <div>
+                    {isSearching ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 text-foreground">
+                          Search Results ({searchResults.length})
+                        </h3>
+                        <div className="space-y-3">
+                          {searchResults.map((result, index) => {
+                            const getTypeIcon = (type: string) => {
+                              switch (type) {
+                                case "music": return Music;
+                                case "artist": return Music;
+                                case "user": return User;
+                                case "playlist": return Music;
+                                case "hashtag": return Hash;
+                                case "reel": return Film;
+                                default: return Search;
+                              }
+                            };
+
+                            const getTypeColor = (type: string) => {
+                              switch (type) {
+                                case "music": return "text-green-500";
+                                case "artist": return "text-purple-500";
+                                case "user": return "text-blue-500";
+                                case "playlist": return "text-orange-500";
+                                case "hashtag": return "text-pink-500";
+                                case "reel": return "text-red-500";
+                                default: return "text-gray-500";
+                              }
+                            };
+
+                            const Icon = getTypeIcon(result.type);
+                            return (
+                              <motion.div
+                                key={result.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() => handleSearchResultClick(result)}
+                                className="flex items-center gap-4 p-3 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                              >
+                                <img
+                                  src={result.image}
+                                  alt={result.title}
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-foreground truncate">{result.title}</h4>
+                                  <p className="text-sm text-muted-foreground truncate">{result.subtitle}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className={`text-xs ${getTypeColor(result.type)}`}>
+                                    {result.category}
+                                  </Badge>
+                                  <Icon className={`w-4 h-4 ${getTypeColor(result.type)}`} />
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2 text-foreground">No results found</h3>
+                        <p className="text-muted-foreground">
+                          Try searching for songs, artists, users, or hashtags
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

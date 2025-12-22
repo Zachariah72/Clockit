@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { Search, Shuffle, Play, ListMusic, Heart, Clock, Music as MusicIcon, TrendingUp, Moon, Zap, Smile, Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft } from "lucide-react";
+import { Search, Shuffle, Play, ListMusic, Heart, Clock, Music as MusicIcon, TrendingUp, Moon, Zap, Smile, Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Layout } from "@/components/layout/Layout";
 import { SongCard } from "@/components/music/SongCard";
 import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
+import MusicSearch from "@/components/music/MusicSearch";
+import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MediaControls } from "@/components/media/MediaControls";
+import { FullPlayer } from "@/components/music/FullPlayer";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
 import album3 from "@/assets/album-3.jpg";
@@ -255,7 +257,7 @@ const genres = [
 const Music = () => {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"search" | "all" | "playlists" | "liked">("all");
+  const [activeTab, setActiveTab] = useState<"search" | "all" | "discover" | "playlists" | "liked" | "spotify">("all");
   const [selectedMood, setSelectedMood] = useState("All");
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
@@ -264,6 +266,7 @@ const Music = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<typeof playlists[0] | null>(null);
   const [showBottomNav, setShowBottomNav] = useState(true);
   const [showSearchBar, setShowSearchBar] = useState(false);
+  const [showFullPlayer, setShowFullPlayer] = useState(false);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionRef = useRef<number>(Date.now());
 
@@ -453,7 +456,8 @@ const Music = () => {
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-border"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-border cursor-pointer"
+        onClick={() => setShowFullPlayer(true)}
       >
         <MediaControls showDeviceControls />
       </motion.div>
@@ -479,7 +483,6 @@ const Music = () => {
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-foreground">Music</h1>
-              <ThemeToggle />
             </div>
 
             {/* Mood Selector */}
@@ -530,6 +533,8 @@ const Music = () => {
               </Button>
               {[
                 { key: "all", label: "All Songs", icon: ListMusic },
+                { key: "search", label: "Search", icon: Search },
+                { key: "discover", label: "Discover", icon: TrendingUp },
                 { key: "playlists", label: "Playlists", icon: Clock },
                 { key: "liked", label: "Liked", icon: Heart },
               ].map((tab) => (
@@ -594,50 +599,27 @@ const Music = () => {
           </div>
         </motion.header>
 
-        {/* Search Results Section */}
-        {activeTab === "search" && searchQuery && (
+        {/* Search Tab - Online Music Search */}
+        {activeTab === "search" && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="px-4 mt-6"
           >
-            <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">Search Results for "{searchQuery}"</h4>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredSongs.slice(0, 20).map((song, index) => (
-                  <motion.div
-                    key={song.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                  >
-                    <SongCard
-                      title={song.title}
-                      artist={song.artist}
-                      albumArt={song.albumArt}
-                      duration={song.duration}
-                      trackUrl={song.trackUrl}
-                      playlist={filteredSongs.map(s => ({
-                        id: `${s.title}-${s.artist}`,
-                        title: s.title,
-                        artist: s.artist,
-                        album: 'Search Results',
-                        duration: 180,
-                        url: s.trackUrl,
-                        artwork: s.albumArt,
-                      }))}
-                      currentIndex={index}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-              {filteredSongs.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No songs found matching "{searchQuery}"</p>
-                </div>
-              )}
-            </div>
+            <MusicSearch />
+          </motion.section>
+        )}
+
+        {/* Discover Tab - Last.fm Music Discovery */}
+        {activeTab === "discover" && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="px-4 mt-6"
+          >
+            <MusicDiscovery />
           </motion.section>
         )}
 
@@ -810,50 +792,75 @@ const Music = () => {
         )}
 
         {/* Songs List */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="px-4 mt-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              {activeTab === "liked" ? "Liked Songs" : selectedGenre === "All" ? "All Songs" : `${selectedGenre} Songs`}
-            </h3>
-            <span className="text-sm text-muted-foreground">
-              {filteredSongs.length} songs
-            </span>
-          </div>
-          <div className="space-y-2">
-            {filteredSongs.map((song, index) => (
-              <motion.div
-                key={song.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + index * 0.05 }}
-              >
-                <SongCard
-                  title={song.title}
-                  artist={song.artist}
-                  albumArt={song.albumArt}
-                  duration={song.duration}
-                  isPlaying={index === 0}
-                  trackUrl={song.trackUrl}
-                  playlist={filteredSongs.map(s => ({
-                    id: `${s.title}-${s.artist}`,
-                    title: s.title,
-                    artist: s.artist,
-                    album: 'Clockit',
-                    duration: 180,
-                    url: s.trackUrl,
-                    artwork: s.albumArt,
-                  }))}
-                  currentIndex={index}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+        {activeTab === "all" && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="px-4 mt-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
+                {selectedGenre === "All" ? "All Songs" : `${selectedGenre} Songs`}
+              </h3>
+              <span className="text-sm text-muted-foreground">
+                {filteredSongs.length} songs
+              </span>
+            </div>
+            <div className="space-y-2">
+              {filteredSongs.map((song, index) => (
+                <motion.div
+                  key={song.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.05 }}
+                >
+                  <SongCard
+                    title={song.title}
+                    artist={song.artist}
+                    albumArt={song.albumArt}
+                    duration={song.duration}
+                    isPlaying={index === 0}
+                    trackUrl={song.trackUrl}
+                    playlist={filteredSongs.map(s => ({
+                      id: `${s.title}-${s.artist}`,
+                      title: s.title,
+                      artist: s.artist,
+                      album: 'Clockit',
+                      duration: 180,
+                      url: s.trackUrl,
+                      artwork: s.albumArt,
+                    }))}
+                    currentIndex={index}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+
+        {/* Liked Songs Tab */}
+        {activeTab === "liked" && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="px-4 mt-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Liked Songs</h3>
+              <span className="text-sm text-muted-foreground">
+                0 songs
+              </span>
+            </div>
+            <div className="text-center py-12">
+              <Heart className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h4 className="font-semibold mb-2 text-foreground">No liked songs yet</h4>
+              <p className="text-muted-foreground">Songs you like will appear here</p>
+            </div>
+          </motion.section>
+        )}
 
 
           {/* Media Controls - Always visible when playing */}
@@ -861,7 +868,8 @@ const Music = () => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-border"
+            className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-border cursor-pointer"
+            onClick={() => setShowFullPlayer(true)}
           >
             <MediaControls showDeviceControls />
           </motion.div>
@@ -884,6 +892,9 @@ const Music = () => {
           <div className="pb-32"></div>
         </div>
       )}
+
+      {/* Full Player */}
+      <FullPlayer open={showFullPlayer} onOpenChange={setShowFullPlayer} />
     </Layout>
   );
 };

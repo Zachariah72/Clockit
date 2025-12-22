@@ -43,6 +43,14 @@ const userSchema = new mongoose.Schema({
   twoFactorEnabled: { type: Boolean, default: false },
   screenTimeLimit: Number, // in minutes
 
+  // Theme preferences
+  theme: { type: String, enum: ['light', 'dark', 'black', 'teal'], default: 'dark' },
+  customColors: {
+    primary: String,
+    secondary: String,
+    accent: String
+  },
+
   // Premium features
   isPremium: { type: Boolean, default: false },
   premiumExpiresAt: Date,

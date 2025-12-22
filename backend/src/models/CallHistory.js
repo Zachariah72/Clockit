@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 
 const callHistorySchema = new mongoose.Schema({
-  callerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  startTime: Date,
+  caller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  callType: { type: String, enum: ['audio', 'video'], required: true },
+  status: { type: String, enum: ['completed', 'missed', 'rejected', 'cancelled'], required: true },
+  startTime: { type: Date, default: Date.now },
   endTime: Date,
-  duration: Number,
+  duration: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 

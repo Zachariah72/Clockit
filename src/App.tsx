@@ -22,6 +22,13 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Settings from "./pages/Settings";
+import DownloadedMusic from "./pages/DownloadedMusic";
+import Podcasts from "./pages/Podcasts";
+import OfflineReels from "./pages/OfflineReels";
+import Appearance from "./pages/Appearance";
+import Search from "./pages/Search";
+import CameraTest from "./pages/CameraTest";
+import Snap from "./pages/Snap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,7 +58,14 @@ const App = () => (
                 <Route path="/live/create" element={<Live />} />
                 <Route path="/live/:id" element={<Live />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/podcasts" element={<Podcasts />} />
+                <Route path="/downloads" element={<DownloadedMusic />} />
+                <Route path="/offline-reels" element={<OfflineReels />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/camera-test" element={<CameraTest />} />
+                <Route path="/snap" element={<Snap />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/settings/appearance" element={<Appearance />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>

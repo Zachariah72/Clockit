@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, Eye, Users, Mic, MicOff, Video, VideoOff, Gift, Crown, Shield, UserPlus, Settings, User } from "lucide-react";
+import { Heart, MessageCircle, Share2, Eye, Users, Mic, MicOff, Video, VideoOff, Gift, Crown, Shield, UserPlus, Settings, User, Palette } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Camera as CameraComponent } from "@/components/Camera";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -37,6 +38,7 @@ const Live = () => {
   const [showHeart, setShowHeart] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCameraSetup, setShowCameraSetup] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout>();
@@ -223,8 +225,8 @@ const Live = () => {
                 <h2 className="text-xl font-semibold mb-2">Live</h2>
                 <p className="text-muted-foreground">Sip en vibe</p>
                 {!isLive && (
-                  <Button onClick={requestCameraAccess} className="mt-4">
-                    Enable Camera & Mic
+                  <Button onClick={() => setShowCameraSetup(true)} className="mt-4">
+                    Setup Camera & Filters
                   </Button>
                 )}
                 {isLive && (
@@ -298,6 +300,14 @@ const Live = () => {
         {/* Stream Controls */}
         {isLive && (
           <div className="absolute top-4 right-4 flex gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={() => setShowCameraSetup(true)}
+              className="bg-black/50 hover:bg-black/70"
+            >
+              <Palette className="w-5 h-5" />
+            </Button>
             <Button
               variant="secondary"
               size="icon"
@@ -490,9 +500,29 @@ const Live = () => {
           </div>
         </motion.div>
       )}
-      </div>
-    </Layout>
-  );
+
+      {/* Camera Setup Modal */}
+      {showCameraSetup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <CameraComponent
+              onCapture={(imageData, file) => {
+                // Handle camera setup completion
+                setCameraEnabled(true);
+                setMicEnabled(true);
+                setShowCameraSetup(false);
+                // In a real app, you would set up the stream here
+              }}
+              onClose={() => setShowCameraSetup(false)}
+              enableFilters={true}
+              className="w-full"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  </Layout>
+);
 };
 
 export default Live;

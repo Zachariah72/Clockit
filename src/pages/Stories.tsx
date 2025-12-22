@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus } from "lucide-react";
+import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Layout } from "@/components/layout/Layout";
 import { StoryCircle } from "@/components/stories/StoryCircle";
 import { StoryViewer } from "@/components/stories/StoryViewer";
+import { Camera as CameraComponent } from "@/components/Camera";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -24,17 +25,12 @@ const Stories = () => {
   const navigate = useNavigate();
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isFlashOn, setIsFlashOn] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [stories, setStories] = useState<any[]>([]);
+  const [isLoadingStories, setIsLoadingStories] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-  const [isCameraLoading, setIsCameraLoading] = useState(false);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [caption, setCaption] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [snapHistory, setSnapHistory] = useState<string[]>([]);
 
   const filters = [
     { id: 'none', name: 'None', icon: RotateCcw },
@@ -82,7 +78,7 @@ const Stories = () => {
       icon: Circle,
       label: "Add Story",
       action: () => {
-        openCamera();
+        setIsCameraOpen(true);
         setIsCreateMenuOpen(false);
       },
       color: "text-purple-500"
@@ -107,134 +103,111 @@ const Stories = () => {
     }
   ];
 
-  // Start camera when camera interface opens
+  // Fetch stories and load snap history on component mount
   useEffect(() => {
-    if (isCameraOpen && !capturedImage && !streamRef.current) {
-      openCamera();
-    }
-  }, [isCameraOpen]);
-
-  const openCamera = async (cameraFacing: 'user' | 'environment' = 'user') => {
-    setIsCameraLoading(true);
-    try {
-      // Stop existing stream if any
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      console.log(`Requesting ${cameraFacing} camera access...`);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: cameraFacing,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: true
-      });
-      console.log('Camera stream obtained:', stream);
-      streamRef.current = stream;
-
-      // Wait for video element to be ready
-      await new Promise(resolve => {
-        if (videoRef.current) {
-          console.log('Attaching stream to video element');
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            console.log('Video metadata loaded, playing...');
-            videoRef.current?.play().then(() => {
-              console.log('Video playing successfully');
-              resolve(void 0);
-            }).catch(e => {
-              console.error('Play failed:', e);
-              resolve(void 0);
-            });
-          };
-        } else {
-          console.error('Video element not found');
-          resolve(void 0);
-        }
-      });
-
-      setFacingMode(cameraFacing);
-      setIsCameraOpen(true);
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Camera access denied. Please allow camera and microphone permissions.');
-    } finally {
-      setIsCameraLoading(false);
-    }
-  };
-
-  const switchCamera = () => {
-    const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
-    openCamera(newFacingMode);
-  };
-
-  const closeCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCameraOpen(false);
-    setCapturedImage(null);
-    setSelectedFilter(null);
-  };
-
-  // Cleanup camera stream when component unmounts
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
+    fetchStories();
+    loadSnapHistory();
   }, []);
 
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-
-      if (ctx) {
-        // Apply filter
-        if (selectedFilter && selectedFilter !== 'none') {
-          const filter = filters.find(f => f.id === selectedFilter);
-          if (filter?.style) {
-            canvas.style.filter = filter.style;
-          }
-        }
-
-        ctx.drawImage(video, 0, 0);
-        const imageDataUrl = canvas.toDataURL('image/jpeg');
-        setCapturedImage(imageDataUrl);
+  const loadSnapHistory = () => {
+    const savedSnaps = localStorage.getItem('snapHistory');
+    if (savedSnaps) {
+      try {
+        const snaps = JSON.parse(savedSnaps);
+        setSnapHistory(snaps);
+      } catch (error) {
+        console.error('Error loading snap history:', error);
       }
     }
   };
 
-  const shareSnap = () => {
-    if (capturedImage) {
-      setIsShareModalOpen(true);
+  const fetchStories = async () => {
+    setIsLoadingStories(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('No auth token, skipping stories fetch');
+        setIsLoadingStories(false);
+        return;
+      }
+
+      const response = await fetch('/api/stories', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStories(data);
+      } else if (response.status === 401) {
+        console.log('Unauthorized, clearing token');
+        localStorage.removeItem('auth_token');
+        toast.error("Please log in to view stories");
+      } else {
+        console.error('Failed to fetch stories');
+      }
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+    } finally {
+      setIsLoadingStories(false);
     }
   };
 
-  const sendSnapToChat = () => {
-    if (capturedImage && selectedRecipients.length > 0) {
-      // Here you would send the snap as a message to selected recipients
-      alert(`Snap sent to ${selectedRecipients.length} friend(s)! (View-once message)`);
-      setIsShareModalOpen(false);
-      setSelectedRecipients([]);
-      closeCamera();
-    }
+  const handleCameraCapture = (imageData: string, file: File) => {
+    // Automatically send captured image to stories
+    sendSnapAsStory(imageData, file);
   };
 
-  const toggleRecipient = (friendId: string) => {
-    setSelectedRecipients(prev =>
-      prev.includes(friendId)
-        ? prev.filter(id => id !== friendId)
-        : [...prev, friendId]
-    );
+  const sendSnapAsStory = async (imageData: string, file: File) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error("Please log in to post stories");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      // For now, use a placeholder URL since data URLs are too large
+      // In production, you'd upload the file and get a URL back
+      const placeholderUrl = `https://via.placeholder.com/400x600/7c3aed/ffffff?text=Story+${Date.now()}`;
+
+      const response = await fetch('/api/stories', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: caption || "Captured with Clockit 📸",
+          mediaUrl: placeholderUrl, // Use placeholder instead of large data URL
+          type: 'image',
+          isPrivate: false
+        })
+      });
+
+      if (response.ok) {
+        toast.success("Story posted! ✨");
+        // Save to snap history for cross-page access (use placeholder for display)
+        const updatedHistory = [placeholderUrl, ...snapHistory.slice(0, 9)];
+        setSnapHistory(updatedHistory);
+        localStorage.setItem('snapHistory', JSON.stringify(updatedHistory));
+        // Refresh stories to show the new one
+        fetchStories();
+        setCaption("");
+      } else if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        toast.error("Session expired. Please log in again.");
+      } else {
+        toast.error("Failed to post story");
+      }
+    } catch (error) {
+      console.error('Error posting story:', error);
+      toast.error("Failed to post story");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const selectFromGallery = () => {
@@ -248,8 +221,8 @@ const Stories = () => {
         const reader = new FileReader();
         reader.onload = (event) => {
           if (event.target?.result) {
-            setCapturedImage(event.target.result as string);
-            setIsCameraOpen(true);
+            // Automatically send gallery image to stories
+            sendSnapAsStory(event.target.result as string, file);
           }
         };
         reader.readAsDataURL(file);
@@ -270,7 +243,6 @@ const Stories = () => {
           <div className="flex items-center justify-between p-4">
             <h1 className="text-2xl font-bold text-foreground">Stories</h1>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <div className="relative">
                 <Button
                   variant="glow"
@@ -328,7 +300,7 @@ const Stories = () => {
               Share Your Moment
             </h3>
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <Button variant="glass" className="flex-1 h-20 sm:h-24 flex-col gap-2" onClick={() => openCamera()}>
+              <Button variant="glass" className="flex-1 h-20 sm:h-24 flex-col gap-2" onClick={() => setIsCameraOpen(true)}>
                 <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 <span className="text-xs sm:text-sm">Camera</span>
               </Button>
@@ -394,202 +366,159 @@ const Stories = () => {
           </div>
         </motion.section>
 
-        {/* Share Modal */}
-        {isShareModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+        {/* Snap History from Snap Page */}
+        {snapHistory.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="px-4 mt-6"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-background rounded-2xl p-6 w-full max-w-md"
-            >
-              <h3 className="text-lg font-semibold mb-4">Send Snap</h3>
-
-              {/* Preview */}
-              <div className="mb-4">
-                <img
-                  src={capturedImage!}
-                  alt="Snap preview"
-                  className="w-full h-32 object-cover rounded-xl"
-                />
-              </div>
-
-              {/* Recipients */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">Send to:</h4>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {friends.map((friend) => (
-                    <div
-                      key={friend.id}
-                      onClick={() => toggleRecipient(friend.id)}
-                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedRecipients.includes(friend.id)
-                          ? 'bg-primary/20'
-                          : 'hover:bg-muted/50'
-                      }`}
-                    >
-                      <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <span className="flex-1">{friend.name}</span>
-                      {selectedRecipients.includes(friend.id) && (
-                        <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-xs text-primary-foreground">✓</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsShareModalOpen(false)}
-                  className="flex-1"
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Your Recent Snaps
+            </h3>
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {snapHistory.slice(0, 6).map((snap, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => {
+                    // Allow posting snap as story
+                    sendSnapAsStory(snap, new File([snap], 'snap.jpg', { type: 'image/jpeg' }));
+                  }}
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={sendSnapToChat}
-                  disabled={selectedRecipients.length === 0}
-                  className="flex-1"
-                >
-                  Send Snap
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+                  <img
+                    src={snap}
+                    alt={`Snap ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-xs font-medium">Post as Story</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
         )}
 
-        {/* Camera Interface */}
-        {isCameraOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black"
-          >
-            <div className="relative h-full flex flex-col">
-              {/* Camera Feed */}
-              <div className="flex-1 relative bg-black">
-                {isCameraLoading ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-white text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                      <p>Starting camera...</p>
+        {/* Stories Feed */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="px-4 mt-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-foreground">Recent Stories</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchStories}
+              disabled={isLoadingStories}
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingStories ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+
+          {isLoadingStories ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : stories.length > 0 ? (
+            <div className="space-y-4">
+              {stories.slice(0, 10).map((story, index) => (
+                <motion.div
+                  key={story._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-card border border-border rounded-xl p-4"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {story.userId?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {story.userId?.username || 'Unknown User'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(story.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
-                ) : capturedImage ? (
-                  <img
-                    src={capturedImage}
-                    alt="Captured"
-                    className="w-full h-full object-cover"
-                    style={{
-                      filter: selectedFilter && selectedFilter !== 'none'
-                        ? filters.find(f => f.id === selectedFilter)?.style
-                        : 'none'
-                    }}
-                  />
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                    style={{
-                      transform: facingMode === 'user' ? 'scaleX(-1)' : 'none', // Mirror only for front camera
-                      minHeight: '100%',
-                      minWidth: '100%'
-                    }}
-                  />
-                )}
-                <canvas ref={canvasRef} className="hidden" />
 
-                {/* Close Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeCamera}
-                  className="absolute top-4 right-4 text-white"
-                >
-                  <X className="w-6 h-6" />
-                </Button>
-              </div>
+                  {story.mediaUrl && (
+                    <div className="mb-3">
+                      <img
+                        src={story.mediaUrl}
+                        alt="Story content"
+                        className="w-full rounded-lg object-cover max-h-64"
+                      />
+                    </div>
+                  )}
 
-              {/* Filters */}
-              {!capturedImage && (
-                <div className="absolute bottom-20 left-0 right-0 p-4">
-                  <div className="flex gap-2 overflow-x-auto">
-                    {filters.map((filter) => {
-                      const Icon = filter.icon;
-                      return (
-                        <Button
-                          key={filter.id}
-                          variant={selectedFilter === filter.id ? "default" : "secondary"}
-                          size="sm"
-                          onClick={() => setSelectedFilter(filter.id)}
-                          className="flex-shrink-0 gap-1"
-                        >
-                          <Icon className="w-4 h-4" />
-                          {filter.name}
-                        </Button>
-                      );
-                    })}
+                  {story.content && (
+                    <p className="text-foreground mb-3">{story.content}</p>
+                  )}
+
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      <span>{story.views || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart className="w-4 h-4" />
+                      <span>{story.likes || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{story.comments || 0}</span>
+                    </div>
                   </div>
+                </motion.div>
+              ))}
+
+              {stories.length > 10 && (
+                <div className="text-center">
+                  <Button variant="outline" onClick={() => navigate('/stories')}>
+                    View All Stories ({stories.length})
+                  </Button>
                 </div>
               )}
-
-              {/* Controls */}
-              <div className="p-6 flex justify-center gap-4">
-                {!capturedImage ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={switchCamera}
-                      className="rounded-full"
-                    >
-                      <RotateCcw className="w-5 h-5" />
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="rounded-full w-16 h-16"
-                      onClick={capturePhoto}
-                    >
-                      <div className="w-6 h-6 bg-white rounded-full" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsFlashOn(!isFlashOn)}
-                      className="rounded-full"
-                    >
-                      <Zap className={`w-5 h-5 ${isFlashOn ? 'text-yellow-400' : ''}`} />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" onClick={() => setCapturedImage(null)}>
-                      Retake
-                    </Button>
-                    <Button onClick={shareSnap}>
-                      Share Snap
-                    </Button>
-                  </>
-                )}
-              </div>
             </div>
-          </motion.div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h4 className="font-semibold mb-2 text-foreground">No stories yet</h4>
+              <p className="text-muted-foreground text-sm">
+                Be the first to share a story! Tap the camera above.
+              </p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* Enhanced Camera Component */}
+        {isCameraOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+              <CameraComponent
+                onCapture={handleCameraCapture}
+                onClose={() => setIsCameraOpen(false)}
+                enableFilters={true}
+                className="w-full"
+              />
+            </div>
+          </div>
         )}
 
         {/* Story Viewer */}

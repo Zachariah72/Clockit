@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, User, Edit2, Save } from "lucide-react";
+import { X, Camera, User, Edit2, Save, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Camera as CameraComponent } from "@/components/Camera";
 import avatar1 from "@/assets/avatar-1.jpg";
 
 interface EditProfileModalProps {
@@ -22,6 +23,8 @@ interface EditProfileModalProps {
 export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: EditProfileModalProps) => {
   const [profile, setProfile] = useState(currentProfile);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -33,8 +36,26 @@ export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: Ed
   };
 
   const handleAvatarChange = () => {
-    // In a real app, this would open file picker
-    alert("Avatar change functionality would open file picker here");
+    setShowAvatarOptions(true);
+  };
+
+  const handleCameraCapture = (imageData: string, file: File) => {
+    // Convert image to data URL for preview
+    setProfile({ ...profile, avatar: imageData });
+    setShowCamera(false);
+    setShowAvatarOptions(false);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfile({ ...profile, avatar: e.target?.result as string });
+        setShowAvatarOptions(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -81,6 +102,51 @@ export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: Ed
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground mt-2">Tap to change photo</p>
+
+              {/* Avatar Options */}
+              <AnimatePresence>
+                {showAvatarOptions && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute top-full mt-2 z-10 bg-background border border-border rounded-lg p-3 shadow-lg"
+                  >
+                    <div className="flex flex-col gap-2 min-w-32">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowCamera(true);
+                          setShowAvatarOptions(false);
+                        }}
+                        className="justify-start gap-2"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Take Photo
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => document.getElementById('avatar-file')?.click()}
+                        className="justify-start gap-2"
+                      >
+                        <Image className="w-4 h-4" />
+                        Choose Photo
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Hidden file input */}
+              <input
+                id="avatar-file"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
 
             {/* Form Fields */}
@@ -139,6 +205,24 @@ export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: Ed
                 )}
               </Button>
             </div>
+
+            {/* Camera Component */}
+            <AnimatePresence>
+              {showCamera && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-background rounded-2xl overflow-hidden"
+                >
+                  <CameraComponent
+                    onCapture={handleCameraCapture}
+                    onClose={() => setShowCamera(false)}
+                    className="w-full h-full"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}

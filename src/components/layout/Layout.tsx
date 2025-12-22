@@ -1,7 +1,8 @@
 import { ReactNode, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { Plus, Film, Radio, FileText, Circle, Users, UserPlus } from "lucide-react";
+import { MusicBottomNav } from "./MusicBottomNav";
+import { Plus, Film, Radio, FileText, Circle, Users, UserPlus, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -9,17 +10,27 @@ interface LayoutProps {
   children: ReactNode;
   hidePlayer?: boolean;
   hideBottomNav?: boolean;
+  hideFab?: boolean;
 }
 
-export const Layout = ({ children, hidePlayer, hideBottomNav }: LayoutProps) => {
+export const Layout = ({ children, hidePlayer, hideBottomNav, hideFab }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isFabOpen, setIsFabOpen] = useState(false);
 
-  // Only show FAB on home page
-  const showFab = location.pathname === "/";
+  // Only show FAB on home page and when not explicitly hidden
+  const showFab = location.pathname === "/" && !hideFab;
 
   const fabOptions = [
+    {
+      icon: Camera,
+      label: "Send Snap",
+      action: () => {
+        navigate("/snap");
+        setIsFabOpen(false);
+      },
+      color: "text-purple-500"
+    },
     {
       icon: Film,
       label: "Create Reel",
@@ -129,7 +140,13 @@ export const Layout = ({ children, hidePlayer, hideBottomNav }: LayoutProps) => 
         </div>
       )}
 
-      {!hideBottomNav && <BottomNav />}
+      {!hideBottomNav && location.pathname !== '/downloads' && location.pathname !== '/podcasts' && (
+        location.pathname.startsWith('/music') ? (
+          <MusicBottomNav />
+        ) : (
+          <BottomNav />
+        )
+      )}
     </div>
   );
 };

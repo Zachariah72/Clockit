@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Bluetooth, BluetoothConnected } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, RotateCcw, Bluetooth, BluetoothConnected, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
@@ -37,6 +37,8 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
     setRepeatMode,
     connectBluetoothDevice,
     disconnectDevice,
+    cacheTrack,
+    isTrackCached,
   } = useMediaPlayer();
 
   const formatTime = (time: number) => {
@@ -56,11 +58,11 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
   const getRepeatIcon = () => {
     switch (repeatMode) {
       case 'one':
-        return '🔂';
+        return <RotateCcw className="w-4 h-4" />;
       case 'all':
-        return '🔁';
+        return <Repeat className="w-4 h-4" />;
       default:
-        return '🔁';
+        return <Repeat className="w-4 h-4" />;
     }
   };
 
@@ -185,7 +187,25 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
           onClick={() => setRepeatMode(repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off')}
           className={`rounded-full p-2 ${repeatMode !== 'off' ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
         >
-          <span className="text-sm">{getRepeatIcon()}</span>
+          {getRepeatIcon()}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            if (currentTrack) {
+              if (isTrackCached(currentTrack.id)) {
+                // Could show a message or different action for already downloaded tracks
+              } else {
+                cacheTrack(currentTrack.id);
+              }
+            }
+          }}
+          className={`rounded-full p-2 ${currentTrack && isTrackCached(currentTrack.id) ? 'text-green-500 bg-green-500/10' : 'text-muted-foreground hover:text-primary'}`}
+          title={currentTrack && isTrackCached(currentTrack.id) ? 'Downloaded for offline' : 'Download for offline'}
+        >
+          <Download className="w-4 h-4" />
         </Button>
 
         {/* Bluetooth Control - positioned after repeat button */}

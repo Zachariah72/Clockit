@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Camera, Image, RotateCcw, Check, Zap } from "lucide-react";
+import { X, Camera, Image, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Camera as CameraComponent } from "@/components/Camera";
 
 interface StoryCreatorProps {
   isOpen: boolean;
@@ -13,67 +14,9 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
   const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [showCamera, setShowCamera] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const startCamera = async (mode: 'user' | 'environment' = 'user') => {
-    try {
-      setFacingMode(mode);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
-        audio: false
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsCapturing(true);
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Camera access denied or not available');
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsCapturing(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-
-      if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'story-photo.jpg', { type: 'image/jpeg' });
-            setSelectedMedia(file);
-            setMediaPreview(canvas.toDataURL('image/jpeg'));
-            setMediaType('image');
-            stopCamera();
-          }
-        }, 'image/jpeg');
-      }
-    }
-  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -89,6 +32,13 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
     }
   };
 
+  const handleCameraCapture = (imageData: string, file: File) => {
+    setSelectedMedia(file);
+    setMediaPreview(imageData);
+    setMediaType('image');
+    setShowCamera(false);
+  };
+
   const handleCreateStory = () => {
     if (selectedMedia && mediaType) {
       onStoryCreated(selectedMedia, mediaType);
@@ -97,18 +47,11 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
   };
 
   const handleClose = () => {
-    stopCamera();
     setSelectedMedia(null);
     setMediaPreview(null);
     setMediaType(null);
+    setShowCamera(false);
     onClose();
-  };
-
-  const switchCamera = () => {
-    stopCamera();
-    setTimeout(() => {
-      startCamera(facingMode === 'user' ? 'environment' : 'user');
-    }, 100);
   };
 
   return (
@@ -136,47 +79,14 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
             {!selectedMedia ? (
               /* Media Selection */
               <div className="flex-1 flex flex-col">
-                {/* Camera View */}
-                {isCapturing ? (
-                  <div className="flex-1 relative">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
+                {showCamera ? (
+                  /* Camera Component */
+                  <div className="flex-1 flex items-center justify-center p-4">
+                    <CameraComponent
+                      onCapture={handleCameraCapture}
+                      onClose={() => setShowCamera(false)}
+                      className="max-w-md w-full"
                     />
-                    <canvas ref={canvasRef} className="hidden" />
-
-                    {/* Camera Controls */}
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={switchCamera}
-                        className="rounded-full w-12 h-12"
-                      >
-                        <RotateCcw className="w-5 h-5" />
-                      </Button>
-
-                      <Button
-                        variant="default"
-                        size="lg"
-                        onClick={capturePhoto}
-                        className="rounded-full w-16 h-16 border-4 border-white"
-                      >
-                        <div className="w-6 h-6 bg-white rounded-full" />
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-full w-12 h-12"
-                      >
-                        <Image className="w-5 h-5" />
-                      </Button>
-                    </div>
                   </div>
                 ) : (
                   /* Initial Options */
@@ -193,7 +103,7 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
                       <Button
                         variant="default"
                         size="lg"
-                        onClick={() => startCamera('user')}
+                        onClick={() => setShowCamera(true)}
                         className="gap-3"
                       >
                         <Camera className="w-5 h-5" />
@@ -246,7 +156,7 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
                       setSelectedMedia(null);
                       setMediaPreview(null);
                       setMediaType(null);
-                      startCamera(facingMode);
+                      setShowCamera(true);
                     }}
                   >
                     Retake

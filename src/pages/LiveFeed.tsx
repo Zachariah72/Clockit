@@ -5,38 +5,8 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const mockLiveStreams = [
-  {
-    id: "1",
-    username: "DJ_MusicLover",
-    avatar: "/api/placeholder/40/40",
-    title: "Chill Beats & Vibes",
-    viewers: 1247,
-    thumbnail: "/api/placeholder/300/400",
-    tags: ["Music", "Chill"],
-    isLive: true,
-  },
-  {
-    id: "2",
-    username: "Artist_Showcase",
-    avatar: "/api/placeholder/40/40",
-    title: "New Music Release Party",
-    viewers: 892,
-    thumbnail: "/api/placeholder/300/400",
-    tags: ["Music", "Release"],
-    isLive: true,
-  },
-  {
-    id: "3",
-    username: "Live_Concert",
-    avatar: "/api/placeholder/40/40",
-    title: "Acoustic Session",
-    viewers: 2156,
-    thumbnail: "/api/placeholder/300/400",
-    tags: ["Concert", "Acoustic"],
-    isLive: true,
-  },
-];
+// Live streams will be populated from real ongoing sessions
+const liveStreams: any[] = [];
 
 const LiveFeed = () => {
   const [selectedStream, setSelectedStream] = useState<string | null>(null);
@@ -62,17 +32,19 @@ const LiveFeed = () => {
         >
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gradient">Live</h1>
-            <Button onClick={goLive} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Go Live
-            </Button>
+            {liveStreams.length > 0 && (
+              <Button onClick={goLive} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Go Live
+              </Button>
+            )}
           </div>
         </motion.header>
 
         {/* Live Streams Grid */}
         <div className="p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockLiveStreams.map((stream, index) => (
+            {liveStreams.map((stream, index) => (
               <motion.div
                 key={stream.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -145,20 +117,28 @@ const LiveFeed = () => {
           </div>
         </div>
 
-        {/* Empty State */}
-        {mockLiveStreams.length === 0 && (
+        {/* Empty State - Waiting for Live Sessions */}
+        {liveStreams.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Users className="w-12 h-12 text-primary" />
+            <div className="w-24 h-24 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-6">
+              <div className="relative">
+                <Eye className="w-12 h-12 text-primary" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+              </div>
             </div>
-            <h3 className="text-xl font-semibold mb-2">No Live Streams</h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Be the first to go live and share your music with the world!
+            <h3 className="text-xl font-semibold mb-2">No Live Sessions</h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-md">
+              This page shows ongoing live sessions. When someone goes live, their stream will appear here automatically.
             </p>
-            <Button onClick={goLive} size="lg" className="gap-2">
-              <Plus className="w-5 h-5" />
-              Start Your Live Stream
-            </Button>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              <Button onClick={goLive} size="lg" className="gap-2">
+                <Plus className="w-5 h-5" />
+                Start Your Live Stream
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Or wait for others to go live
+              </p>
+            </div>
           </div>
         )}
       </div>

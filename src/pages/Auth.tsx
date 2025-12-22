@@ -173,7 +173,7 @@ const Auth = React.memo(() => {
     navigate("/");
   };
 
-  const OAuthButtons = () => (
+  const OAuthButtons = React.memo(() => (
     <div className="space-y-3">
       <Button
         type="button"
@@ -206,9 +206,9 @@ const Auth = React.memo(() => {
         Continue with Facebook
       </Button>
     </div>
-  );
+  ));
 
-  const HubScreen = () => (
+  const HubScreen = React.memo(() => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -254,9 +254,9 @@ const Auth = React.memo(() => {
         <OAuthButtons />
       </div>
     </motion.div>
-  );
+  ));
 
-  const SignUpScreen = () => (
+  const SignUpScreen = React.memo(() => (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -426,9 +426,9 @@ const Auth = React.memo(() => {
         </p>
       </div>
     </motion.div>
-  );
+  ));
 
-  const SignInScreen = () => (
+  const SignInScreen = React.memo(() => (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -541,7 +541,7 @@ const Auth = React.memo(() => {
         </p>
       </div>
     </motion.div>
-  );
+  ));
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

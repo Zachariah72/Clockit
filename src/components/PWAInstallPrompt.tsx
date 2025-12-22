@@ -29,10 +29,8 @@ export const PWAInstallPrompt = () => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-      // Show prompt after a delay and some user interaction
-      setTimeout(() => {
-        setShowPrompt(true);
-      }, 3000);
+      // Show prompt immediately
+      setShowPrompt(true);
     };
 
     // Listen for successful installation

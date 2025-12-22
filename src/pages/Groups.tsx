@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Users, Plus, Lock, Globe, MessageCircle, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Layout } from "@/components/layout/Layout";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
@@ -82,7 +81,6 @@ const Groups = () => {
           <div className="flex items-center justify-between p-4">
             <h1 className="text-2xl font-bold text-foreground">Groups</h1>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <Button variant="glow" size="sm" className="gap-2">
                 <Plus className="w-4 h-4" />
                 <span>Create</span>

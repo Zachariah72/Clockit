@@ -5,9 +5,10 @@ interface UseWebRTCProps {
   remoteUserId: string;
   isCaller: boolean;
   callType: 'audio' | 'video';
+  callId?: string;
 }
 
-export const useWebRTC = ({ remoteUserId, isCaller, callType }: UseWebRTCProps) => {
+export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRTCProps) => {
   const { socket } = useSocket();
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -76,18 +77,17 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType }: UseWebRTCProps) 
     const stream = await getUserMedia(callType === 'video');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-    socket.emit('accept-call', { to: remoteUserId });
+    socket.emit('accept-call', { callId });
   };
 
   const rejectCall = () => {
     if (!socket) return;
-    socket.emit('reject-call', { to: remoteUserId });
+    socket.emit('reject-call', { callId });
   };
 
   const endCall = () => {
     if (!socket) return;
-    socket.emit('end-call', { to: remoteUserId });
-    socket.emit('end-call-status');
+    socket.emit('end-call', { callId });
     cleanup();
   };
 

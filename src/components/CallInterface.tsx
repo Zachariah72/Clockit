@@ -6,6 +6,7 @@ import { useWebRTC } from '@/hooks/useWebRTC';
 interface CallInterfaceProps {
   remoteUserId: string;
   callType: 'audio' | 'video';
+  callId?: string;
   onEndCall: () => void;
   onMinimize: () => void;
   isIncoming?: boolean;
@@ -17,6 +18,7 @@ interface CallInterfaceProps {
 export const CallInterface = ({
   remoteUserId,
   callType,
+  callId,
   onEndCall,
   onMinimize,
   isIncoming = false,
@@ -45,6 +47,7 @@ export const CallInterface = ({
     remoteUserId,
     isCaller: !isIncoming,
     callType,
+    callId,
   });
 
   useEffect(() => {

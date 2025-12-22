@@ -1,23 +1,29 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, MoreVertical, Phone, Video, Search, Users, Plus, Image, Music, File } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical, Phone, Video, Search, Users, Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { CallInterface } from "@/components/CallInterface";
-import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 
 interface Message {
-  id: string;
+  _id?: string;
+  id?: string;
   content: string;
-  sender_id: string;
+  sender_id: {
+    _id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  } | string;
   created_at: string;
   is_read: boolean;
   type?: 'text' | 'snap';
@@ -87,17 +93,63 @@ const mockMessages: { [key: string]: Message[] } = {
   ],
 };
 
-const ChatList = ({ 
-  conversations, 
+const ChatList = ({
+  conversations,
   onSelectChat,
   searchQuery,
-  setSearchQuery
-}: { 
-  conversations: Conversation[]; 
+  setSearchQuery,
+  isLoading,
+  onStartNewChat
+}: {
+  conversations: Conversation[];
   onSelectChat: (conv: Conversation) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  isLoading: boolean;
+  onStartNewChat: (userId: string, username: string) => void;
 }) => {
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Search for users
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      const response = await fetch(`/api/messages/users/suggestions?query=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const users = await response.json();
+        setSearchResults(users);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(userSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [userSearchQuery]);
   const filteredConversations = conversations.filter(conv =>
     conv.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -113,10 +165,64 @@ const ChatList = ({
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Messages</h1>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
-            <ThemeToggle />
+            <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Start New Conversation</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {isSearching ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((user) => (
+                        <div
+                          key={user._id}
+                          onClick={() => {
+                            onStartNewChat(user._id, user.username);
+                            setShowNewChat(false);
+                            setUserSearchQuery("");
+                            setSearchResults([]);
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
+                        >
+                          <img
+                            src={user.avatar_url || '/api/placeholder/40/40'}
+                            alt={user.username}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="font-medium">{user.username}</p>
+                            <p className="text-sm text-muted-foreground">{user.display_name}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : userSearchQuery ? (
+                      <p className="text-center text-muted-foreground py-4">No users found</p>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-4">Start typing to search users</p>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
         
@@ -134,7 +240,22 @@ const ChatList = ({
 
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {filteredConversations.map((conv, index) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h4 className="font-semibold mb-2 text-foreground">No conversations yet</h4>
+            <p className="text-muted-foreground text-sm">
+              Start chatting with friends and followers!
+            </p>
+          </div>
+        ) : (
+          filteredConversations.map((conv, index) => (
           <motion.div
             key={conv.id}
             initial={{ opacity: 0, x: -20 }}
@@ -171,7 +292,8 @@ const ChatList = ({
               </div>
             )}
           </motion.div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
@@ -180,20 +302,72 @@ const ChatList = ({
 const ChatView = ({
   conversation,
   onBack,
-  messages: initialMessages,
   onStartCall
 }: {
   conversation: Conversation;
   onBack: () => void;
-  messages: Message[];
   onStartCall: (callType: 'audio' | 'video') => void;
 }) => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [viewingSnap, setViewingSnap] = useState<Message | null>(null);
   const [isPremiumUser, setIsPremiumUser] = useState(false); // Mock premium status
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { socket } = useSocket();
+
+  // Fetch messages for the conversation
+  const fetchMessages = async () => {
+    if (!conversation?.id) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setIsLoadingMessages(false);
+        return;
+      }
+
+      const response = await fetch(`/api/messages/conversations/${conversation.id}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data);
+      } else if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        toast.error("Session expired. Please log in again.");
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+
+    // Join conversation room for real-time messages
+    if (socket && conversation?.id) {
+      socket.emit('join_conversation', conversation.id);
+
+      socket.on('new_message', (data) => {
+        if (data.conversationId === conversation.id) {
+          setMessages(prev => [...prev, data.message]);
+        }
+      });
+
+      return () => {
+        socket.emit('leave_conversation', conversation.id);
+        socket.off('new_message');
+      };
+    }
+  }, [conversation?.id, socket]);
 
   const viewSnap = (message: Message) => {
     if (message.type === 'snap' && message.snapData) {
@@ -219,31 +393,48 @@ const ChatView = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
+  const handleSend = async () => {
+    if (!newMessage.trim() || !conversation?.id || !socket) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      content: newMessage,
-      sender_id: "me",
-      created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      is_read: false,
-    };
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error("Please log in to send messages");
+      return;
+    }
 
-    setMessages([...messages, message]);
-    setNewMessage("");
-    
-    // Simulate reply after 1 second
-    setTimeout(() => {
-      const reply: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Thanks for the message! 😊",
-        sender_id: "other",
-        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        is_read: false,
-      };
-      setMessages(prev => [...prev, reply]);
-    }, 1000);
+    try {
+      // Send message via Socket.IO for real-time delivery
+      socket.emit('send_message', {
+        conversationId: conversation.id,
+        content: newMessage.trim(),
+        type: 'text'
+      });
+
+      // Also send via API to ensure persistence
+      const response = await fetch(`/api/messages/conversations/${conversation.id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: newMessage.trim(),
+          type: 'text'
+        })
+      });
+
+      if (response.ok) {
+        setNewMessage("");
+      } else if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        toast.error("Session expired. Please log in again.");
+      } else {
+        toast.error("Failed to send message");
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error("Failed to send message");
+    }
   };
 
   return (
@@ -294,14 +485,29 @@ const ChatView = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence>
-          {messages.map((message, index) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`flex ${message.sender_id === "me" ? "justify-end" : "justify-start"}`}
-            >
+          {isLoadingMessages ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h4 className="font-semibold mb-2 text-foreground">No messages yet</h4>
+              <p className="text-muted-foreground text-sm">
+                Start the conversation!
+              </p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <motion.div
+                key={message._id || message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`flex ${typeof message.sender_id === 'object' ? message.sender_id._id === user?.id : message.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+              >
               {message.type === 'snap' ? (
                 <div
                   onClick={() => viewSnap(message)}
@@ -343,7 +549,8 @@ const ChatView = ({
                 </div>
               )}
             </motion.div>
-          ))}
+            ))
+          )}
         </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
@@ -425,18 +632,246 @@ const ChatView = ({
   );
 };
 
+const CallHistoryView = ({
+  callHistory,
+  isLoading,
+  onStartCall
+}: {
+  callHistory: any[];
+  isLoading: boolean;
+  onStartCall: (userId: string, callType: 'audio' | 'video') => void;
+}) => {
+  const formatDuration = (seconds: number) => {
+    if (seconds === 0) return 'Missed';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const getCallIcon = (status: string, direction: string) => {
+    const isSuccessful = status === 'completed';
+    const colorClass = isSuccessful ? 'text-green-500' : 'text-red-500';
+
+    if (direction === 'outgoing') {
+      return <ArrowUpRight className={`w-4 h-4 ${colorClass}`} />;
+    } else {
+      return <ArrowDownLeft className={`w-4 h-4 ${colorClass}`} />;
+    }
+  };
+
+  const getCallDirection = (caller: string, receiver: string, currentUserId: string) => {
+    return caller === currentUserId ? 'outgoing' : 'incoming';
+  };
+
+  const getCallStatusText = (status: string, direction: string) => {
+    switch (status) {
+      case 'completed':
+        return direction === 'outgoing' ? 'Dialed' : 'Received';
+      case 'missed':
+        return 'Missed';
+      case 'rejected':
+        return direction === 'outgoing' ? 'Cancelled' : 'Rejected';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  };
+
+  const { user } = useAuth();
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="sticky top-0 z-20 glass-card rounded-b-3xl p-3 sm:p-4"
+      >
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Call History</h1>
+        </div>
+      </motion.header>
+
+      {/* Call History List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : callHistory.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Phone className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h4 className="font-semibold mb-2 text-foreground">No call history yet</h4>
+            <p className="text-muted-foreground text-sm">
+              Your call history will appear here
+            </p>
+          </div>
+        ) : (
+          callHistory.map((call, index) => {
+            const direction = getCallDirection(call.caller, call.receiver, user?.id || '');
+            const otherUserId = direction === 'outgoing' ? call.receiver : call.caller;
+            const otherUserName = 'User'; // TODO: Get actual user name
+            const statusText = getCallStatusText(call.status, direction);
+
+            return (
+              <motion.div
+                key={call._id || index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => onStartCall(otherUserId, call.callType)}
+              >
+                {/* Call Icon */}
+                <div className="relative">
+                  <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center">
+                    {call.callType === 'video' ? <Video className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-background rounded-full flex items-center justify-center border border-border">
+                    {getCallIcon(call.status, direction)}
+                  </div>
+                </div>
+
+                {/* Call Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-foreground">{otherUserName}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(call.startTime)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {statusText} {call.callType} call
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      • {formatDuration(call.duration)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Call Again Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartCall(otherUserId, call.callType);
+                  }}
+                  className="rounded-full p-2"
+                >
+                  {call.callType === 'video' ? <Video className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                </Button>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Chat = () => {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentCall, setCurrentCall] = useState<{ userId: string; callType: 'audio' | 'video'; isIncoming: boolean } | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ from: string; callType: 'audio' | 'video'; callerName: string } | null>(null);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+  const [currentCall, setCurrentCall] = useState<{ userId: string; callType: 'audio' | 'video'; isIncoming: boolean; callId?: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ from: string; callType: 'audio' | 'video'; callerName: string; callId: string } | null>(null);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+  const [isLoadingCallHistory, setIsLoadingCallHistory] = useState(true);
   const { socket } = useSocket();
+  const { user } = useAuth();
+
+  // Fetch conversations from API
+  const fetchConversations = async () => {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setIsLoadingConversations(false);
+        return;
+      }
+
+      const response = await fetch('/api/messages/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data);
+      } else if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        toast.error("Please log in to view messages");
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
+
+  // Fetch call history from API
+  const fetchCallHistory = async () => {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setIsLoadingCallHistory(false);
+        return;
+      }
+
+      const response = await fetch('/api/calls/history', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCallHistory(data.history || []);
+      } else if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        toast.error("Please log in to view call history");
+      }
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+    } finally {
+      setIsLoadingCallHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    fetchCallHistory();
+  }, [user]);
 
   useEffect(() => {
     if (!socket) return;
 
     socket.on('incoming-call', (data) => {
-      setIncomingCall({ from: data.from, callType: data.callType, callerName: 'Caller' }); // TODO: get name
+      setIncomingCall({ from: data.from, callType: data.callType, callerName: 'Caller', callId: data.callId }); // TODO: get name
     });
 
     socket.on('call-accepted', () => {
@@ -464,8 +899,8 @@ const Chat = () => {
   }, [socket, currentCall]);
 
   const startCall = (callType: 'audio' | 'video') => {
-    if (!selectedConversation || !socket) return;
-    socket.emit('call-user', { to: selectedConversation.id, from: 'me', callType });
+    if (!selectedConversation || !socket || !user) return;
+    socket.emit('call-user', { to: selectedConversation.id, from: user.id, callType });
     setCurrentCall({ userId: selectedConversation.id, callType, isIncoming: false });
   };
 
@@ -484,6 +919,42 @@ const Chat = () => {
     setCurrentCall(null);
   };
 
+  const handleStartNewChat = async (userId: string, username: string) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        toast.error("Please log in to start conversations");
+        return;
+      }
+
+      const response = await fetch('/api/messages/conversations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipientId: userId,
+          initialMessage: `Hi ${username}! 👋`
+        })
+      });
+
+      if (response.ok) {
+        const conversation = await response.json();
+        // Refresh conversations to show the new one
+        fetchConversations();
+        toast.success(`Started conversation with ${username}`);
+      } else if (response.status === 403) {
+        toast.error("Cannot start conversation with this user");
+      } else {
+        toast.error("Failed to start conversation");
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast.error("Failed to start conversation");
+    }
+  };
+
   return (
     <Layout hidePlayer>
       <div className="h-[calc(100vh-80px)]">
@@ -499,7 +970,6 @@ const Chat = () => {
               <ChatView
                 conversation={selectedConversation}
                 onBack={() => setSelectedConversation(null)}
-                messages={mockMessages[selectedConversation.id] || []}
                 onStartCall={startCall}
               />
             </motion.div>
@@ -511,12 +981,40 @@ const Chat = () => {
               exit={{ opacity: 0, x: -100 }}
               className="h-full"
             >
-              <ChatList
-                conversations={mockConversations}
-                onSelectChat={setSelectedConversation}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-              />
+              <Tabs defaultValue="messages" className="h-full flex flex-col">
+                <div className="px-4 pt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="messages">Messages</TabsTrigger>
+                    <TabsTrigger value="calls">Call History</TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="messages" className="flex-1 mt-0">
+                  <ChatList
+                    conversations={conversations}
+                    onSelectChat={setSelectedConversation}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    isLoading={isLoadingConversations}
+                    onStartNewChat={handleStartNewChat}
+                  />
+                </TabsContent>
+
+                <TabsContent value="calls" className="flex-1 mt-0">
+                  <CallHistoryView
+                    callHistory={callHistory}
+                    isLoading={isLoadingCallHistory}
+                    onStartCall={(userId, callType) => {
+                      // For call history, we need to find the conversation or create a temporary one
+                      // For now, just emit the call directly
+                      if (socket) {
+                        socket.emit('call-user', { to: userId, from: user?.id, callType });
+                        setCurrentCall({ userId, callType, isIncoming: false });
+                      }
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
             </motion.div>
           )}
         </AnimatePresence>
@@ -527,6 +1025,7 @@ const Chat = () => {
         <CallInterface
           remoteUserId={currentCall.userId}
           callType={currentCall.callType}
+          callId={currentCall.isIncoming ? currentCall.callId : undefined}
           onEndCall={handleEndCall}
           onMinimize={() => {}}
           isIncoming={currentCall.isIncoming}
@@ -539,6 +1038,7 @@ const Chat = () => {
         <CallInterface
           remoteUserId={incomingCall.from}
           callType={incomingCall.callType}
+          callId={incomingCall.callId}
           onEndCall={handleRejectCall}
           onMinimize={() => {}}
           isIncoming={true}
