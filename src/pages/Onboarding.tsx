@@ -45,16 +45,15 @@ const Onboarding: React.FC = () => {
             <p className="text-white/80 text-sm">Preparing your experience...</p>
           </div>
 
-          {/* Optional skip button */}
+          {/* Get Started button */}
           <Button
-            variant="outline"
             onClick={() => {
               localStorage.setItem('onboardingCompleted', 'true');
               navigate('/auth');
             }}
-            className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+            className="bg-white text-purple-900 hover:bg-white/90 font-semibold px-8 py-3 text-lg"
           >
-            Skip to Sign Up
+            Get Started
           </Button>
         </div>
       </div>
