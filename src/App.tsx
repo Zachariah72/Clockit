@@ -35,44 +35,24 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <SocketProvider>
-          <MediaPlayerProvider>
-            <MediaNotification />
-            <PWAInstallPrompt />
-            <OfflineIndicator />
-            <TooltipProvider>
-            <Toaster />
-            <Sonner />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/stories" element={<Stories />} />
-                <Route path="/music" element={<Music />} />
-                <Route path="/groups" element={<Groups />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/reels" element={<Reels />} />
-                <Route path="/live" element={<LiveFeed />} />
-                <Route path="/live/create" element={<Live />} />
-                <Route path="/live/:id" element={<Live />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/podcasts" element={<Podcasts />} />
-                <Route path="/downloads" element={<DownloadedMusic />} />
-                <Route path="/offline-reels" element={<OfflineReels />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/camera-test" element={<CameraTest />} />
-                <Route path="/snap" element={<Snap />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/settings/appearance" element={<Appearance />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
-          </MediaPlayerProvider>
-        </SocketProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <MediaPlayerProvider>
+              <MediaNotification />
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <AppRouter />
+              </TooltipProvider>
+            </MediaPlayerProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

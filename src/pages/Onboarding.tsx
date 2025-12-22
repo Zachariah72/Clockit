@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -61,6 +62,7 @@ const contentInterests = ['Music Videos', 'Short Films', 'Comedy', 'Education', 
 const hobbiesActivities = ['Reading', 'Gaming', 'Cooking', 'Travel', 'Photography', 'Fitness', 'Art', 'Dancing'];
 
 const Onboarding: React.FC = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
@@ -88,7 +90,7 @@ const Onboarding: React.FC = () => {
   };
 
   const handleFinish = () => {
-    // Save to localStorage for now, will sync after sign-up
+    // Save preferences to localStorage for later sync after sign-up
     const preferences = {
       musicGenres: selectedGenres,
       moodModes: selectedMoods,
@@ -96,7 +98,10 @@ const Onboarding: React.FC = () => {
       hobbiesActivities: selectedHobbies,
     };
     localStorage.setItem('onboardingPreferences', JSON.stringify(preferences));
-    // TODO: Navigate to sign-up or next step
+    localStorage.setItem('onboardingCompleted', 'true');
+
+    // Redirect to authentication page
+    navigate('/auth');
   };
 
   const renderSlide = (slide: typeof slides[0], index: number) => (
