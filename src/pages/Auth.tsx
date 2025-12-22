@@ -28,7 +28,7 @@ const Auth = React.memo(() => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
 
-  const { signIn, signUp, signInWithOAuth, user, session } = useAuth();
+  const { signIn, signUp, signInWithOAuth, signInWithSpotify, user, session } = useAuth();
   const navigate = useNavigate();
 
   const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,14 +147,23 @@ const Auth = React.memo(() => {
     }
   };
 
-  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook') => {
+  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook' | 'spotify') => {
     setIsLoading(true);
-    const { error } = await signInWithOAuth(provider);
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
+    if (provider === 'spotify') {
+      const { error } = await signInWithSpotify();
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+      }
+      // Spotify OAuth will redirect, so no need to set loading false
+    } else {
+      const { error } = await signInWithOAuth(provider);
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+      }
+      // OAuth will redirect, so no need to set loading false
     }
-    // OAuth will redirect, so no need to set loading false
   };
 
   const handlePostAuth = async () => {
@@ -273,6 +282,7 @@ const Auth = React.memo(() => {
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="username-input"
               id="username"
               name="username"
               type="text"
@@ -280,6 +290,7 @@ const Auth = React.memo(() => {
               value={username}
               onChange={handleUsernameChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="username"
             />
           </div>
           {errors.username && (
@@ -291,6 +302,7 @@ const Auth = React.memo(() => {
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="email-input"
               id="email"
               name="email"
               type="email"
@@ -298,6 +310,7 @@ const Auth = React.memo(() => {
               value={email}
               onChange={handleEmailChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="email"
             />
           </div>
           {errors.email && (
@@ -309,6 +322,7 @@ const Auth = React.memo(() => {
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="phone-input"
               id="phone"
               name="phone"
               type="tel"
@@ -316,6 +330,7 @@ const Auth = React.memo(() => {
               value={phone}
               onChange={handlePhoneChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="tel"
             />
           </div>
           {errors.phone && (
@@ -327,11 +342,13 @@ const Auth = React.memo(() => {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="password-input"
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={handlePasswordChange}
               className="pl-10 pr-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -445,11 +462,13 @@ const Auth = React.memo(() => {
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="signin-email-input"
               type="email"
               placeholder="Email"
               value={email}
               onChange={handleEmailChange}
               className="pl-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="email"
             />
           </div>
           {errors.email && (
@@ -461,11 +480,13 @@ const Auth = React.memo(() => {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
+              key="signin-password-input"
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={handlePasswordChange}
               className="pl-10 pr-10 h-12 rounded-xl bg-muted/50 border-border/50"
+              autoComplete="current-password"
             />
             <button
               type="button"

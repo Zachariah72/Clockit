@@ -3,6 +3,13 @@ import { useMediaSession } from '@/hooks/useMediaSession';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface BluetoothDevice {
+  name?: string;
+  gatt?: {
+    disconnect: () => void;
+  };
+}
+
 interface Track {
   id: string;
   title: string;
@@ -70,7 +77,8 @@ interface MediaPlayerProviderProps {
 }
 
 export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ children }) => {
-  const { spotifyToken } = useAuth();
+  const auth = useAuth();
+  const spotifyTokens = (auth as any).spotifyTokens;
   const [state, setState] = useState<MediaPlayerState>({
     currentTrack: null,
     isPlaying: false,
@@ -90,7 +98,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const bluetoothDeviceRef = useRef<any>(null);
+  const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
 
   // Spotify player integration
   const spotifyPlayer = useSpotifyPlayer();
@@ -150,17 +158,17 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
         currentTrack: {
           id: spotifyPlayer.currentTrack.id,
           title: spotifyPlayer.currentTrack.name,
-          artist: spotifyPlayer.currentTrack.artists.map((a: any) => a.name).join(', '),
+          artist: spotifyPlayer.currentTrack.artists.map((a: { name: string }) => a.name).join(', '),
           album: spotifyPlayer.currentTrack.album.name,
-          duration: spotifyPlayer.currentTrack.duration_ms,
+          duration: spotifyPlayer.currentTrack.duration_ms / 1000,
           artwork: spotifyPlayer.currentTrack.album.images[0]?.url,
           url: '',
           spotifyUri: spotifyPlayer.currentTrack.uri,
           source: 'spotify',
         },
         isPlaying: spotifyPlayer.isPlaying,
-        currentTime: spotifyPlayer.position,
-        duration: spotifyPlayer.duration,
+        currentTime: spotifyPlayer.position / 1000,
+        duration: spotifyPlayer.duration / 1000,
       }));
     }
   }, [spotifyPlayer.isReady, spotifyPlayer.currentTrack, spotifyPlayer.isPlaying, spotifyPlayer.position, spotifyPlayer.duration, state.playbackSource]);
@@ -269,7 +277,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
 
   const playTrack = (track: Track, playlist: Track[] = [], index: number = 0) => {
     const finalPlaylist = playlist.length > 0 ? playlist : [track];
-    const playbackSource = track.source === 'spotify' && spotifyToken ? 'spotify' : 'local';
+    const playbackSource = track.source === 'spotify' && spotifyTokens ? 'spotify' : 'local';
 
     setState(prev => ({
       ...prev,
@@ -327,7 +335,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
         throw new Error('Bluetooth not supported');
       }
 
-      const device = await (navigator as any).bluetooth.requestDevice({
+      const device = await (navigator as { bluetooth: { requestDevice: (options: { acceptAllDevices: boolean; optionalServices: string[] }) => Promise<BluetoothDevice> } }).bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: ['battery_service', 'audio_sink'],
       });
