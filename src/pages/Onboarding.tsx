@@ -11,7 +11,7 @@ const Onboarding: React.FC = () => {
     const timer = setTimeout(() => {
       localStorage.setItem('onboardingCompleted', 'true');
       navigate('/auth');
-    }, 3000); // Show for 3 seconds
+    }, 6000); // Show for 6 seconds
 
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -24,7 +24,9 @@ const Onboarding: React.FC = () => {
       }}
     >
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-blue-900/80 to-indigo-900/80"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-indigo-900/90"></div>
+      {/* Blackish tint */}
+      <div className="absolute inset-0 bg-black/15"></div>
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
@@ -39,11 +41,6 @@ const Onboarding: React.FC = () => {
             </p>
           </div>
 
-          {/* Loading indicator */}
-          <div className="space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/30 border-t-white mx-auto"></div>
-            <p className="text-white/80 text-sm">Preparing your experience...</p>
-          </div>
 
           {/* Get Started button */}
           <Button
@@ -51,7 +48,8 @@ const Onboarding: React.FC = () => {
               localStorage.setItem('onboardingCompleted', 'true');
               navigate('/auth');
             }}
-            className="bg-white text-purple-900 hover:bg-white/90 font-semibold px-8 py-3 text-lg"
+            variant="gradient"
+            className="font-semibold px-8 py-3 text-lg rounded-xl"
           >
             Get Started
           </Button>

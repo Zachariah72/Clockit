@@ -273,7 +273,7 @@ const Auth = React.memo(() => {
       className="space-y-6"
     >
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-2">Create Account</h2>
+        <h2 className="text-3xl font-bold mb-2 text-gradient">Create Account</h2>
         <p className="text-muted-foreground">Join the Clockit community</p>
       </div>
 
@@ -400,7 +400,7 @@ const Auth = React.memo(() => {
 
         <Button
           type="submit"
-          variant="glow"
+          variant="gradient"
           className="w-full h-12 rounded-xl text-lg"
           disabled={isLoading}
         >
@@ -436,7 +436,7 @@ const Auth = React.memo(() => {
               setScreen('signin');
               setErrors({});
             }}
-            className="text-primary hover:underline font-medium"
+            className="text-gradient hover:underline font-medium"
           >
             Sign In
           </button>
@@ -453,8 +453,8 @@ const Auth = React.memo(() => {
       className="space-y-6"
     >
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-2">Welcome Back</h2>
-        <p className="text-muted-foreground">Sign in to your account</p>
+        <h2 className="text-3xl font-bold mb-2 text-gradient">Welcome Back</h2>
+        <p className="text-primary">Sign in to your account</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -519,7 +519,7 @@ const Auth = React.memo(() => {
 
         <Button
           type="submit"
-          variant="glow"
+          variant="gradient"
           className="w-full h-12 rounded-xl text-lg"
           disabled={isLoading}
         >
@@ -555,7 +555,7 @@ const Auth = React.memo(() => {
               setScreen('signup');
               setErrors({});
             }}
-            className="text-primary hover:underline font-medium"
+            className="text-gradient hover:underline font-medium"
           >
             Sign Up
           </button>
