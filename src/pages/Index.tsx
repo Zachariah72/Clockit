@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film } from "lucide-react";
+import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -255,8 +255,8 @@ const Index = () => {
               >
                 <Search className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/music'}>
-                <Music className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/live'}>
+                <Radio className="w-5 h-5" />
               </Button>
               <div className="relative">
                 <Button

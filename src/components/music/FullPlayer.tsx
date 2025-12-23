@@ -198,6 +198,13 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <button
+                    onClick={handleShare}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                  >
+                    <Share2 className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium">Share</span>
+                  </button>
+                  <button
                     onClick={handleLike}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
                       isLiked
@@ -207,13 +214,6 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                   >
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-red-500'}`} />
                     <span className="font-medium">{isLiked ? 'Liked' : 'Like'}</span>
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
-                  >
-                    <Share2 className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium">Share</span>
                   </button>
                   <button
                     onClick={handleAddToPlaylist}
