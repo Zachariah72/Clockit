@@ -71,7 +71,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-32 h-32 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse"
+              className="absolute w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse"
               style={{
                 left: `${10 + i * 12}%`,
                 top: `${20 + (i % 3) * 25}%`,
@@ -85,14 +85,14 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
         <div className="relative flex flex-col h-full z-10">
           {/* Fixed Header */}
           <div className="flex-shrink-0">
-            <SheetHeader className="text-left mb-6 px-6 pt-6">
-              <SheetTitle className="text-3xl font-bold text-gradient">Now Playing</SheetTitle>
+            <SheetHeader className="text-left mb-4 sm:mb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+              <SheetTitle className="text-2xl sm:text-3xl font-bold text-gradient">Now Playing</SheetTitle>
             </SheetHeader>
           </div>
 
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 px-6">
-            <div className="space-y-8 pb-8">
+          <ScrollArea className="flex-1 px-4 sm:px-6">
+            <div className="space-y-6 sm:space-y-8 pb-6 sm:pb-8">
               {/* Album Art with Enhanced Styling */}
               <div className="flex justify-center">
                 <div className="relative">
@@ -101,7 +101,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                   <img
                     src={currentTrack.artwork || '/api/placeholder/300/300'}
                     alt={currentTrack.title}
-                    className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl object-cover shadow-2xl border border-white/20"
+                    className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-3xl object-cover shadow-2xl border border-white/20"
                   />
                   {/* Inner Glow */}
                   <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-white/10 to-transparent" />
@@ -110,128 +110,128 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
 
               {/* Track Info with Better Typography */}
               <div className="text-center">
-                <h2 className="text-3xl font-bold text-foreground mb-3 leading-tight">{currentTrack.title}</h2>
-                <p className="text-xl text-muted-foreground font-medium mb-2">{currentTrack.artist}</p>
-                <p className="text-sm text-muted-foreground/70">Album • 2024</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3 leading-tight">{currentTrack.title}</h2>
+                <p className="text-lg sm:text-xl text-muted-foreground font-medium mb-1 sm:mb-2">{currentTrack.artist}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground/70">Album • 2024</p>
               </div>
 
               {/* Media Controls with Enhanced Styling */}
-              <div className="glass-card-modern p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
                 <MediaControls showDeviceControls />
               </div>
 
               {/* Song Details */}
-              <div className="glass-card-modern p-6 rounded-2xl">
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
-                    <Info className="w-4 h-4" />
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
+                    <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                   </span>
                   Song Details
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-2 sm:space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Duration</p>
-                      <p className="font-medium">{currentTrack.duration || '3:42'}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+                      <p className="font-medium text-sm sm:text-base">{currentTrack.duration || '3:42'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Genre</p>
-                      <p className="font-medium">Electronic/EDM</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Genre</p>
+                      <p className="font-medium text-sm sm:text-base">Electronic/EDM</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Released</p>
-                      <p className="font-medium">2024</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Released</p>
+                      <p className="font-medium text-sm sm:text-base">2024</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Album</p>
-                      <p className="font-medium">Neon Dreams</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Album</p>
+                      <p className="font-medium text-sm sm:text-base">Neon Dreams</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Label</p>
-                      <p className="font-medium">Synthwave Records</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Label</p>
+                      <p className="font-medium text-sm sm:text-base">Synthwave Records</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">BPM</p>
-                      <p className="font-medium">128</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">BPM</p>
+                      <p className="font-medium text-sm sm:text-base">128</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Artist Info */}
-              <div className="glass-card-modern p-6 rounded-2xl">
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center text-white">
-                    <User className="w-4 h-4" />
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center text-white">
+                    <User className="w-3 h-3 sm:w-4 sm:h-4" />
                   </span>
                   About the Artist
                 </h3>
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <img
                     src="/api/placeholder/60/60"
                     alt={currentTrack.artist}
-                    className="w-16 h-16 rounded-xl object-cover"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover flex-shrink-0"
                   />
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-2">{currentTrack.artist}</h4>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">{currentTrack.artist}</h4>
+                    <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                       Midnight Wave is an electronic music producer known for blending synthwave aesthetics with modern electronic production techniques. Their music explores themes of nostalgia, technology, and urban life.
                     </p>
-                    <div className="flex gap-4 mt-3">
-                      <span className="text-sm text-muted-foreground">2.1M followers</span>
-                      <span className="text-sm text-muted-foreground">•</span>
-                      <span className="text-sm text-muted-foreground">156 tracks</span>
+                    <div className="flex gap-3 sm:gap-4 mt-2 sm:mt-3">
+                      <span className="text-xs sm:text-sm text-muted-foreground">2.1M followers</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">•</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">156 tracks</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Social Actions */}
-              <div className="glass-card-modern p-6 rounded-2xl">
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center text-white">
-                    <Share2 className="w-4 h-4" />
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center text-white">
+                    <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </span>
                   Connect & Share
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     onClick={handleShare}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
                   >
-                    <Share2 className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium">Share</span>
+                    <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                    <span className="font-medium text-sm sm:text-base">Share</span>
                   </button>
                   <button
                     onClick={handleLike}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                    className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl transition-colors ${
                       isLiked
                         ? 'bg-red-500/20 hover:bg-red-500/30'
                         : 'bg-red-500/10 hover:bg-red-500/20'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-red-500'}`} />
-                    <span className="font-medium">{isLiked ? 'Liked' : 'Like'}</span>
+                    <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-red-500'}`} />
+                    <span className="font-medium text-sm sm:text-base">{isLiked ? 'Liked' : 'Like'}</span>
                   </button>
                   <button
                     onClick={handleAddToPlaylist}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
                   >
-                    <Plus className="w-4 h-4 text-purple-500" />
-                    <span className="font-medium">Add to Playlist</span>
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                    <span className="font-medium text-sm sm:text-base">Add to Playlist</span>
                   </button>
                   <button
                     onClick={handleDownload}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                    className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl transition-colors ${
                       isTrackCached(currentTrack.id)
                         ? 'bg-green-500/20 hover:bg-green-500/30 text-green-600'
                         : 'bg-green-500/10 hover:bg-green-500/20'
                     }`}
                   >
-                    <Download className={`w-4 h-4 ${isTrackCached(currentTrack.id) ? 'text-green-600' : 'text-green-500'}`} />
-                    <span className="font-medium">
+                    <Download className={`w-3 h-3 sm:w-4 sm:h-4 ${isTrackCached(currentTrack.id) ? 'text-green-600' : 'text-green-500'}`} />
+                    <span className="font-medium text-sm sm:text-base">
                       {isTrackCached(currentTrack.id) ? 'Downloaded' : 'Download'}
                     </span>
                   </button>
@@ -239,29 +239,29 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Related Songs */}
-              <div className="glass-card-modern p-6 rounded-2xl">
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
-                    <Music className="w-4 h-4" />
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
+                    <Music className="w-3 h-3 sm:w-4 sm:h-4" />
                   </span>
                   More from {currentTrack.artist}
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {[
                     { title: "Neon Nights", duration: "3:55" },
                     { title: "Digital Dreams", duration: "4:12" },
                     { title: "Cyber City", duration: "3:28" },
                   ].map((song, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
-                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center">
-                        <Music className="w-5 h-5 text-muted-foreground" />
+                    <div key={index} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center">
+                        <Music className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{song.title}</p>
-                        <p className="text-sm text-muted-foreground">{song.duration}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base">{song.title}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{song.duration}</p>
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
-                        <Play className="w-3 h-3 ml-0.5" />
+                      <button className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                        <Play className="w-2 h-2 sm:w-3 sm:h-3 ml-0.5" />
                       </button>
                     </div>
                   ))}
@@ -269,25 +269,25 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Lyrics Section with Modern Design */}
-              <div className="glass-card-modern p-6 rounded-2xl">
-                <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white">
-                    <Mic className="w-4 h-4" />
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white">
+                    <Mic className="w-3 h-3 sm:w-4 sm:h-4" />
                   </span>
                   Lyrics
                 </h3>
-                <div className="text-center text-muted-foreground space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center">
-                    <Music className="w-6 h-6" />
+                <div className="text-center text-muted-foreground space-y-3 sm:space-y-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center">
+                    <Music className="w-4 h-4 sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <p className="text-lg font-medium">Lyrics not available for this track</p>
-                    <p className="text-sm mt-2 opacity-75">We're working on adding lyrics for all songs!</p>
+                    <p className="text-base sm:text-lg font-medium">Lyrics not available for this track</p>
+                    <p className="text-xs sm:text-sm mt-1 sm:mt-2 opacity-75">We're working on adding lyrics for all songs!</p>
                   </div>
-                  <div className="flex justify-center gap-2 mt-6">
-                    <div className="w-2 h-2 bg-purple-500/50 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                    <div className="w-2 h-2 bg-pink-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    <div className="w-2 h-2 bg-blue-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  <div className="flex justify-center gap-1 sm:gap-2 mt-4 sm:mt-6">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500/50 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-pink-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                   </div>
                 </div>
               </div>
