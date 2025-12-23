@@ -300,24 +300,24 @@ const Profile = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mx-4 mt-8">
-            <TabsTrigger value="posts" className="flex items-center gap-1 text-xs">
+          <TabsList className="flex w-full overflow-x-auto mx-4 mt-8 scrollbar-hide">
+            <TabsTrigger value="posts" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Grid3X3 className="w-3 h-3" />
               Posts
             </TabsTrigger>
-            <TabsTrigger value="saved" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="saved" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Bookmark className="w-3 h-3" />
               Saved
             </TabsTrigger>
-            <TabsTrigger value="drafts" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="drafts" className="flex items-center gap-1 text-xs flex-shrink-0">
               <FileText className="w-3 h-3" />
               Drafts
             </TabsTrigger>
-            <TabsTrigger value="insights" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="insights" className="flex items-center gap-1 text-xs flex-shrink-0">
               <BarChart3 className="w-3 h-3" />
               Insights
             </TabsTrigger>
-            <TabsTrigger value="playlists" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="playlists" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Heart className="w-3 h-3" />
               Playlists
             </TabsTrigger>

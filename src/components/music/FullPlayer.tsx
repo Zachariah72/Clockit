@@ -101,7 +101,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                   <img
                     src={currentTrack.artwork || '/api/placeholder/300/300'}
                     alt={currentTrack.title}
-                    className="relative w-72 h-72 rounded-3xl object-cover shadow-2xl border border-white/20"
+                    className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl object-cover shadow-2xl border border-white/20"
                   />
                   {/* Inner Glow */}
                   <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-white/10 to-transparent" />
