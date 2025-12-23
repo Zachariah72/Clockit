@@ -238,6 +238,19 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/50;
   }
+
+  /* Top progress bar styling */
+  ::-webkit-progress-bar {
+    background-color: #000000;
+  }
+
+  ::-webkit-progress-value {
+    background-color: #000000;
+  }
+
+  ::-moz-progress-bar {
+    background-color: #000000;
+  }
 }
 
 @layer utilities {
