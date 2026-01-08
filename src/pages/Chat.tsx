@@ -99,7 +99,8 @@ const ChatList = ({
   searchQuery,
   setSearchQuery,
   isLoading,
-  onStartNewChat
+  onStartNewChat,
+  hideSearch = false
 }: {
   conversations: Conversation[];
   onSelectChat: (conv: Conversation) => void;
@@ -107,6 +108,7 @@ const ChatList = ({
   setSearchQuery: (query: string) => void;
   isLoading: boolean;
   onStartNewChat: (userId: string, username: string) => void;
+  hideSearch?: boolean;
 }) => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
@@ -156,88 +158,6 @@ const ChatList = ({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-20 glass-card rounded-b-3xl p-3 sm:p-4"
-      >
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Messages</h1>
-          <div className="flex items-center gap-2">
-            <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Start New Conversation</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search users..."
-                      value={userSearchQuery}
-                      onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto space-y-2">
-                    {isSearching ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      searchResults.map((user) => (
-                        <div
-                          key={user._id}
-                          onClick={() => {
-                            onStartNewChat(user._id, user.username);
-                            setShowNewChat(false);
-                            setUserSearchQuery("");
-                            setSearchResults([]);
-                          }}
-                          className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
-                        >
-                          <img
-                            src={user.avatar_url || '/api/placeholder/40/40'}
-                            alt={user.username}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                          <div>
-                            <p className="font-medium">{user.username}</p>
-                            <p className="text-sm text-muted-foreground">{user.display_name}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : userSearchQuery ? (
-                      <p className="text-center text-muted-foreground py-4">No users found</p>
-                    ) : (
-                      <p className="text-center text-muted-foreground py-4">Start typing to search users</p>
-                    )}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-        
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 rounded-xl bg-muted/50 border-border/50"
-          />
-        </div>
-      </motion.header>
-
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {isLoading ? (
@@ -635,10 +555,12 @@ const ChatView = ({
 const CallHistoryView = ({
   callHistory,
   isLoading,
+  searchQuery,
   onStartCall
 }: {
   callHistory: any[];
   isLoading: boolean;
+  searchQuery: string;
   onStartCall: (userId: string, callType: 'audio' | 'video') => void;
 }) => {
   const formatDuration = (seconds: number) => {
@@ -694,26 +616,24 @@ const CallHistoryView = ({
 
   const { user } = useAuth();
 
+  // Filter call history based on search query
+  const filteredCallHistory = callHistory.filter(call => {
+    if (!searchQuery.trim()) return true;
+    // For now, we'll filter by call type or status. In a real app, you'd filter by user name
+    const searchLower = searchQuery.toLowerCase();
+    return call.callType.toLowerCase().includes(searchLower) ||
+           call.status.toLowerCase().includes(searchLower);
+  });
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-20 glass-card rounded-b-3xl p-3 sm:p-4"
-      >
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Call History</h1>
-        </div>
-      </motion.header>
-
       {/* Call History List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : callHistory.length === 0 ? (
+        ) : filteredCallHistory.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Phone className="w-8 h-8 text-muted-foreground" />
@@ -724,7 +644,7 @@ const CallHistoryView = ({
             </p>
           </div>
         ) : (
-          callHistory.map((call, index) => {
+          filteredCallHistory.map((call, index) => {
             const direction = getCallDirection(call.caller, call.receiver, user?.id || '');
             const otherUserId = direction === 'outgoing' ? call.receiver : call.caller;
             const otherUserName = 'User'; // TODO: Get actual user name
@@ -795,8 +715,50 @@ const Chat = () => {
   const [incomingCall, setIncomingCall] = useState<{ from: string; callType: 'audio' | 'video'; callerName: string; callId: string } | null>(null);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingCallHistory, setIsLoadingCallHistory] = useState(true);
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { socket } = useSocket();
   const { user } = useAuth();
+
+  // Search for users
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      const response = await fetch(`/api/messages/users/suggestions?query=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const users = await response.json();
+        setSearchResults(users);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(userSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [userSearchQuery]);
 
   // Fetch conversations from API
   const fetchConversations = async () => {
@@ -982,7 +944,17 @@ const Chat = () => {
               className="h-full"
             >
               <Tabs defaultValue="messages" className="h-full flex flex-col">
+                {/* Search Bar */}
                 <div className="px-4 pt-4">
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search conversations..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-10 rounded-xl bg-muted/50 border-border/50"
+                    />
+                  </div>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="messages">Messages</TabsTrigger>
                     <TabsTrigger value="calls">Call History</TabsTrigger>
@@ -997,6 +969,7 @@ const Chat = () => {
                     setSearchQuery={setSearchQuery}
                     isLoading={isLoadingConversations}
                     onStartNewChat={handleStartNewChat}
+                    hideSearch={true}
                   />
                 </TabsContent>
 
@@ -1004,6 +977,7 @@ const Chat = () => {
                   <CallHistoryView
                     callHistory={callHistory}
                     isLoading={isLoadingCallHistory}
+                    searchQuery={searchQuery}
                     onStartCall={(userId, callType) => {
                       // For call history, we need to find the conversation or create a temporary one
                       // For now, just emit the call directly
@@ -1019,6 +993,71 @@ const Chat = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Floating Action Button for New Chat */}
+      {!selectedConversation && (
+        <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
+          <DialogTrigger asChild>
+            <Button
+              className="fixed bottom-20 right-4 sm:right-6 w-14 h-14 rounded-full shadow-lg z-30"
+              size="icon"
+            >
+              <Plus className="w-6 h-6" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Start New Conversation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((user) => (
+                    <div
+                      key={user._id}
+                      onClick={() => {
+                        onStartNewChat(user._id, user.username);
+                        setShowNewChat(false);
+                        setUserSearchQuery("");
+                        setSearchResults([]);
+                      }}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
+                    >
+                      <img
+                        src={user.avatar_url || '/api/placeholder/40/40'}
+                        alt={user.username}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{user.username}</p>
+                        <p className="text-sm text-muted-foreground">{user.display_name}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : userSearchQuery ? (
+                  <p className="text-center text-muted-foreground py-4">No users found</p>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">Start typing to search users</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Call Interface */}
       {currentCall && (
