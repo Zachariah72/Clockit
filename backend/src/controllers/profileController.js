@@ -206,7 +206,7 @@ exports.getReels = async (req, res) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .select('title description thumbnail url views likes duration createdAt');
+    .select('title description thumbnail url views likes duration segments createdAt');
 
     const total = await Video.countDocuments({ userId, isDraft: false });
 

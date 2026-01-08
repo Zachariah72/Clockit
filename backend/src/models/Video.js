@@ -7,6 +7,11 @@ const videoSchema = new mongoose.Schema({
   url: String,
   thumbnail: String,
   duration: Number,
+  segments: [{
+    start: { type: Number, required: true },
+    end: { type: Number, required: true },
+    duration: { type: Number, required: true }
+  }],
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
   isDraft: { type: Boolean, default: false },

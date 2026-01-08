@@ -27,6 +27,39 @@ const getVideoById = async (req, res) => {
 const createVideo = async (req, res) => {
   try {
     const { title, description, url, thumbnail, duration, isDraft, duetOf, stitchOf, filters, speed, voiceEffects, captions, hashtags, mentions, autoCaptions } = req.body;
+
+    // Validate duration: max 15 minutes
+    if (duration > 15 * 60) {
+      return res.status(400).json({ message: 'Video duration cannot exceed 15 minutes' });
+    }
+
+    // Create segments for reels
+    let segments = [];
+    if (duration > 5 * 60) { // If longer than 5 minutes, create segments
+      const segmentDuration = Math.min(5 * 60, duration / 3); // Each segment up to 5 min, or divide evenly
+      let start = 0;
+      while (start < duration) {
+        const end = Math.min(start + segmentDuration, duration);
+        const segDuration = end - start;
+        if (segDuration >= 60) { // Minimum 1 minute
+          segments.push({
+            start: start,
+            end: end,
+            duration: segDuration
+          });
+        }
+        start = end;
+        if (segments.length >= 3) break; // Max 3 segments
+      }
+    } else {
+      // For shorter videos, single segment
+      segments = [{
+        start: 0,
+        end: duration,
+        duration: duration
+      }];
+    }
+
     const video = new Video({
       userId: req.user.id,
       title,
@@ -34,6 +67,7 @@ const createVideo = async (req, res) => {
       url,
       thumbnail,
       duration,
+      segments,
       isDraft,
       duetOf,
       stitchOf,
