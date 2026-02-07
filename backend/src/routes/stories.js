@@ -17,7 +17,7 @@ const {
 // Configure multer for story media uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/stories');
+    const uploadDir = path.join(__dirname, '../uploads/stories');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -59,8 +59,8 @@ router.post('/upload', auth, upload.single('media'), async (req, res) => {
     console.log('File saved:', req.file.filename);
     console.log('File path:', req.file.path);
     
-    // Use the API_URL environment variable or localhost:5000
-    const apiUrl = process.env.API_URL || 'http://localhost:5000';
+    // Use the API_URL environment variable or dynamically detect the current URL
+    const apiUrl = process.env.API_URL || `${req.protocol}://${req.get('host')}`;
     const mediaUrl = `${apiUrl}/uploads/stories/${req.file.filename}`;
     console.log('Media URL:', mediaUrl);
     

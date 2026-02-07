@@ -57,9 +57,13 @@ app.get('/', (req, res) => {
 });
 
 // Static files for uploads
-app.use('/uploads', express.static(path.join(__dirname, '../../backend/uploads')));
-app.use('/uploads/avatars', express.static(path.join(__dirname, '../../backend/src/uploads/avatars')));
-app.use('/uploads/stories', express.static(path.join(__dirname, '../../backend/uploads/stories')));
+// Use relative paths that work in both local and Render environments
+const uploadsPath = path.join(__dirname, '../uploads');
+const srcUploadsPath = path.join(__dirname, './uploads');
+
+app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads/avatars', express.static(path.join(srcUploadsPath, 'avatars')));
+app.use('/uploads/stories', express.static(path.join(uploadsPath, 'stories')));
 // Placeholder image route - with input sanitization
 app.get('/api/placeholder/:width/:height', (req, res) => {
   // Sanitize width and height to prevent XSS
