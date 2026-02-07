@@ -26,6 +26,7 @@ export interface Story {
   caption?: string;
   viewsCount: number;
   likesCount: number;
+  duration?: number;
   createdAt: string;
 }
 
@@ -69,9 +70,18 @@ export const profileApi = {
   getProfile: (userId?: string) =>
     api.get<User>(userId ? `/profile/${userId}` : '/profile'),
 
-  // Update profile
+  // Update profile (text fields only)
   updateProfile: (data: Partial<User>) =>
     api.put<User>('/profile', data),
+
+  // Upload avatar
+  uploadAvatar: async (file: File): Promise<{ avatar: string; user: User }> => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    // Don't set Content-Type header - let the browser set it with boundary
+    return api.post<{ avatar: string; user: User }>('/profile/avatar', formData);
+  },
 
   // Social features
   getFollowers: (userId?: string, page = 1, limit = 20) =>

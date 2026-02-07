@@ -509,13 +509,13 @@ const Stories = () => {
 
         {/* Enhanced Camera Component */}
         {isCameraOpen && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+          <div className="fixed inset-0 bg-black z-[100] flex items-center justify-center">
+            <div className="w-full h-full max-w-none" style={{ height: '85vh' }}>
               <CameraComponent
                 onCapture={handleCameraCapture}
                 onClose={() => setIsCameraOpen(false)}
                 enableFilters={true}
-                className="w-full"
+                className="w-full h-full"
               />
             </div>
           </div>

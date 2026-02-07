@@ -158,9 +158,11 @@ export const Camera: React.FC<CameraProps> = ({
     }
   }, [facingMode, startCamera, isStreaming]);
 
+  const hasFullHeight = className.includes('h-full');
+  
   return (
-    <div className={`relative ${className.includes('h-full') ? 'w-full h-full bg-black overflow-hidden' : className}`}>
-      {className.includes('h-full') ? (
+    <div className={`relative ${hasFullHeight ? 'w-full h-full bg-black overflow-hidden' : 'w-full bg-black overflow-hidden'} ${className}`} style={!hasFullHeight ? { height: '100%' } : {}}>
+      {hasFullHeight ? (
         <div className="relative w-full h-full bg-black">
           <AnimatePresence mode="wait">
             {!capturedImage ? (
@@ -344,9 +346,9 @@ export const Camera: React.FC<CameraProps> = ({
           </AnimatePresence>
         </div>
       ) : (
-        <Card className="overflow-hidden bg-black">
+        <Card className="overflow-hidden bg-black h-full">
           {/* Camera View */}
-          <div className="relative aspect-[4/3] bg-black">
+          <div className="relative h-full bg-black">
             <AnimatePresence mode="wait">
               {!capturedImage ? (
                 <motion.div

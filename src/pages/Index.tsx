@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film, Radio } from "lucide-react";
+import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film, Radio, Video, ImagePlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ const Index = () => {
   const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -104,22 +105,77 @@ const Index = () => {
     );
   };
 
-  const handleStoryCreated = (media: File, type: 'image' | 'video') => {
-    // Handle story creation - you can upload to server here
-    console.log('Story created:', { media, type });
-
-    // For now, just show a success message
-    // In a real app, you'd upload the media and refresh the stories
-    alert('Story created successfully!');
-
-    // You could add the new story to the stories list here
-    // const newStory = {
-    //   id: Date.now().toString(),
-    //   username: "Your story",
-    //   image: URL.createObjectURL(media),
-    //   hasUnseenStory: true
-    // };
-    // setStories(prev => [newStory, ...prev]);
+  const handleStoryCreated = async (media: File, type: 'image' | 'video') => {
+    try {
+      setIsStoryCreatorOpen(false);
+      console.log('Starting story creation, media:', media.name, 'type:', type);
+      
+      // Step 1: Upload the media file
+      const formData = new FormData();
+      formData.append('media', media);
+      
+      const token = localStorage.getItem('auth_token');
+      console.log('Uploading to:', `${import.meta.env.VITE_API_URL}/api/stories/upload`);
+      
+      const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/stories/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      console.log('Upload response status:', uploadResponse.status);
+      
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        console.error('Upload error:', errorData);
+        throw new Error('Failed to upload media');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      console.log('Upload successful, data:', uploadData);
+      
+      // Step 2: Create the story
+      const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/stories`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: '',
+          mediaUrl: uploadData.mediaUrl,
+          type,
+          isPrivate: false
+        })
+      });
+      
+      console.log('Create story response status:', createResponse.status);
+      
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json();
+        console.error('Create story error:', errorData);
+        throw new Error('Failed to create story');
+      }
+      
+      const newStory = await createResponse.json();
+      console.log('Story created, data:', newStory);
+      
+      // Update the stories list with the new story
+      // Format: id, username, image, hasUnseenStory (matching StoriesRow interface)
+      setStories(prev => [{
+        id: newStory._id,
+        username: 'You',
+        image: newStory.mediaUrl,
+        hasUnseenStory: true
+      }, ...prev]);
+      
+      alert('Story created successfully!');
+    } catch (error) {
+      console.error('Error creating story:', error);
+      alert('Failed to create story. Please try again.');
+    }
   };
 
   const handleCreateStory = () => {
@@ -233,7 +289,7 @@ const Index = () => {
   }, [searchQuery]);
 
   return (
-    <Layout hideFab={isStoryViewerOpen}>
+    <Layout>
       <div className="min-h-screen">
         {/* Header */}
         <motion.header
@@ -254,6 +310,14 @@ const Index = () => {
                 onClick={() => setIsSearchOpen(true)}
               >
                 <Search className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFabOpen(!isFabOpen)}
+                className="touch-manipulation"
+              >
+                <Plus className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={() => window.location.href = '/live'}>
                 <Radio className="w-5 h-5" />
@@ -322,6 +386,82 @@ const Index = () => {
                   </motion.div>
                 )}
               </div>
+
+              {/* FAB Dropdown Menu */}
+              <AnimatePresence>
+                {isFabOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    className="absolute top-16 right-4 w-64 bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg z-50 overflow-hidden"
+                  >
+                    <div className="p-3 space-y-1">
+                      <h4 className="text-xs font-semibold text-muted-foreground px-2 py-1">CREATE</h4>
+                      <button
+                        onClick={() => {
+                          setIsFabOpen(false);
+                          navigate('/reels');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                          <Video className="w-5 h-5 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Reel</p>
+                          <p className="text-xs text-muted-foreground">Create a new reel</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsFabOpen(false);
+                          navigate('/music');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Music</p>
+                          <p className="text-xs text-muted-foreground">Share a song</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsFabOpen(false);
+                          navigate('/stories');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center">
+                          <ImagePlus className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Story</p>
+                          <p className="text-xs text-muted-foreground">Share a story</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsFabOpen(false);
+                          navigate('/groups');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Group</p>
+                          <p className="text-xs text-muted-foreground">Start a listening group</p>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <Button variant="ghost" size="icon" onClick={() => window.location.href = '/profile'}>
                 <User className="w-5 h-5" />
               </Button>
@@ -457,6 +597,7 @@ const Index = () => {
           isOpen={isStoryViewerOpen}
           onClose={() => setIsStoryViewerOpen(false)}
           initialStoryId={selectedStoryId || undefined}
+          stories={stories}
           onStoryViewed={handleStoryViewed}
         />
 

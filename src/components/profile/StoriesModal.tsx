@@ -61,6 +61,7 @@ export const StoriesModal = ({ isOpen, onClose, stories }: StoriesModalProps) =>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
+                {console.log('StoriesModal - stories prop:', stories)}
                 {stories.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">

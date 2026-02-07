@@ -125,9 +125,9 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
               </div>
             ) : (
               /* Preview and Edit */
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col h-full">
                 {/* Media Preview */}
-                <div className="flex-1 relative">
+                <div className="flex-1 relative overflow-hidden">
                   {mediaType === 'image' ? (
                     <img
                       src={mediaPreview!}
@@ -149,7 +149,7 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
                 </div>
 
                 {/* Action Buttons */}
-                <div className="p-4 flex items-center justify-between">
+                <div className="p-4 flex items-center justify-between gap-4 bg-background border-t">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -158,6 +158,7 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
                       setMediaType(null);
                       setShowCamera(true);
                     }}
+                    className="flex-1"
                   >
                     Retake
                   </Button>
@@ -165,7 +166,7 @@ export const StoryCreator = ({ isOpen, onClose, onStoryCreated }: StoryCreatorPr
                   <Button
                     variant="default"
                     onClick={handleCreateStory}
-                    className="gap-2"
+                    className="gap-2 flex-1"
                   >
                     <Zap className="w-4 h-4" />
                     Share Story

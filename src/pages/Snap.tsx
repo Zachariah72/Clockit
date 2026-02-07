@@ -177,7 +177,7 @@ const Snap = () => {
                 className="space-y-6"
               >
                 {/* Camera Section */}
-                <div className="max-w-md mx-auto">
+                <div className="w-full">
                   <div className="text-center mb-4">
                     <h2 className="text-lg font-semibold mb-2">Take a Snap</h2>
                     <p className="text-sm text-muted-foreground">
@@ -185,10 +185,12 @@ const Snap = () => {
                     </p>
                   </div>
 
-                  <CameraComponent
-                    onCapture={handleCapture}
-                    className="w-full"
-                  />
+                  <div className="camera-container" style={{ height: '75vh', maxHeight: 'none' }}>
+                    <CameraComponent
+                      onCapture={handleCapture}
+                      className="w-full rounded-xl overflow-hidden"
+                    />
+                  </div>
                 </div>
 
                 {/* Snap History */}

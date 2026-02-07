@@ -1,6 +1,20 @@
 import { toast } from 'sonner';
 
-const API_BASE_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+// Build the API base URL - ensure it's always a proper URL
+const getApiBaseUrl = () => {
+  const devUrl = 'http://localhost:5000/api';
+  const prodUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  
+  // In development, try to use proxy if available, otherwise use direct URL
+  if (import.meta.env.DEV) {
+    // Check if there's a proxy configured (Vite dev server)
+    return devUrl;
+  }
+  return prodUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('API Base URL:', API_BASE_URL);
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -22,12 +36,14 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    // Check if body is FormData - don't set Content-Type, let browser set it
+    const isFormData = options.body instanceof FormData;
+
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers: isFormData 
+        ? { ...options.headers }  // Don't set Content-Type for FormData
+        : { 'Content-Type': 'application/json', ...options.headers },
     };
 
     // Add auth token if available
@@ -39,20 +55,31 @@ class ApiService {
       };
     }
 
+    console.log(`API ${options.method || 'GET'} ${endpoint}`);
+    console.log('Headers:', JSON.stringify(config.headers, null, 2));
+
     try {
       const response = await fetch(url, config);
 
+      console.log(`Response status: ${response.status}`);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('API Error:', errorData);
         throw new ApiError(response.status, errorData.message || 'API request failed');
       }
 
       return await response.json();
     } catch (error) {
+      console.error('API Request Error:', error);
       if (error instanceof ApiError) {
         // Handle specific API errors
         if (error.status === 401) {
           // Token expired or invalid
+          localStorage.removeItem('auth_token');
+          window.location.href = '/auth';
+        } else if (error.status === 404 && error.message.includes('User not found')) {
+          // User not found - clear stale token
           localStorage.removeItem('auth_token');
           window.location.href = '/auth';
         } else if (error.status >= 500) {
@@ -111,10 +138,12 @@ class ApiService {
   }
 
   async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+    // Check if data is FormData - don't stringify it
+    const isFormData = data instanceof FormData;
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
   }
 

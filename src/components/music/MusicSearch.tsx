@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Play, Music, Loader2, Headphones } from 'lucide-react';
+import { Search, Play, Music, Loader2, Headphones, Cloud, Upload, FileAudio, Trash2, Plus } from 'lucide-react';
 import { useMediaPlayer } from '@/contexts/MediaPlayerContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MusicTrack {
   id: string;
@@ -18,9 +19,31 @@ interface MusicTrack {
   };
   duration_ms: number;
   preview_url?: string;
+  stream_url?: string;
   external_urls?: {
     spotify: string;
   };
+}
+
+interface SoundCloudTrack {
+  id: number | string;
+  title: string;
+  user?: { username: string };
+  artist?: { id: string; name: string; picture?: string };
+  duration: number;
+  artwork_url: string | null;
+  stream_url: string;
+  is_full_track?: boolean;
+}
+
+interface UserTrack {
+  id: string;
+  title: string;
+  artist: string;
+  filename: string;
+  duration: number;
+  uploadedAt: string;
+  stream_url: string;
 }
 
 const MusicSearch: React.FC = () => {
@@ -28,18 +51,37 @@ const MusicSearch: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [spotifyResults, setSpotifyResults] = useState<MusicTrack[]>([]);
   const [lastfmResults, setLastfmResults] = useState<MusicTrack[]>([]);
+  const [soundcloudResults, setSoundcloudResults] = useState<MusicTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeService, setActiveService] = useState<'spotify' | 'lastfm'>('spotify');
+  const [activeService, setActiveService] = useState<'soundcloud' | 'spotify' | 'lastfm'>('soundcloud');
 
-  const searchMusic = async (query: string, service: 'spotify' | 'lastfm' = activeService) => {
+  // Get API base URL for production vs development
+  const getApiBaseUrl = () => {
+    if (import.meta.env.PROD) {
+      return 'https://clockit-gvm2.onrender.com';
+    }
+    return '';
+  };
+
+  const searchMusic = async (query: string, service: 'soundcloud' | 'spotify' | 'lastfm' = activeService) => {
     if (!query.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const endpoint = service === 'spotify' ? '/api/spotify/search' : '/api/lastfm/search';
+      const apiBase = getApiBaseUrl();
+      let endpoint: string;
+      
+      if (service === 'soundcloud') {
+        endpoint = `${apiBase}/api/soundcloud/search`;
+      } else if (service === 'spotify') {
+        endpoint = `${apiBase}/api/spotify/search`;
+      } else {
+        endpoint = `${apiBase}/api/lastfm/search`;
+      }
+      
       const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}&limit=20`);
 
       if (!response.ok) {
@@ -48,7 +90,25 @@ const MusicSearch: React.FC = () => {
 
       const data = await response.json();
 
-      if (data.tracks?.items) {
+      if (service === 'soundcloud') {
+        // SoundCloud returns array directly
+        if (Array.isArray(data)) {
+          const formattedTracks: MusicTrack[] = data.map((track: SoundCloudTrack) => ({
+            id: track.id.toString(),
+            name: track.title,
+            artists: [{ name: track.artist?.name || track.user?.username || 'Unknown Artist' }],
+            album: {
+              name: track.album?.title || 'SoundCloud',
+              images: [{ url: track.artwork_url || track.album?.cover || '/placeholder.svg' }]
+            },
+            duration_ms: track.duration,
+            stream_url: track.stream_url ? `${apiBase}${track.stream_url}` : ''
+          }));
+          setSoundcloudResults(formattedTracks);
+        } else {
+          setSoundcloudResults([]);
+        }
+      } else if (data.tracks?.items) {
         if (service === 'spotify') {
           setSpotifyResults(data.tracks.items);
         } else {
@@ -64,7 +124,9 @@ const MusicSearch: React.FC = () => {
     } catch (error) {
       console.error('Search error:', error);
       setError('Failed to search music. Please try again.');
-      if (service === 'spotify') {
+      if (service === 'soundcloud') {
+        setSoundcloudResults([]);
+      } else if (service === 'spotify') {
         setSpotifyResults([]);
       } else {
         setLastfmResults([]);
@@ -81,9 +143,9 @@ const MusicSearch: React.FC = () => {
       artist: track.artists.map(a => a.name).join(', '),
       album: track.album.name,
       duration: track.duration_ms / 1000,
-      url: track.preview_url || '', // Use preview URL (30s clip)
+      url: track.stream_url || track.preview_url || '', // Prefer stream_url for SoundCloud
       artwork: track.album.images[0]?.url,
-      source: 'local' as const, // Since we're using preview URLs
+      source: 'local' as const,
     };
     playTrack(mediaTrack);
   };
@@ -100,7 +162,9 @@ const MusicSearch: React.FC = () => {
   };
 
   const getCurrentResults = () => {
-    return activeService === 'spotify' ? spotifyResults : lastfmResults;
+    if (activeService === 'soundcloud') return soundcloudResults;
+    if (activeService === 'spotify') return spotifyResults;
+    return lastfmResults;
   };
 
   return (
@@ -113,8 +177,12 @@ const MusicSearch: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Service Tabs */}
-        <Tabs value={activeService} onValueChange={(value) => setActiveService(value as 'spotify' | 'lastfm')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeService} onValueChange={(value) => setActiveService(value as 'soundcloud' | 'spotify' | 'lastfm')}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="soundcloud" className="flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              SoundCloud
+            </TabsTrigger>
             <TabsTrigger value="spotify" className="flex items-center gap-2">
               <Headphones className="w-4 h-4" />
               Spotify
@@ -124,6 +192,24 @@ const MusicSearch: React.FC = () => {
               Last.fm
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="soundcloud" className="space-y-4">
+            <form onSubmit={handleSearch} className="flex space-x-2">
+              <Input
+                placeholder="Search for songs, artists..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+              </Button>
+            </form>
+          </TabsContent>
 
           <TabsContent value="spotify" className="space-y-4">
             <form onSubmit={handleSearch} className="flex space-x-2">
@@ -225,7 +311,7 @@ const MusicSearch: React.FC = () => {
               <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-600 dark:text-gray-400">Search for your favorite music</p>
               <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                Discover music from {activeService === 'spotify' ? 'Spotify' : 'Last.fm'}
+                Discover music from {activeService === 'soundcloud' ? 'SoundCloud' : activeService === 'spotify' ? 'Spotify' : 'Last.fm'}
               </p>
             </div>
           )}

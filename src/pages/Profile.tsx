@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2 } from "lucide-react";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { StoriesModal } from "@/components/profile/StoriesModal";
 import { ShareMusicModal } from "@/components/profile/ShareMusicModal";
 import { profileApi, User, Story, SavedItem, DraftItem, Reel } from "@/services/profileApi";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -79,6 +80,7 @@ const draftItems = [
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, session, loading: authLoading } = useAuth();
 
   // Loading and data states
   const [loading, setLoading] = useState(true);
@@ -92,6 +94,7 @@ const Profile = () => {
 
   // Modal states
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [avatarUpdateTime, setAvatarUpdateTime] = useState(Date.now());
   const [isShareMusicOpen, setIsShareMusicOpen] = useState(false);
   const [followersModal, setFollowersModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
     isOpen: false,
@@ -101,32 +104,87 @@ const Profile = () => {
 
   // Load profile data on mount
   useEffect(() => {
+    // Check if user is authenticated with a valid backend token
+    const hasBackendToken = localStorage.getItem('auth_token');
+    const hasSupabaseSession = session && session.access_token;
+    
+    console.log('Profile useEffect - hasBackendToken:', !!hasBackendToken);
+    console.log('Profile useEffect - hasSupabaseSession:', !!hasSupabaseSession);
+    console.log('Profile useEffect - session:', session);
+    
+    if (!hasBackendToken && !hasSupabaseSession) {
+      // User is not authenticated, skip API calls
+      console.log('User not authenticated, skipping API calls');
+      setLoading(false);
+      return;
+    }
+    
+    // If we have a session but no backend token, we'll still try to load
+    // but it might fail - that's okay, we'll show empty state
     loadProfileData();
-  }, []);
+  }, [session]);
 
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      const [profileRes, followersRes, followingRes, storiesRes, reelsRes, savedRes, draftsRes] = await Promise.all([
-        profileApi.getProfile(),
-        profileApi.getFollowers(),
-        profileApi.getFollowing(),
-        profileApi.getStories(),
-        profileApi.getReels(),
-        profileApi.getSavedContent(),
-        profileApi.getDrafts()
-      ]);
-
-      setProfile(profileRes.data);
-      setFollowers(followersRes.data.followers);
-      setFollowing(followingRes.data.following);
-      setStories(storiesRes.data);
-      setReels(reelsRes.data.reels);
-      setSavedContent(savedRes.data.savedContent);
-      setDrafts(draftsRes.data);
+      console.log('loadProfileData called');
+      
+      // Make API calls individually to handle partial failures
+      try {
+        const profileRes = await profileApi.getProfile();
+        console.log('Profile fetched:', profileRes);
+        setProfile(profileRes);
+      } catch (e) {
+        console.error('Profile fetch error:', e);
+      }
+      
+      try {
+        const followersRes = await profileApi.getFollowers();
+        setFollowers(followersRes.followers);
+      } catch (e) {
+        // Followers fetch failed
+      }
+      
+      try {
+        const followingRes = await profileApi.getFollowing();
+        setFollowing(followingRes.following);
+      } catch (e) {
+        // Following fetch failed
+      }
+      
+      try {
+        console.log('Fetching stories...');
+        const storiesRes = await profileApi.getStories();
+        console.log('Stories fetched:', storiesRes);
+        setStories(storiesRes);
+      } catch (e) {
+        console.error('Stories fetch error:', e);
+      }
+      
+      try {
+        const reelsRes = await profileApi.getReels();
+        setReels(reelsRes.reels);
+      } catch (e) {
+        // Reels fetch failed
+      }
+      
+      try {
+        const savedRes = await profileApi.getSavedContent();
+        setSavedContent(savedRes.savedContent);
+      } catch (e) {
+        // Saved content fetch failed
+      }
+      
+      try {
+        const draftsRes = await profileApi.getDrafts();
+        setDrafts(draftsRes);
+      } catch (e) {
+        // Drafts fetch failed
+      }
+      
     } catch (error) {
       console.error('Error loading profile data:', error);
-      toast.error('Failed to load profile data');
+      // Don't show error toast - data will just be empty
     } finally {
       setLoading(false);
     }
@@ -139,8 +197,21 @@ const Profile = () => {
 
   const handleSaveProfile = async (updatedProfile: any) => {
     try {
-      const response = await profileApi.updateProfile(updatedProfile);
-      setProfile(response.data);
+      console.log('=== handleSaveProfile ===');
+      console.log('Updated profile received:', JSON.stringify(updatedProfile, null, 2));
+      console.log('Current profile before update:', JSON.stringify(profile, null, 2));
+      
+      setProfile(updatedProfile);
+      console.log('Profile state updated');
+      
+      // Update avatar timestamp for cache busting
+      if (updatedProfile.avatar) {
+        setAvatarUpdateTime(Date.now());
+        console.log('Avatar update time set to:', Date.now());
+      } else {
+        console.log('No avatar in updatedProfile, avatar field:', updatedProfile.avatar);
+      }
+      
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -160,7 +231,7 @@ const Profile = () => {
       case 'followers':
         try {
           const response = await profileApi.getFollowers();
-          setFollowers(response.data.followers);
+          setFollowers(response.followers);
           setFollowersModal({ isOpen: true, type: 'followers' });
         } catch (error) {
           toast.error("Failed to load followers");
@@ -169,7 +240,7 @@ const Profile = () => {
       case 'following':
         try {
           const response = await profileApi.getFollowing();
-          setFollowing(response.data.following);
+          setFollowing(response.following);
           setFollowersModal({ isOpen: true, type: 'following' });
         } catch (error) {
           toast.error("Failed to load following");
@@ -191,6 +262,51 @@ const Profile = () => {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Loading profile...</p>
           </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show auth loading state
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Checking authentication...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show unauthenticated state
+  if (!session && !localStorage.getItem('auth_token')) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center gap-4 text-center"
+          >
+            <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center">
+              <LogIn className="w-12 h-12 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Sign in to view your profile</h2>
+            <p className="text-muted-foreground max-w-xs">
+              Create an account or sign in to see your profile, reels, and saved content.
+            </p>
+            <Button 
+              variant="gradient" 
+              className="gap-2 mt-4"
+              onClick={() => navigate('/auth')}
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </Button>
+          </motion.div>
         </div>
       </Layout>
     );
@@ -229,9 +345,14 @@ const Profile = () => {
               <div className="story-ring w-28 h-28">
                 <div className="w-full h-full rounded-full bg-background p-1">
                   <img
-                    src={avatar1}
+                    src={profile?.avatar ? `${profile.avatar}?t=${avatarUpdateTime}` : avatar1}
                     alt="Profile"
                     className="w-full h-full object-cover rounded-full"
+                    onLoad={() => console.log('Avatar image loaded:', profile?.avatar)}
+                    onError={(e) => {
+                      console.error('Avatar image failed to load:', profile?.avatar);
+                      (e.target as HTMLImageElement).src = avatar1;
+                    }}
                   />
                 </div>
               </div>
@@ -239,6 +360,7 @@ const Profile = () => {
                 variant="glow"
                 size="icon-sm"
                 className="absolute bottom-0 right-0"
+                onClick={handleEditProfile}
               >
                 <Edit2 className="w-4 h-4" />
               </Button>
@@ -304,6 +426,10 @@ const Profile = () => {
             <TabsTrigger value="posts" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Grid3X3 className="w-3 h-3" />
               Posts
+            </TabsTrigger>
+            <TabsTrigger value="stories" className="flex items-center gap-1 text-xs flex-shrink-0">
+              <Camera className="w-3 h-3" />
+              Stories
             </TabsTrigger>
             <TabsTrigger value="saved" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Bookmark className="w-3 h-3" />
@@ -380,6 +506,69 @@ const Profile = () => {
                         <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
                           <div className="w-0 h-0 border-l-3 border-l-white border-t-2 border-t-transparent border-b-2 border-b-transparent ml-0.5" />
                         </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.section>
+          </TabsContent>
+
+          <TabsContent value="stories" className="mt-6">
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="px-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">My Stories</h3>
+                </div>
+              </div>
+              {stories.length === 0 ? (
+                <div className="text-center py-12">
+                  <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No stories yet</h3>
+                  <p className="text-muted-foreground">Create your first story to share with friends!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {stories.map((story, index) => (
+                    <motion.div
+                      key={story._id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5 + index * 0.05 }}
+                      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                    >
+                      <img
+                        src={story.mediaUrl}
+                        alt={story.caption || 'Story'}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+
+                      {/* Story type indicator */}
+                      <div className="absolute top-2 left-2 bg-black/50 rounded-full px-2 py-1">
+                        {story.contentType === 'video' ? (
+                          <Camera className="w-4 h-4 text-white" />
+                        ) : (
+                          <Image className="w-4 h-4 text-white" />
+                        )}
+                      </div>
+
+                      {/* Views */}
+                      <div className="absolute bottom-2 right-2 bg-black/50 rounded-full px-2 py-1 flex items-center gap-1">
+                        <Eye className="w-3 h-3 text-white" />
+                        <span className="text-xs text-white">{story.viewsCount || 0}</span>
+                      </div>
+
+                      {/* Duration/Time */}
+                      <div className="absolute top-2 right-2 bg-black/50 rounded-full px-2 py-1">
+                        <span className="text-xs text-white">
+                          {story.contentType === 'video' && story.duration ? `${Math.floor(story.duration / 60)}:${(story.duration % 60).toString().padStart(2, '0')}` : '24h'}
+                        </span>
                       </div>
                     </motion.div>
                   ))}

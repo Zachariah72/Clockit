@@ -115,6 +115,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       });
 
       audioRef.current.addEventListener('ended', () => {
+        console.log('Audio track ended, playbackSource:', state.playbackSource, 'calling handleTrackEnd');
         handleTrackEnd();
       });
 
@@ -148,11 +149,13 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
 
   // Sync Spotify player state
   useEffect(() => {
+    console.log('Syncing Spotify player state, playbackSource:', state.playbackSource, 'spotifyPlayer.isReady:', spotifyPlayer.isReady);
     if (spotifyPlayer.isReady !== state.spotifyPlayerReady) {
       setState(prev => ({ ...prev, spotifyPlayerReady: spotifyPlayer.isReady }));
     }
 
     if (state.playbackSource === 'spotify' && spotifyPlayer.currentTrack) {
+      console.log('Updating state from Spotify player');
       setState(prev => ({
         ...prev,
         currentTrack: {
@@ -174,16 +177,41 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   }, [spotifyPlayer.isReady, spotifyPlayer.currentTrack, spotifyPlayer.isPlaying, spotifyPlayer.position, spotifyPlayer.duration, state.playbackSource]);
 
   const handleTrackEnd = () => {
+    console.log('handleTrackEnd called, repeatMode:', state.repeatMode, 'currentIndex:', state.currentIndex, 'playlistLength:', state.playlist.length);
+
+    // If no playlist, stop playback
+    if (state.playlist.length === 0) {
+      console.log('No playlist, stopping playback');
+      setState(prev => ({ ...prev, isPlaying: false }));
+      return;
+    }
+
+    // Ensure currentIndex is valid
+    let validIndex = state.currentIndex;
+    if (validIndex < 0 || validIndex >= state.playlist.length) {
+      console.warn('Invalid currentIndex, resetting to 0');
+      validIndex = 0;
+      setState(prev => ({ ...prev, currentIndex: validIndex }));
+    }
+
     if (state.repeatMode === 'one') {
+      console.log('Repeating current track');
       // Replay current track
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play();
       }
-    } else if (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1) {
+    } else if (state.repeatMode === 'all') {
+      console.log('Repeat all mode, playing next');
+      // Always play next in repeat all mode
+      next();
+    } else if (validIndex < state.playlist.length - 1) {
+      console.log('Playing next track');
+      // Play next track if available
       next();
     } else {
-      // Stop playback
+      console.log('End of playlist, stopping playback');
+      // End of playlist - stop playback cleanly
       setState(prev => ({ ...prev, isPlaying: false }));
     }
   };
@@ -225,7 +253,9 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
         if (state.repeatMode === 'all') {
           nextIndex = 0;
         } else {
-          return; // End of playlist
+          // End of playlist - stop playback without navigation
+          setState(prev => ({ ...prev, isPlaying: false }));
+          return;
         }
       }
 
@@ -396,7 +426,13 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       // Set up action handlers
       navigator.mediaSession.setActionHandler('play', play);
       navigator.mediaSession.setActionHandler('pause', pause);
-      navigator.mediaSession.setActionHandler('nexttrack', next);
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        // Only call next if there are actually more tracks to play
+        if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
+          next();
+        }
+        // If no more tracks, do nothing to prevent navigation
+      });
       navigator.mediaSession.setActionHandler('previoustrack', previous);
       navigator.mediaSession.setActionHandler('seekto', (details) => {
         if (details.seekTime) {
@@ -409,11 +445,16 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
 
       // Set position state if duration is available
       if (state.currentTrack.duration && state.currentTrack.duration > 0) {
-        navigator.mediaSession.setPositionState({
-          duration: state.currentTrack.duration,
-          playbackRate: 1,
-          position: state.currentTime
-        });
+        try {
+          const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
+          navigator.mediaSession.setPositionState({
+            duration: state.currentTrack.duration,
+            playbackRate: 1,
+            position: clampedPosition
+          });
+        } catch (error) {
+          console.warn('Failed to set media session position state:', error);
+        }
       }
     }
   }, [state.currentTrack, state.isPlaying, state.currentTime]);

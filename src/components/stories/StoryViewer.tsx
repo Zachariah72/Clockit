@@ -1,57 +1,38 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Send, ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { X, Heart, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import avatar1 from "@/assets/avatar-1.jpg";
-import avatar2 from "@/assets/avatar-2.jpg";
-import avatar3 from "@/assets/avatar-3.jpg";
-import heroMusic from "@/assets/hero-music.jpg";
-import album1 from "@/assets/album-1.jpg";
-import album2 from "@/assets/album-2.jpg";
 
 interface StoryViewerProps {
   isOpen: boolean;
   onClose: () => void;
   initialStoryId?: string;
+  stories: any[];
   onStoryViewed?: (storyId: string) => void;
 }
 
-const mockStoryData = [
-  {
-    id: "1",
-    username: "Sarah",
-    avatar: avatar1,
-    image: heroMusic,
-    timestamp: "2h ago",
-    streak: 15,
-  },
-  {
-    id: "2",
-    username: "Mike",
-    avatar: avatar2,
-    image: album1,
-    timestamp: "4h ago",
-    streak: 8,
-  },
-  {
-    id: "3",
-    username: "Alex",
-    avatar: avatar3,
-    image: album2,
-    timestamp: "6h ago",
-    streak: 23,
-  },
-];
+interface Story {
+  id: string;
+  username: string;
+  image: string;
+  hasUnseenStory: boolean;
+}
 
-export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: StoryViewerProps) => {
+export const StoryViewer = ({ isOpen, onClose, initialStoryId, stories, onStoryViewed }: StoryViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const currentStory = mockStoryData[currentIndex];
+  // Use real stories or empty array if none
+  const currentStory = stories[currentIndex] || null;
 
   useEffect(() => {
-    if (!isOpen || isPaused) return;
+    setIsLoading(true);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (!isOpen || !currentStory || isPaused) return;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -59,7 +40,7 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
           // Mark current story as viewed
           onStoryViewed?.(currentStory.id);
 
-          if (currentIndex < mockStoryData.length - 1) {
+          if (currentIndex < stories.length - 1) {
             setCurrentIndex((i) => i + 1);
             return 0;
           } else {
@@ -72,11 +53,14 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isOpen, isPaused, currentIndex, onClose]);
+  }, [isOpen, isPaused, currentIndex, stories, onClose, currentStory, onStoryViewed]);
 
   useEffect(() => {
     setProgress(0);
   }, [currentIndex]);
+
+  // Don't render if no stories
+  if (!isOpen || !currentStory) return null;
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -86,7 +70,7 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
   };
 
   const handleNext = () => {
-    if (currentIndex < mockStoryData.length - 1) {
+    if (currentIndex < stories.length - 1) {
       setCurrentIndex((i) => i + 1);
       setProgress(0);
     } else {
@@ -105,7 +89,7 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
         >
           {/* Progress bars */}
           <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
-            {mockStoryData.map((_, index) => (
+            {stories.map((_, index) => (
               <div key={index} className="flex-1 h-0.5 bg-muted rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-foreground rounded-full"
@@ -127,23 +111,19 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
           {/* Header */}
           <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-10">
             <div className="flex items-center gap-3">
-              <img
-                src={currentStory.avatar}
-                alt={currentStory.username}
-                className="w-10 h-10 rounded-full object-cover border-2 border-primary"
-              />
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">
+                  {currentStory.username.charAt(0).toUpperCase()}
+                </span>
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">
                     {currentStory.username}
                   </span>
-                  <div className="flex items-center gap-1 text-secondary">
-                    <Flame className="w-4 h-4 fill-current" />
-                    <span className="text-xs font-bold">{currentStory.streak}</span>
-                  </div>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {currentStory.timestamp}
+                  Just now
                 </span>
               </div>
             </div>
@@ -154,16 +134,26 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
 
           {/* Story image */}
           <div
-            className="w-full h-full"
+            className="w-full h-full flex items-center justify-center bg-muted"
             onMouseDown={() => setIsPaused(true)}
             onMouseUp={() => setIsPaused(false)}
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
           >
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+              </div>
+            )}
             <img
               src={currentStory.image}
               alt="Story"
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${isLoading ? 'hidden' : ''}`}
+              onLoad={() => setIsLoading(false)}
+              onError={(e) => {
+                console.error('Failed to load story image:', currentStory.image);
+                setIsLoading(false);
+              }}
             />
           </div>
 
@@ -186,7 +176,7 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, onStoryViewed }: 
               <ChevronLeft className="w-6 h-6" />
             </button>
           )}
-          {currentIndex < mockStoryData.length - 1 && (
+          {currentIndex < stories.length - 1 && (
             <button
               onClick={handleNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/30 backdrop-blur-sm"

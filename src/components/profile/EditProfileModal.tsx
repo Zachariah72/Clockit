@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Camera as CameraComponent } from "@/components/Camera";
+import { profileApi } from "@/services/profileApi";
+import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 
 interface EditProfileModalProps {
@@ -22,57 +24,138 @@ interface EditProfileModalProps {
 
 export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: EditProfileModalProps) => {
   const [profile, setProfile] = useState(currentProfile);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewTime, setAvatarPreviewTime] = useState(Date.now());
   const [isLoading, setIsLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    onSave(profile);
-    setIsLoading(false);
-    onClose();
+    
+    try {
+      let newAvatarUrl = profile.avatar;
+      
+      // Upload avatar if a new file was selected
+      if (avatarFile) {
+        console.log('=== UPLOADING AVATAR ===');
+        console.log('File name:', avatarFile.name);
+        console.log('File type:', avatarFile.type);
+        console.log('File size:', avatarFile.size);
+        console.log('Calling profileApi.uploadAvatar...');
+        
+        const result = await profileApi.uploadAvatar(avatarFile);
+        console.log('Avatar upload result:', JSON.stringify(result, null, 2));
+        newAvatarUrl = result.avatar;
+        console.log('New avatar URL:', newAvatarUrl);
+        console.log('=== UPLOAD COMPLETE ===');
+      } else {
+        console.log('No avatar file selected, keeping existing avatar:', newAvatarUrl);
+      }
+      
+      // Update text fields
+      console.log('Updating profile fields...');
+      await profileApi.updateProfile({
+        username: profile.username,
+        displayName: profile.displayName,
+        bio: profile.bio,
+      });
+      
+      // Return updated profile with new avatar URL
+      console.log('Calling onSave with updated profile...');
+      onSave({ ...profile, avatar: newAvatarUrl });
+      console.log('Profile saved successfully');
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      console.error('Error message:', error.message);
+      console.error('Error status:', error.status);
+      toast.error("Failed to update profile: " + (error.message || 'Unknown error'));
+    } finally {
+      setIsLoading(false);
+      onClose();
+    }
   };
 
-  const handleAvatarChange = () => {
-    setShowAvatarOptions(true);
+  const handleAvatarChange = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Avatar change button clicked');
+    setShowAvatarOptions(!showAvatarOptions);
   };
 
   const handleCameraCapture = (imageData: string, file: File) => {
-    // Convert image to data URL for preview
     setProfile({ ...profile, avatar: imageData });
+    setAvatarFile(file);
+    setAvatarPreviewTime(Date.now());
     setShowCamera(false);
     setShowAvatarOptions(false);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('File selected:', file?.name, 'type:', file?.type);
     if (file) {
+      console.log('Starting FileReader...');
       const reader = new FileReader();
       reader.onload = (e) => {
+        console.log('FileReader completed, result length:', e.target?.result?.toString().length);
+        console.log('Updating state...');
         setProfile({ ...profile, avatar: e.target?.result as string });
+        setAvatarFile(file);
+        setAvatarPreviewTime(Date.now());
         setShowAvatarOptions(false);
+        console.log('State updated');
+      };
+      reader.onerror = (e) => {
+        console.error('FileReader error:', e);
+      };
+      reader.onprogress = (e) => {
+        console.log('FileReader progress:', e.loaded, '/', e.total);
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const handleTakePhoto = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Take Photo clicked');
+    setShowCamera(true);
+    setShowAvatarOptions(false);
+  };
+
+  const handleChoosePhoto = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Choose Photo clicked');
+    const fileInput = document.getElementById('avatar-file');
+    if (fileInput) {
+      console.log('Found file input, triggering click');
+      fileInput.click();
+    } else {
+      console.error('File input not found!');
+    }
+  };
+
   return (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={onClose}
-        >
+      {isOpen && !showCamera && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-md bg-background rounded-2xl p-6"
+            className="relative w-full max-w-md bg-background rounded-2xl p-6 m-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -83,58 +166,53 @@ export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: Ed
             </div>
 
             {/* Avatar Section */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-muted p-1">
+            <div className="flex flex-col items-center mb-6 relative">
+              <div className="relative group cursor-pointer">
+                <div className="w-24 h-24 rounded-full bg-muted p-1 overflow-hidden">
                   <img
-                    src={profile.avatar}
+                    src={profile.avatar ? `${profile.avatar}?t=${avatarPreviewTime}` : avatar1}
                     alt="Profile"
-                    className="w-full h-full object-cover rounded-full"
+                    className="w-full h-full object-cover rounded-full pointer-events-none"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = avatar1;
+                    }}
                   />
                 </div>
-                <Button
-                  variant="glow"
-                  size="icon-sm"
-                  className="absolute bottom-0 right-0"
+                <button
+                  type="button"
                   onClick={handleAvatarChange}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg hover:bg-primary/90 transition-colors cursor-pointer z-20"
                 >
                   <Camera className="w-4 h-4" />
-                </Button>
+                </button>
               </div>
               <p className="text-sm text-muted-foreground mt-2">Tap to change photo</p>
 
-              {/* Avatar Options */}
+              {/* Avatar Options Dropdown */}
               <AnimatePresence>
                 {showAvatarOptions && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="absolute top-full mt-2 z-10 bg-background border border-border rounded-lg p-3 shadow-lg"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full mt-2 bg-background border border-border rounded-lg p-2 shadow-lg min-w-36 z-30"
                   >
-                    <div className="flex flex-col gap-2 min-w-32">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowCamera(true);
-                          setShowAvatarOptions(false);
-                        }}
-                        className="justify-start gap-2"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Take Photo
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => document.getElementById('avatar-file')?.click()}
-                        className="justify-start gap-2"
-                      >
-                        <Image className="w-4 h-4" />
-                        Choose Photo
-                      </Button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTakePhoto}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted rounded-md cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Take Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleChoosePhoto}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted rounded-md cursor-pointer"
+                    >
+                      <Image className="w-4 h-4" />
+                      Choose Photo
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -149,82 +227,73 @@ export const EditProfileModal = ({ isOpen, onClose, currentProfile, onSave }: Ed
               />
             </div>
 
-            {/* Form Fields */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={profile.username}
-                  onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                  placeholder="Enter username"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  value={profile.displayName}
-                  onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
-                  placeholder="Enter display name"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {profile.bio.length}/150 characters
-                </p>
-              </div>
+            {/* Username */}
+            <div className="mb-4">
+              <Label htmlFor="username" className="text-foreground">Username</Label>
+              <Input
+                id="username"
+                value={profile.username}
+                onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+                placeholder="Enter username"
+                className="mt-1"
+              />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={onClose} className="flex-1">
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={isLoading} className="flex-1">
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Save className="w-4 h-4" />
-                    Save Changes
-                  </div>
-                )}
-              </Button>
+            {/* Display Name */}
+            <div className="mb-4">
+              <Label htmlFor="displayName" className="text-foreground">Display Name</Label>
+              <Input
+                id="displayName"
+                value={profile.displayName}
+                onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                placeholder="Enter display name"
+                className="mt-1"
+              />
             </div>
 
-            {/* Camera Component */}
-            <AnimatePresence>
-              {showCamera && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-background rounded-2xl overflow-hidden"
-                >
-                  <CameraComponent
-                    onCapture={handleCameraCapture}
-                    onClose={() => setShowCamera(false)}
-                    className="w-full h-full"
-                  />
-                </motion.div>
+            {/* Bio */}
+            <div className="mb-6">
+              <Label htmlFor="bio" className="text-foreground">Bio</Label>
+              <Textarea
+                id="bio"
+                value={profile.bio}
+                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                placeholder="Tell us about yourself"
+                className="mt-1 resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* Save Button */}
+            <Button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="w-full cursor-pointer"
+            >
+              {isLoading ? (
+                <>
+                  <Save className="w-4 h-4 mr-2 animate-pulse" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
               )}
-            </AnimatePresence>
+            </Button>
           </motion.div>
-        </motion.div>
+        </div>
+      )}
+
+      {/* Camera Component */}
+      {showCamera && (
+        <div className="fixed inset-0 z-[100]">
+          <CameraComponent
+            onCapture={handleCameraCapture}
+            onClose={() => setShowCamera(false)}
+          />
+        </div>
       )}
     </AnimatePresence>
   );

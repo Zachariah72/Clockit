@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from "react";
-import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
@@ -12,15 +11,19 @@ interface Profile {
   streak_count: number;
 }
 
+interface User {
+  id: string;
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
+  session: any | null;
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, username: string, phone?: string, avatar?: File) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
-  signInWithOAuth: (provider: 'google' | 'apple' | 'facebook') => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider: 'google' | 'apple' | 'facebook' | 'spotify') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -28,105 +31,69 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (data) {
-      setProfile(data as Profile);
-    }
-  };
-
-  const createBackendToken = async (email: string) => {
-    try {
-      // Check if user already exists in backend
-      const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'POST',
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // Verify token with backend
+      fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password: 'supabase_user_temp_password' // Temporary password for Supabase users
-        }),
-      });
-
-      if (loginResponse.ok) {
-        const data = await loginResponse.json();
-        localStorage.setItem('auth_token', data.token);
-        console.log('Backend token created for existing user:', email);
-        return;
-      }
-
-      // If login fails, try to register (this will fail if user exists)
-      const username = email.split('@')[0]; // Use email prefix as username
-      const registerResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password: 'supabase_user_temp_password'
-        }),
-      });
-
-      if (registerResponse.ok) {
-        const data = await registerResponse.json();
-        localStorage.setItem('auth_token', data.token);
-        console.log('Backend account created for:', email);
-      } else {
-        console.warn('Failed to create backend account for:', email);
-      }
-    } catch (error) {
-      console.warn('Failed to create backend token:', error);
+          'Authorization': `Bearer ${token}`
+        }
+      }).then(res => res.json()).then(data => {
+        if (data.user) {
+          setUser({ email: data.user.email, id: data.user.id });
+        }
+      }).catch(() => {
+        localStorage.removeItem('auth_token');
+      }).finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetch with setTimeout to avoid deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-
-          // Ensure backend token exists for API calls
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session ? { id: session.user.id, email: session.user.email } : null);
+      
+      // If session exists, ensure backend token is saved
+      if (session && session.user) {
+        try {
+          // Check if we already have a token
           if (!localStorage.getItem('auth_token')) {
-            // Try to create backend token if user exists
-            createBackendToken(session.user.email || '');
+            // Get backend token for OAuth user
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/oauth-verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                email: session.user.email,
+                userId: session.user.id
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data.token) {
+                localStorage.setItem('auth_token', data.token);
+                console.log('✅ Backend token saved for OAuth user');
+              }
+            }
           }
-        } else {
-          setProfile(null);
-          localStorage.removeItem('auth_token');
+        } catch (e) {
+          console.warn('Failed to create backend token for OAuth user:', e);
         }
-        setLoading(false);
       }
-    );
-
-    // THEN check for existing session
+    });
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
+      setUser(session ? { id: session.user.id, email: session.user.email } : null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +14,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const PWAInstallPrompt = () => {
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -26,11 +28,11 @@ export const PWAInstallPrompt = () => {
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-
-      // Show prompt immediately
-      setShowPrompt(true);
+      // Temporarily disable custom PWA prompt to avoid browser warnings
+      // TODO: Re-enable with proper event handling
+      // e.preventDefault();
+      // setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // setShowPrompt(true);
     };
 
     // Listen for successful installation
