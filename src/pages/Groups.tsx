@@ -120,6 +120,7 @@ const Groups = () => {
   useEffect(() => {
     const fetchDiscoverGroups = async () => {
       try {
+        const apiUrl = getApiUrl();
         const token = localStorage.getItem('auth_token');
         const response = await fetch(`${apiUrl}/listening-groups/discover`, {
           headers: {
@@ -147,6 +148,7 @@ const Groups = () => {
 
     setJoiningGroup(groupId);
     try {
+      const apiUrl = getApiUrl();
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${apiUrl}/listening-groups/${groupId}/join`, {
         method: 'POST',
@@ -180,6 +182,7 @@ const Groups = () => {
 
     setIsCreating(true);
     try {
+      const apiUrl = getApiUrl();
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${apiUrl}/listening-groups`, {
         method: 'POST',
