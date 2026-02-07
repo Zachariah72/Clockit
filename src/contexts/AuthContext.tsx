@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem('auth_token');
     if (token) {
       // Verify token with backend
-      fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
+      fetch(`${import.meta.env.VITE_API_URL}/auth/verify`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Check if we already have a token
           if (!localStorage.getItem('auth_token')) {
             // Get backend token for OAuth user
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/oauth-verify`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/oauth-verify`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // If Supabase signup successful, also create backend account
     if (!error) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // If Supabase login successful, also create backend token
     if (!error) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
