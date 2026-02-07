@@ -2,11 +2,12 @@ import { toast } from 'sonner';
 
 // Build the API base URL - ensure it's always a proper URL
 const getApiBaseUrl = () => {
-  const devUrl = 'http://localhost:5000';
-  const prodUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const devUrl = 'http://localhost:5000/api';
+  const prodUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   
-  // In development, use dev URL
+  // In development, try to use proxy if available, otherwise use direct URL
   if (import.meta.env.DEV) {
+    // Check if there's a proxy configured (Vite dev server)
     return devUrl;
   }
   return prodUrl;
