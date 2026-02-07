@@ -1,7 +1,9 @@
 // Centralized API URL helper
-// Uses VITE_API_URL environment variable, falls back to Render URL for production
+// IMPORTANT: VITE_API_URL should include /api/ prefix because the frontend code
+// has inconsistent endpoint patterns (some with /api/, some without)
+// Set VITE_API_URL = "https://your-backend.onrender.com/api" in Vercel
 export const getApiUrl = (): string => {
-  const url = import.meta.env.VITE_API_URL || 'https://clockit-gvm2.onrender.com';
+  const url = import.meta.env.VITE_API_URL || 'https://clockit-gvm2.onrender.com/api';
   console.log('API URL being used:', url);
   return url;
 };
