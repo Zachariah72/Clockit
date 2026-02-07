@@ -5,6 +5,35 @@ const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 
+// Cache for client credentials token
+let clientToken = null;
+let tokenExpiry = null;
+
+// Get client credentials token
+const getClientCredentialsToken = async () => {
+  if (clientToken && tokenExpiry && Date.now() < tokenExpiry) {
+    return clientToken;
+  }
+
+  try {
+    const response = await axios.post('https://accounts.spotify.com/api/token', querystring.stringify({
+      grant_type: 'client_credentials'
+    }), {
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    clientToken = response.data.access_token;
+    tokenExpiry = Date.now() + (response.data.expires_in * 1000);
+    return clientToken;
+  } catch (error) {
+    console.error('Client credentials error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Get Spotify authorization URL
 const getSpotifyAuthUrl = (req, res) => {
   const scope = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing streaming playlist-read-private playlist-read-collaborative';
@@ -108,6 +137,30 @@ const searchTracks = async (req, res) => {
 
   } catch (error) {
     console.error('Search error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to search tracks' });
+  }
+};
+
+// Search tracks with client credentials (for public access)
+const searchTracksPublic = async (req, res) => {
+  const { q, limit = 50 } = req.query;
+
+  try {
+    const token = await getClientCredentialsToken();
+    const response = await axios.get(`https://api.spotify.com/v1/search?${querystring.stringify({
+      q: q,
+      type: 'track',
+      limit: limit
+    })}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data);
+
+  } catch (error) {
+    console.error('Public search error:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to search tracks' });
   }
 };
@@ -242,6 +295,7 @@ module.exports = {
   handleSpotifyCallback,
   refreshSpotifyToken,
   searchTracks,
+  searchTracksPublic,
   getUserPlaylists,
   getPlaylistTracks,
   getTopTracks,

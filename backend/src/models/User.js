@@ -7,11 +7,12 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   password: { type: String }, // Optional for OAuth users
   providers: [{
-    provider: { type: String, enum: ['google', 'facebook', 'apple'], required: true },
+    provider: { type: String, enum: ['google', 'facebook', 'apple', 'supabase'], required: true },
     providerId: { type: String, required: true },
     accessToken: { type: String },
     refreshToken: { type: String }
   }],
+  supabaseId: { type: String }, // For Supabase OAuth users
   resetToken: String,
   resetTokenExpiry: Date,
 

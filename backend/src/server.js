@@ -5,6 +5,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const UserPresence = require('./models/UserPresence');
 
@@ -12,7 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["https://clockit-sage.vercel.app", "https://clockit-gvm2.onrender.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+    origin: true,
     methods: ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
@@ -21,12 +22,30 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(cors({
-  origin: ["https://clockit-sage.vercel.app", "https://clockit-gvm2.onrender.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      "https://clockit-sage.vercel.app", 
+      "https://clockit-gvm2.onrender.com", 
+      "http://localhost:3000", 
+      "http://localhost:5173", 
+      "http://localhost:8080"
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '10mb' }));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connected'))
@@ -35,6 +54,25 @@ mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connecte
 // Basic route
 app.get('/', (req, res) => {
   res.send('API is running');
+});
+
+// Static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../../backend/uploads')));
+app.use('/uploads/avatars', express.static(path.join(__dirname, '../../backend/src/uploads/avatars')));
+app.use('/uploads/stories', express.static(path.join(__dirname, '../../backend/uploads/stories')));
+// Placeholder image route - with input sanitization
+app.get('/api/placeholder/:width/:height', (req, res) => {
+  // Sanitize width and height to prevent XSS
+  const width = parseInt(req.params.width, 10) || 56;
+  const height = parseInt(req.params.height, 10) || 56;
+  
+  // Limit size to prevent abuse
+  const safeWidth = Math.min(Math.max(1, width), 500);
+  const safeHeight = Math.min(Math.max(1, height), 500);
+  
+  const svg = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#374151"/><text x="50%" y="50%" font-family="Arial" font-size="${Math.min(14, safeWidth/4)}" fill="#9CA3AF" text-anchor="middle" dy=".3em">${safeWidth}x${safeHeight}</text></svg>`;
+  res.set('Content-Type', 'image/svg+xml');
+  res.send(svg);
 });
 
 // Routes
@@ -56,8 +94,9 @@ app.use('/api/listening', require('./routes/listening'));
 app.use('/api/listening-groups', require('./routes/listeningGroups'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/profile', require('./routes/profile'));
-app.use('/api/spotify', require('./routes/spotify'));
+app.use('/api/soundcloud', require('./routes/soundcloud'));
 app.use('/api/lastfm', require('./routes/lastfm'));
+app.use('/api/tiktok', require('./routes/tiktok'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));

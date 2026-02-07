@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const ListeningGroup = require('../models/ListeningGroup');
 const auth = require('../middlewares/auth');
 
@@ -7,10 +8,11 @@ const router = express.Router();
 // Get user's listening groups
 router.get('/', auth, async (req, res) => {
   try {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
     const groups = await ListeningGroup.find({
       $or: [
-        { creator: req.user.id },
-        { members: req.user.id }
+        { creator: userId },
+        { members: userId }
       ]
     }).populate('creator').populate('members').populate('currentSong');
     res.json(groups);
@@ -22,13 +24,14 @@ router.get('/', auth, async (req, res) => {
 // Create listening group
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, description, isPublic } = req.body;
+    const { name, description, isPublic, isPrivate } = req.body;
+    const userId = new mongoose.Types.ObjectId(req.user.id);
     const group = new ListeningGroup({
       name,
       description,
-      creator: req.user.id,
-      members: [req.user.id],
-      isPublic: isPublic !== undefined ? isPublic : true
+      creator: userId,
+      members: [userId],
+      isPublic: isPublic !== undefined ? isPublic : (isPrivate !== undefined ? !isPrivate : true)
     });
     await group.save();
     await group.populate('creator');
@@ -41,15 +44,57 @@ router.post('/', auth, async (req, res) => {
 // Join listening group
 router.post('/:id/join', auth, async (req, res) => {
   try {
-    const group = await ListeningGroup.findById(req.params.id);
-    if (!group) return res.status(404).json({ message: 'Group not found' });
-
-    if (!group.members.includes(req.user.id)) {
-      group.members.push(req.user.id);
+    let group;
+    try {
+      group = await ListeningGroup.findById(req.params.id);
+    } catch (findError) {
+      // If ID is invalid, treat as new group
+      group = null;
+    }
+    
+    // If group doesn't exist, create a new one
+    if (!group) {
+      group = new ListeningGroup({
+        name: req.body.groupName || 'New Group',
+        description: req.body.description || 'A listening group',
+        creator: req.user.id,
+        members: [req.user.id],
+        isPublic: true
+      });
       await group.save();
+    } else {
+      // Convert user.id to ObjectId for proper comparison
+      const userId = new mongoose.Types.ObjectId(req.user.id);
+      const isAlreadyMember = group.members.some(
+        (member) => member.toString() === userId.toString()
+      );
+      
+      if (!isAlreadyMember) {
+        group.members.push(req.user.id);
+        await group.save();
+      }
     }
 
-    res.json({ message: 'Joined group' });
+    res.json({ message: 'Joined group', group });
+  } catch (error) {
+    console.error('Join group error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Discover public groups (not created by user, not already joined)
+router.get('/discover', auth, async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const groups = await ListeningGroup.find({
+      isPublic: true,
+      creator: { $ne: userId },
+      members: { $ne: userId }
+    })
+      .populate('creator', 'username')
+      .limit(20)
+      .sort({ createdAt: -1 });
+    res.json(groups);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

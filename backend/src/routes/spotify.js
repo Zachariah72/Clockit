@@ -5,6 +5,7 @@ const {
   handleSpotifyCallback,
   refreshSpotifyToken,
   searchTracks,
+  searchTracksPublic,
   getUserPlaylists,
   getPlaylistTracks,
   getTopTracks,
@@ -23,6 +24,9 @@ router.post('/refresh-token', refreshSpotifyToken);
 
 // Search tracks
 router.post('/search', searchTracks);
+
+// Public search tracks (no auth required)
+router.get('/search-public', searchTracksPublic);
 
 // Get user playlists
 router.post('/playlists', getUserPlaylists);
