@@ -25,7 +25,7 @@
       "url": "/snap",
       "icons": [
         {
-          "src": "pwa-192x192.svg",
+          "src": "/pwa-192x192.svg",
           "sizes": "192x192"
         }
       ]
@@ -37,7 +37,7 @@
       "url": "/music",
       "icons": [
         {
-          "src": "pwa-192x192.svg",
+          "src": "/pwa-192x192.svg",
           "sizes": "192x192"
         }
       ]
@@ -49,7 +49,7 @@
       "url": "/chat",
       "icons": [
         {
-          "src": "pwa-192x192.svg",
+          "src": "/pwa-192x192.svg",
           "sizes": "192x192"
         }
       ]
@@ -57,31 +57,31 @@
   ],
   "icons": [
     {
-      "src": "pwa-192x192.svg",
+      "src": "/pwa-192x192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "pwa-512x512.svg",
+      "src": "/pwa-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "pwa-192x192.png",
+      "src": "/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "pwa-512x512.png",
+      "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "favicon.ico",
+      "src": "/favicon.ico",
       "sizes": "48x48",
       "type": "image/x-icon",
       "purpose": "any"
@@ -89,14 +89,14 @@
   ],
   "screenshots": [
     {
-      "src": "screenshot-mobile.png",
+      "src": "/screenshot-mobile.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Clockit mobile interface"
     },
     {
-      "src": "screenshot-desktop.png",
+      "src": "/screenshot-desktop.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
