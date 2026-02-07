@@ -75,7 +75,7 @@ const Snap = () => {
     setIsLoadingStories(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/stories', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/stories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
