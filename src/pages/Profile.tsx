@@ -718,7 +718,7 @@ const Profile = () => {
               transition={{ delay: 0.4 }}
               className="px-4"
             >
-              <Insights userId="user123" /> {/* TODO: Get from auth context */}
+              <Insights userId={user?.id || undefined} />
             </motion.section>
           </TabsContent>
 

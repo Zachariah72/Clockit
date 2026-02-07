@@ -34,14 +34,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
 
 interface InsightsProps {
-  userId: string;
+  userId?: string;
 }
 
-export const Insights = ({ userId }: InsightsProps) => {
+export const Insights = ({ userId: propUserId }: InsightsProps) => {
+  const { user, session } = useAuth();
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [stats, setStats] = useState<any>(null);
   const [contentAnalytics, setContentAnalytics] = useState<any>(null);
@@ -49,23 +51,42 @@ export const Insights = ({ userId }: InsightsProps) => {
   const [activitySummary, setActivitySummary] = useState<any>(null);
   const [musicInsights, setMusicInsights] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use prop userId first, then auth user, then skip
+  const effectiveUserId = propUserId || user?.id;
 
   useEffect(() => {
     fetchAnalytics();
-  }, [period]);
+  }, [period, effectiveUserId]);
 
   const fetchAnalytics = async () => {
+    if (!effectiveUserId) {
+      setLoading(false);
+      setError("No user ID available");
+      return;
+    }
+    
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const [statsRes, contentRes, audienceRes, activityRes, musicRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/stats/${userId}?period=${period}`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/content/${userId}?period=${period}`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/audience/${userId}`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/activity/${userId}?period=${period}`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/music/${userId}?period=${period}`)
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/stats/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/content/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/audience/${effectiveUserId}`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/activity/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/music/${effectiveUserId}?period=${period}`, { headers })
       ]);
 
-      const [statsData, contentData, audienceData, activityData, musicData] = await Promise.all([
+      // Check for errors but don't fail if some endpoints return 401
+      const [statsData, contentData, audienceData, activityData, musicData] = await Promise.allSettled([
         statsRes.json(),
         contentRes.json(),
         audienceRes.json(),
@@ -73,13 +94,14 @@ export const Insights = ({ userId }: InsightsProps) => {
         musicRes.json()
       ]);
 
-      setStats(statsData);
-      setContentAnalytics(contentData);
-      setAudienceInsights(audienceData);
-      setActivitySummary(activityData);
-      setMusicInsights(musicData);
+      if (statsRes.ok) setStats(statsData.value);
+      if (contentRes.ok) setContentAnalytics(contentData.value);
+      if (audienceRes.ok) setAudienceInsights(audienceData.value);
+      if (activityRes.ok) setActivitySummary(activityData.value);
+      if (musicRes.ok) setMusicInsights(musicData.value);
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      setError('Failed to load analytics');
     } finally {
       setLoading(false);
     }
@@ -89,6 +111,15 @@ export const Insights = ({ userId }: InsightsProps) => {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error || !effectiveUserId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>{error || "Sign in to view insights"}</p>
       </div>
     );
   }
