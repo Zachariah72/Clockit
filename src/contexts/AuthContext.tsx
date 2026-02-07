@@ -64,28 +64,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // If session exists, ensure backend token is saved
       if (session && session.user) {
+        const existingToken = localStorage.getItem('auth_token');
+        console.log('Existing token:', existingToken ? 'yes' : 'no');
+        
         try {
-          // Check if we already have a token
-          if (!localStorage.getItem('auth_token')) {
-            // Get backend token for OAuth user
-            const response = await fetch(`${getApiUrl()}/auth/oauth-verify`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                email: session.user.email,
-                userId: session.user.id
-              })
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              if (data.token) {
-                localStorage.setItem('auth_token', data.token);
-                console.log('✅ Backend token saved for OAuth user');
-              }
+          // Always verify/refresh token for OAuth users
+          console.log('Calling /auth/oauth-verify...');
+          const response = await fetch(`${getApiUrl()}/auth/oauth-verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: session.user.email,
+              userId: session.user.id
+            })
+          });
+          
+          console.log('OAuth verify response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.token) {
+              localStorage.setItem('auth_token', data.token);
+              console.log('✅ Backend token saved for OAuth user');
             }
+          } else {
+            const error = await response.json();
+            console.error('OAuth verify failed:', error);
           }
         } catch (e) {
           console.warn('Failed to create backend token for OAuth user:', e);
