@@ -115,9 +115,9 @@ const Index = () => {
       formData.append('media', media);
       
       const token = localStorage.getItem('auth_token');
-      console.log('Uploading to:', `${import.meta.env.VITE_API_URL}/api/stories/upload`);
+      console.log('Uploading to:', `${import.meta.env.VITE_API_URL}/stories/upload`);
       
-      const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/stories/upload`, {
+      const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/stories/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -137,7 +137,7 @@ const Index = () => {
       console.log('Upload successful, data:', uploadData);
       
       // Step 2: Create the story
-      const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/stories`, {
+      const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/stories`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

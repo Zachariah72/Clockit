@@ -39,8 +39,8 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const syncThemeWithBackend = async (newTheme: Theme) => {
     try {
       const token = localStorage.getItem('auth_token');
-      if (token) {
-        await fetch('/api/theme', {
+      if (token && import.meta.env.VITE_API_URL) {
+        await fetch(`${import.meta.env.VITE_API_URL}/theme`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

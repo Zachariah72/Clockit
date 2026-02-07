@@ -90,7 +90,7 @@ const Groups = () => {
     const fetchGroups = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/listening-groups`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/listening-groups`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -119,7 +119,7 @@ const Groups = () => {
     const fetchDiscoverGroups = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/listening-groups/discover`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/listening-groups/discover`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
