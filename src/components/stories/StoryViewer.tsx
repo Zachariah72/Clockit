@@ -25,7 +25,7 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, stories, onStoryV
   const [isLoading, setIsLoading] = useState(true);
 
   // Use real stories or empty array if none
-  const currentStory = stories[currentIndex] || null;
+  const currentStory = (stories || [])[currentIndex] || null;
 
   useEffect(() => {
     setIsLoading(true);
