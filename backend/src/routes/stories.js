@@ -60,7 +60,9 @@ router.post('/upload', auth, upload.single('media'), async (req, res) => {
     console.log('File path:', req.file.path);
     
     // Use the API_URL environment variable or dynamically detect the current URL
-    const apiUrl = process.env.API_URL || `${req.protocol}://${req.get('host')}`;
+    // Check x-forwarded-proto for HTTPS behind Render proxy
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const apiUrl = process.env.API_URL || `${protocol}://${req.get('host')}`;
     const mediaUrl = `${apiUrl}/uploads/stories/${req.file.filename}`;
     console.log('Media URL:', mediaUrl);
     
