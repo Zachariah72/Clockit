@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { getApiUrl } from "@/utils/api";
 
 type Theme = "dark" | "light" | "black" | "teal";
 
@@ -39,8 +40,9 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const syncThemeWithBackend = async (newTheme: Theme) => {
     try {
       const token = localStorage.getItem('auth_token');
-      if (token && import.meta.env.VITE_API_URL) {
-        await fetch(`${import.meta.env.VITE_API_URL}/theme`, {
+      if (token) {
+        const apiUrl = getApiUrl();
+        await fetch(`${apiUrl}/theme`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

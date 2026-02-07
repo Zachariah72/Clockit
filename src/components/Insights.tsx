@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { getApiUrl } from "@/utils/api";
 import {
   BarChart3,
   TrendingUp,
@@ -77,12 +78,13 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
+      const apiUrl = getApiUrl();
       const [statsRes, contentRes, audienceRes, activityRes, musicRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/stats/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/content/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/audience/${effectiveUserId}`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/activity/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/analytics/music/${effectiveUserId}?period=${period}`, { headers })
+        fetch(`${apiUrl}/api/analytics/stats/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/api/analytics/content/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/api/analytics/audience/${effectiveUserId}`, { headers }),
+        fetch(`${apiUrl}/api/analytics/activity/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/api/analytics/music/${effectiveUserId}?period=${period}`, { headers })
       ]);
 
       // Check for errors but don't fail if some endpoints return 401

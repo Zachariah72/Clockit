@@ -12,6 +12,7 @@ import { StoryCreator } from "@/components/stories/StoryCreator";
 import { SongCard } from "@/components/music/SongCard";
 import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
 import { Layout } from "@/components/layout/Layout";
+import { getApiUrl } from "@/utils/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
@@ -115,9 +116,10 @@ const Index = () => {
       formData.append('media', media);
       
       const token = localStorage.getItem('auth_token');
-      console.log('Uploading to:', `${import.meta.env.VITE_API_URL}/stories/upload`);
+      const apiUrl = getApiUrl();
+      console.log('Uploading to:', `${apiUrl}/stories/upload`);
       
-      const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/stories/upload`, {
+      const uploadResponse = await fetch(`${apiUrl}/stories/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -137,7 +139,7 @@ const Index = () => {
       console.log('Upload successful, data:', uploadData);
       
       // Step 2: Create the story
-      const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/stories`, {
+      const createResponse = await fetch(`${apiUrl}/stories`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

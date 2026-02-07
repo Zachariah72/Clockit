@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
+import { getApiUrl } from "@/utils/api";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -89,8 +90,9 @@ const Groups = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
+        const apiUrl = getApiUrl();
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/listening-groups`, {
+        const response = await fetch(`${apiUrl}/listening-groups`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -119,7 +121,7 @@ const Groups = () => {
     const fetchDiscoverGroups = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/listening-groups/discover`, {
+        const response = await fetch(`${apiUrl}/listening-groups/discover`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -146,7 +148,7 @@ const Groups = () => {
     setJoiningGroup(groupId);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/listening-groups/${groupId}/join`, {
+      const response = await fetch(`${apiUrl}/listening-groups/${groupId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -179,7 +181,7 @@ const Groups = () => {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/listening-groups`, {
+      const response = await fetch(`${apiUrl}/listening-groups`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

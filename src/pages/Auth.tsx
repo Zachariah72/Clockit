@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getApiUrl } from "@/utils/api";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -377,7 +378,8 @@ const Auth = () => {
     const preferences = localStorage.getItem('onboardingPreferences');
     if (preferences && session?.access_token) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/users/onboarding`, {
+        const apiUrl = getApiUrl();
+        const response = await fetch(`${apiUrl}/users/onboarding`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { Camera as CameraComponent } from "@/components/Camera";
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getApiUrl } from "@/utils/api";
 
 const Snap = () => {
   const navigate = useNavigate();
@@ -75,7 +76,8 @@ const Snap = () => {
     setIsLoadingStories(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/stories`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/stories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
