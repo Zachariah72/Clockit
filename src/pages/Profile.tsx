@@ -226,6 +226,15 @@ const Profile = () => {
   const handleStatClick = async (action: string) => {
     switch (action) {
       case 'stories':
+        try {
+          console.log('Fetching stories for modal...');
+          const storiesRes = await profileApi.getStories();
+          console.log('Stories fetched for modal:', storiesRes);
+          setStories(storiesRes);
+        } catch (error) {
+          console.error('Failed to load stories:', error);
+          toast.error("Failed to load stories");
+        }
         setIsStoriesModalOpen(true);
         break;
       case 'followers':

@@ -229,6 +229,46 @@ The app includes PWA support for installation on devices:
    - Check audio file URLs
    - Verify CORS settings on backend
 
+5. **OAuth Sign-in Not Working (ERR_CONNECTION_REFUSED)**
+   - Ensure all redirect URLs are added to Supabase dashboard (see below)
+   - Add both development and production URLs to Supabase
+
+## 🔐 Supabase OAuth Configuration
+
+### Required Redirect URLs
+
+Add the following URLs to your Supabase project's **Authentication > Providers > OAuth Redirect URLs**:
+
+**Development:**
+- `http://localhost:5173/auth/callback`
+- `http://localhost:5173/`
+
+**Production (Vercel):**
+- `https://your-vercel-app.vercel.app/auth/callback`
+- `https://your-vercel-app.vercel.app/`
+
+### Steps to Configure:
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Select your project
+3. Navigate to **Authentication > Providers**
+4. Click on the OAuth provider (Google, Facebook, Apple)
+5. Add all redirect URLs in the **Redirect URLs** field (one per line):
+   ```
+   http://localhost:5173/auth/callback
+   http://localhost:5173/
+   https://your-vercel-domain.vercel.app/auth/callback
+   https://your-vercel-domain.vercel.app/
+   ```
+6. Save changes
+
+### Why This Fix Works:
+
+- Uses `window.location.origin` to dynamically determine the correct domain
+- Creates a dedicated `/auth/callback` route to handle OAuth redirects
+- Works seamlessly in both development (localhost) and production (Vercel)
+- No hardcoded URLs means automatic environment adaptation
+
 ## 🤝 Contributing
 
 1. Fork the repository

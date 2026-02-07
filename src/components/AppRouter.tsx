@@ -21,6 +21,7 @@ import Search from '@/pages/Search';
 import CameraTest from '@/pages/CameraTest';
 import Snap from '@/pages/Snap';
 import SpotifyCallback from '@/pages/SpotifyCallback';
+import AuthCallback from '@/pages/AuthCallback';
 import NotFound from '@/pages/NotFound';
 
 const AppRouter: React.FC = () => {
@@ -68,6 +69,7 @@ const AppRouter: React.FC = () => {
       {/* Public routes */}
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
 
       {/* Protected routes - only accessible when logged in */}
