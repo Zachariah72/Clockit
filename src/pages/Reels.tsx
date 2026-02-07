@@ -299,7 +299,8 @@ const Reels = () => {
     formData.append('title', title);
     formData.append('description', description);
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/videos/upload`, {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+    const response = await fetch(`${apiUrl}/videos/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -312,7 +313,7 @@ const Reels = () => {
     }
 
     // Refresh reels to include new video
-    const reelsResponse = await fetch(`${import.meta.env.VITE_API_URL}/videos/feed`);
+    const reelsResponse = await fetch(`${apiUrl}/videos/feed`);
     const reelsData = await reelsResponse.json();
     if (reelsData.videos) {
       setReels(reelsData.videos);
@@ -324,7 +325,8 @@ const Reels = () => {
     const fetchReels = async () => {
       try {
         console.log('Fetching reels from TikTok API...');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/tiktok/trending`);
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+        const response = await fetch(`${apiUrl}/tiktok/trending`);
         console.log('TikTok API response status:', response.status);
         const data = await response.json();
         console.log('TikTok API response data:', data);
