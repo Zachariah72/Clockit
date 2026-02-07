@@ -18,14 +18,26 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     if (session?.access_token) {
       // Assuming backend accepts Supabase token or we have JWT
       // For now, use session.access_token as token
-      const newSocket = io(import.meta.env.VITE_API_URL, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+      console.log('Connecting to Socket.IO:', apiUrl);
+      
+      const newSocket = io(apiUrl, {
         query: {
           userId: session.user.id, // Assuming user.id is the ID
         },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
       });
 
       newSocket.on('connect', () => {
+        console.log('Socket.IO connected');
         setIsConnected(true);
+      });
+
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket.IO connection error:', error);
       });
 
       newSocket.on('disconnect', () => {
