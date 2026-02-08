@@ -27,6 +27,9 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, stories, onStoryV
   // Use real stories or empty array if none
   const currentStory = (stories || [])[currentIndex] || null;
 
+  // Helper to get image URL from story (handle both formats)
+  const getStoryImage = (story: any) => story.image || story.mediaUrl || '';
+
   useEffect(() => {
     setIsLoading(true);
   }, [currentIndex]);
@@ -146,12 +149,12 @@ export const StoryViewer = ({ isOpen, onClose, initialStoryId, stories, onStoryV
               </div>
             )}
             <img
-              src={currentStory.image}
+              src={getStoryImage(currentStory)}
               alt="Story"
               className={`w-full h-full object-cover ${isLoading ? 'hidden' : ''}`}
               onLoad={() => setIsLoading(false)}
               onError={(e) => {
-                console.error('Failed to load story image:', currentStory.image);
+                console.error('Failed to load story image:', getStoryImage(currentStory));
                 setIsLoading(false);
               }}
             />

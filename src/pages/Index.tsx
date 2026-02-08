@@ -69,6 +69,40 @@ const Index = () => {
     { id: "6", username: "Lily", image: avatar3, hasUnseenStory: true },
   ]);
 
+  // Fetch stories from API on mount
+  useEffect(() => {
+    const fetchStories = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        const apiUrl = getApiUrl();
+        const response = await fetch(`${apiUrl}/stories`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Transform backend story format to frontend format
+          const transformedStories = data.map((story: any) => ({
+            id: story._id,
+            username: story.userId?.username || 'Unknown User',
+            image: story.mediaUrl,
+            hasUnseenStory: true
+          }));
+          setStories(transformedStories);
+        }
+      } catch (error) {
+        console.error('Error fetching stories:', error);
+      }
+    };
+
+    fetchStories();
+  }, []);
+
   const handleStoryClick = (storyId: string) => {
     setSelectedStoryId(storyId);
     setIsStoryViewerOpen(true);
