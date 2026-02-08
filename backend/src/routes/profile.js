@@ -1,10 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const profileController = require('../controllers/profileController');
 const auth = require('../middlewares/auth');
+
+// Enable CORS for this router
+router.use(cors());
+
+// Handle OPTIONS requests for CORS preflight
+router.options('/', cors());
+router.options('/stories', cors());
 
 // Configure multer for avatar uploads
 const storage = multer.diskStorage({

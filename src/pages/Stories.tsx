@@ -8,6 +8,7 @@ import { StoryViewer } from "@/components/stories/StoryViewer";
 import { Camera as CameraComponent } from "@/components/Camera";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getApiUrl } from "@/utils/api";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -131,7 +132,8 @@ const Stories = () => {
         return;
       }
 
-      const response = await fetch('/api/stories', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/stories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -173,7 +175,8 @@ const Stories = () => {
       // In production, you'd upload the file and get a URL back
       const placeholderUrl = `https://via.placeholder.com/400x600/7c3aed/ffffff?text=Story+${Date.now()}`;
 
-      const response = await fetch('/api/stories', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/stories`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

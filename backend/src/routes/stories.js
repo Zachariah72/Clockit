@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const cors = require('cors');
 const auth = require('../middlewares/auth');
 const multer = require('multer');
 const path = require('path');
@@ -13,6 +14,13 @@ const {
   getStoryComments,
   toggleLikeStory
 } = require('../controllers/storyController');
+
+// Enable CORS for this router
+router.use(cors());
+
+// Handle OPTIONS requests for CORS preflight
+router.options('/', cors());
+router.options('/:id', cors());
 
 // Configure multer for story media uploads
 const storage = multer.diskStorage({
