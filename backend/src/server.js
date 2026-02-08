@@ -75,9 +75,9 @@ app.get('/', (req, res) => {
 const uploadsPath = path.join(__dirname, '../uploads');
 const srcUploadsPath = path.join(__dirname, './uploads');
 
-app.use('/uploads', express.static(uploadsPath));
+// Serve from src/uploads for stories (where multer uploads them)
+app.use('/uploads/stories', express.static(path.join(srcUploadsPath, 'stories')));
 app.use('/uploads/avatars', express.static(path.join(srcUploadsPath, 'avatars')));
-app.use('/uploads/stories', express.static(path.join(uploadsPath, 'stories')));
 // Placeholder image route - with input sanitization
 app.get('/api/placeholder/:width/:height', (req, res) => {
   // Sanitize width and height to prevent XSS
