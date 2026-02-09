@@ -254,7 +254,10 @@ io.on('connection', async (socket) => {
       });
       await callSession.save();
 
-      // Send call with session ID
+      // Notify caller that call is ringing
+      socket.emit('call-initiated', { callId: callSession._id });
+
+      // Send call with session ID to receiver
       io.to(to).emit('incoming-call', {
         from,
         callType,

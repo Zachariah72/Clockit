@@ -14,6 +14,7 @@ import { getApiUrl } from "@/utils/api";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
+import callingSound from "@/assets/phone-ringing-382734.mp3";
 
 interface Message {
   _id?: string;
@@ -818,8 +819,12 @@ const Chat = () => {
   const [callHistory, setCallHistory] = useState<any[]>([]);
   const [currentCall, setCurrentCall] = useState<{ userId: string; callType: 'audio' | 'video'; isIncoming: boolean; callId?: string } | null>(null);
   const [incomingCall, setIncomingCall] = useState<{ from: string; callType: 'audio' | 'video'; callerName: string; callId: string } | null>(null);
+  const [isCalling, setIsCalling] = useState(false);
+  const [callingUserName, setCallingUserName] = useState("");
+  const [callingCallType, setCallingCallType] = useState<'audio' | 'video'>('audio');
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingCallHistory, setIsLoadingCallHistory] = useState(true);
+  const callingAudioRef = useRef<HTMLAudioElement>(null);
   const { socket } = useSocket();
   const { user } = useAuth();
 
@@ -899,24 +904,47 @@ const Chat = () => {
       setIncomingCall({ from: data.from, callType: data.callType, callerName: 'Caller', callId: data.callId }); // TODO: get name
     });
 
+    socket.on('call-initiated', (data) => {
+      // Start calling animation and sound
+      setIsCalling(true);
+    });
+
     socket.on('call-accepted', () => {
+      // Stop calling sound
+      if (callingAudioRef.current) {
+        callingAudioRef.current.pause();
+        callingAudioRef.current.currentTime = 0;
+      }
+      setIsCalling(false);
       if (currentCall) {
         setCurrentCall({ ...currentCall, isIncoming: false });
       }
     });
 
     socket.on('call-rejected', () => {
-      setCurrentCall(null);
-      toast.error('Call rejected');
+      // Stop calling sound
+      if (callingAudioRef.current) {
+        callingAudioRef.current.pause();
+        callingAudioRef.current.currentTime = 0;
+      }
+      setIsCalling(false);
+      toast.error('Call was rejected');
     });
 
     socket.on('call-ended', () => {
+      // Stop calling sound
+      if (callingAudioRef.current) {
+        callingAudioRef.current.pause();
+        callingAudioRef.current.currentTime = 0;
+      }
+      setIsCalling(false);
       setCurrentCall(null);
       toast.info('Call ended');
     });
 
     return () => {
       socket.off('incoming-call');
+      socket.off('call-initiated');
       socket.off('call-accepted');
       socket.off('call-rejected');
       socket.off('call-ended');
@@ -926,10 +954,36 @@ const Chat = () => {
   const startCall = (callType: 'audio' | 'video') => {
     if (!selectedConversation || !socket || !user) return;
     socket.emit('call-user', { to: selectedConversation.otherUserId, from: user.id, callType });
+    setCallingUserName(selectedConversation.username);
+    setCallingCallType(callType);
+    setIsCalling(true);
+    
+    // Play calling sound
+    if (callingAudioRef.current) {
+      callingAudioRef.current.loop = true;
+      callingAudioRef.current.play().catch(console.error);
+    }
+    
     setCurrentCall({ userId: selectedConversation.otherUserId, callType, isIncoming: false });
   };
 
+  const cancelCall = () => {
+    setIsCalling(false);
+    if (callingAudioRef.current) {
+      callingAudioRef.current.pause();
+      callingAudioRef.current.currentTime = 0;
+    }
+    setCurrentCall(null);
+  };
+
   const handleAcceptCall = () => {
+    // Stop calling sound if we were calling
+    if (callingAudioRef.current) {
+      callingAudioRef.current.pause();
+      callingAudioRef.current.currentTime = 0;
+    }
+    setIsCalling(false);
+    
     if (incomingCall) {
       setCurrentCall({ userId: incomingCall.from, callType: incomingCall.callType, isIncoming: true });
       setIncomingCall(null);
@@ -1030,10 +1084,18 @@ const Chat = () => {
                     callHistory={callHistory}
                     isLoading={isLoadingCallHistory}
                     onStartCall={(userId, callType) => {
-                      // For call history, we need to find the conversation or create a temporary one
-                      // For now, just emit the call directly
-                      if (socket) {
-                        socket.emit('call-user', { to: userId, from: user?.id, callType });
+                      if (socket && user) {
+                        socket.emit('call-user', { to: userId, from: user.id, callType });
+                        setCallingUserName('User');
+                        setCallingCallType(callType);
+                        setIsCalling(true);
+                        
+                        // Play calling sound
+                        if (callingAudioRef.current) {
+                          callingAudioRef.current.loop = true;
+                          callingAudioRef.current.play().catch(console.error);
+                        }
+                        
                         setCurrentCall({ userId, callType, isIncoming: false });
                       }
                     }}
@@ -1044,6 +1106,27 @@ const Chat = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Calling UI */}
+      {isCalling && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 text-center">
+            <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+              {callingCallType === 'video' ? (
+                <Video className="w-10 h-10 text-gray-400" />
+              ) : (
+                <Phone className="w-10 h-10 text-gray-400" />
+              )}
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Calling {callingUserName}...</h2>
+            <p className="text-muted-foreground text-sm mb-6">Waiting for answer</p>
+            <Button variant="destructive" onClick={cancelCall} className="w-full">
+              <PhoneOff className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Call Interface */}
       {currentCall && (
@@ -1072,6 +1155,9 @@ const Chat = () => {
           onReject={handleRejectCall}
         />
       )}
+
+      {/* Hidden audio element for calling sound */}
+      <audio ref={callingAudioRef} src={callingSound} preload="auto" />
     </Layout>
   );
 };
