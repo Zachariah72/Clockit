@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Search as SearchIcon, Music, User, Users, Film, Hash, X } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, Music, User, Users, Film, Hash, X, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { profileApi } from "@/services/profileApi";
+import { toast } from "sonner";
 
 const Search = () => {
   const navigate = useNavigate();
@@ -49,10 +51,12 @@ const Search = () => {
     {
       id: "4",
       type: "user",
+      userId: "user_123",
       title: "sarah_dance",
       subtitle: "Dancer • 12.5K followers",
       image: "/api/placeholder/60/60",
-      category: "User"
+      category: "User",
+      isFollowing: false
     },
     {
       id: "5",
@@ -148,6 +152,23 @@ const Search = () => {
 
   const removeFromHistory = (item: string) => {
     setSearchHistory(prev => prev.filter(h => h !== item));
+  };
+
+  const handleFollowToggle = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await profileApi.toggleFollow(userId);
+      // Update the local state to reflect the change
+      setSearchResults(prev => prev.map(result => {
+        if (result.userId === userId) {
+          return { ...result, isFollowing: response.action === 'followed' };
+        }
+        return result;
+      }));
+      toast.success(response.action === 'followed' ? 'Followed user' : 'Unfollowed user');
+    } catch (error) {
+      toast.error('Failed to update follow status');
+    }
   };
 
   useEffect(() => {
@@ -284,6 +305,19 @@ const Search = () => {
                             <p className="text-sm text-muted-foreground truncate">{result.subtitle}</p>
                           </div>
                           <div className="flex items-center gap-2">
+                            {result.type === 'user' && result.userId && (
+                              <Button
+                                variant={result.isFollowing ? "outline" : "default"}
+                                size="sm"
+                                onClick={(e) => handleFollowToggle(result.userId, e)}
+                              >
+                                {result.isFollowing ? (
+                                  <><UserCheck className="w-4 h-4 mr-1" /> Following</>
+                                ) : (
+                                  <><UserPlus className="w-4 h-4 mr-1" /> Follow</>
+                                )}
+                              </Button>
+                            )}
                             <Badge variant="outline" className={`text-xs ${getTypeColor(result.type)}`}>
                               {result.category}
                             </Badge>
