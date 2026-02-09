@@ -84,7 +84,9 @@ const getMessages = async (req, res) => {
 // Send a message
 const sendMessage = async (req, res) => {
   try {
-    const { conversationId, content, type = 'text' } = req.body;
+    // Get conversationId from URL params (not body)
+    const { conversationId } = req.params;
+    const { content, type = 'text' } = req.body;
     // Handle both JWT structures
     const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
 
