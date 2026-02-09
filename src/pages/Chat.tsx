@@ -19,7 +19,13 @@ interface Message {
   _id?: string;
   id?: string;
   content: string;
-  sender_id: {
+  senderId: {
+    _id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  } | string;
+  sender_id?: {
     _id: string;
     username: string;
     display_name: string;
@@ -76,21 +82,21 @@ const mockConversations: Conversation[] = [
   },
 ];
 
-const mockMessages: { [key: string]: Message[] } = {
+const mockMessages: { [key: string]: Omit<Message, '_id'>[] } = {
   "1": [
-    { id: "m1", content: "Hey! How are you?", sender_id: "other", created_at: "10:30 AM", is_read: true },
-    { id: "m2", content: "I'm good! Just finished a workout", sender_id: "me", created_at: "10:32 AM", is_read: true },
-    { id: "m3", content: "Nice! I saw your story", sender_id: "other", created_at: "10:33 AM", is_read: true },
-    { id: "m4", content: "Did you see the new reel I posted?", sender_id: "other", created_at: "10:35 AM", is_read: false },
+    { id: "m1", content: "Hey! How are you?", senderId: "other", created_at: "10:30 AM", is_read: true },
+    { id: "m2", content: "I'm good! Just finished a workout", senderId: "me", created_at: "10:32 AM", is_read: true },
+    { id: "m3", content: "Nice! I saw your story", senderId: "other", created_at: "10:33 AM", is_read: true },
+    { id: "m4", content: "Did you see the new reel I posted?", senderId: "other", created_at: "10:35 AM", is_read: false },
   ],
   "2": [
-    { id: "m5", content: "That concert was insane!", sender_id: "other", created_at: "9:00 PM", is_read: true },
-    { id: "m6", content: "I know right! Best night ever 🎸", sender_id: "me", created_at: "9:05 PM", is_read: true },
+    { id: "m5", content: "That concert was insane!", senderId: "other", created_at: "9:00 PM", is_read: true },
+    { id: "m6", content: "I know right! Best night ever 🎸", senderId: "me", created_at: "9:05 PM", is_read: true },
   ],
   "3": [
-    { id: "m7", content: "Hey, you free this weekend?", sender_id: "other", created_at: "3:00 PM", is_read: true },
-    { id: "m8", content: "Yeah! What's the plan?", sender_id: "me", created_at: "3:15 PM", is_read: true },
-    { id: "m9", content: "Let's meet up this weekend", sender_id: "other", created_at: "3:20 PM", is_read: false },
+    { id: "m7", content: "Hey, you free this weekend?", senderId: "other", created_at: "3:00 PM", is_read: true },
+    { id: "m8", content: "Yeah! What's the plan?", senderId: "me", created_at: "3:15 PM", is_read: true },
+    { id: "m9", content: "Let's meet up this weekend", senderId: "other", created_at: "3:20 PM", is_read: false },
   ],
 };
 
@@ -320,6 +326,15 @@ const ChatView = ({
   const { user } = useAuth();
   const { socket } = useSocket();
 
+  // Helper to check if message is from current user
+  const isOutgoing = (message: Message) => {
+    const senderId = (message as any).senderId || message.sender_id;
+    if (typeof senderId === 'object' && senderId !== null) {
+      return senderId._id === user?.id;
+    }
+    return senderId === user?.id;
+  };
+
   // Fetch messages for the conversation
   const fetchMessages = async () => {
     if (!conversation?.id) return;
@@ -512,13 +527,13 @@ const ChatView = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`flex ${typeof message.sender_id === 'object' ? message.sender_id._id === user?.id : message.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                className={`flex ${isOutgoing(message) ? "justify-end" : "justify-start"}`}
               >
               {message.type === 'snap' ? (
                 <div
                   onClick={() => viewSnap(message)}
                   className={`max-w-[75%] cursor-pointer ${
-                    message.sender_id === "me" ? "rounded-br-sm" : "rounded-bl-sm"
+                    isOutgoing(message) ? "rounded-br-sm" : "rounded-bl-sm"
                   }`}
                 >
                   <div className="relative">
@@ -541,14 +556,14 @@ const ChatView = ({
               ) : (
                 <div
                   className={`max-w-[75%] p-3 rounded-2xl ${
-                    message.sender_id === "me"
+                    isOutgoing(message)
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-muted text-foreground rounded-bl-sm"
                   }`}
                 >
                   <p>{message.content}</p>
                   <p className={`text-xs mt-1 ${
-                    message.sender_id === "me" ? "text-primary-foreground/70" : "text-muted-foreground"
+                    isOutgoing(message) ? "text-primary-foreground/70" : "text-muted-foreground"
                   }`}>
                     {message.created_at}
                   </p>
