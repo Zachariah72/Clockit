@@ -1,9 +1,13 @@
 {
   "version": 2,
   "name": "clockit",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/assets/(.*)",
+      "source": "/api/(.*)",
+      "destination": "https://clockit-gvm2.onrender.com/api/$1"
+    },
+    {
+      "source": "/assets/(.*)",
       "dest": "/assets/$1"
     },
     {
