@@ -66,7 +66,7 @@ const AppRouter: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes - accessible without login */}
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
@@ -95,8 +95,8 @@ const AppRouter: React.FC = () => {
           <Route path="/settings/appearance" element={<Appearance />} />
         </>
       ) : (
-        // Redirect to onboarding/auth for unauthenticated users
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
+        // No routes here - public routes are already defined above
+        null
       )}
 
       {/* 404 for authenticated users */}
