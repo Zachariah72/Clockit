@@ -430,6 +430,7 @@ const ChatView = ({
 
       if (response.ok) {
         setNewMessage("");
+        fetchMessages(); // Refetch messages to show the sent message
       } else if (response.status === 401) {
         localStorage.removeItem('auth_token');
         toast.error("Session expired. Please log in again.");
