@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, UserPlus, UserMinus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { profileApi } from "@/services/profileApi";
+import { toast } from "sonner";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -22,9 +24,10 @@ interface FollowersModalProps {
   onClose: () => void;
   type: 'followers' | 'following';
   users: User[];
+  onFollowChange?: () => void;
 }
 
-export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalProps) => {
+export const FollowersModal = ({ isOpen, onClose, type, users, onFollowChange }: FollowersModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredUsers = users.filter(user =>
@@ -32,9 +35,19 @@ export const FollowersModal = ({ isOpen, onClose, type, users }: FollowersModalP
     user.displayName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleFollowToggle = (userId: string) => {
-    // In a real app, this would call an API
-    console.log(`${type === 'following' ? 'Unfollow' : 'Follow'} user ${userId}`);
+  const handleFollowToggle = async (userId: string) => {
+    try {
+      const response = await profileApi.toggleFollow(userId);
+      if (response.action === 'followed') {
+        toast.success('Followed user successfully');
+      } else {
+        toast.success('Unfollowed user successfully');
+      }
+      // Notify parent component
+      onFollowChange?.();
+    } catch (error) {
+      toast.error('Failed to update follow status');
+    }
   };
 
   return (

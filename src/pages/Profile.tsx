@@ -792,6 +792,13 @@ const Profile = () => {
           onClose={() => setFollowersModal({ isOpen: false, type: 'followers' })}
           type={followersModal.type}
           users={followersModal.type === 'followers' ? followers : following}
+          onFollowChange={async () => {
+            // Refresh followers and following lists
+            const followersRes = await profileApi.getFollowers();
+            setFollowers(followersRes.followers);
+            const followingRes = await profileApi.getFollowing();
+            setFollowing(followingRes.following);
+          }}
         />
 
         <StoriesModal
