@@ -78,6 +78,7 @@ const srcUploadsPath = path.join(__dirname, './uploads');
 // Serve from src/uploads for stories (where multer uploads them)
 app.use('/uploads/stories', express.static(path.join(srcUploadsPath, 'stories')));
 app.use('/uploads/avatars', express.static(path.join(srcUploadsPath, 'avatars')));
+app.use('/uploads/live-recordings', express.static(path.join(srcUploadsPath, 'live-recordings')));
 // Placeholder image route - with input sanitization
 app.get('/api/placeholder/:width/:height', (req, res) => {
   // Sanitize width and height to prevent XSS
@@ -118,6 +119,7 @@ app.use('/api/tiktok', require('./routes/tiktok'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/live', require('./routes/live'));
 
 // Socket.IO authentication middleware - use JWT token like REST API
 io.use((socket, next) => {
@@ -437,6 +439,39 @@ io.on('connection', async (socket) => {
     // data: { streamId }
     socket.join(`live_${data.streamId}`);
     socket.to(`live_${data.streamId}`).emit('co_host_joined', { userId: socket.userId });
+  });
+
+  // Live streaming WebRTC signaling
+  socket.on('live_offer', (data) => {
+    const { streamId, offer } = data;
+    socket.to(`live_${streamId}`).emit('live_offer', { from: socket.userId, offer });
+  });
+
+  socket.on('live_answer', (data) => {
+    const { streamId, answer } = data;
+    socket.to(`live_${streamId}`).emit('live_answer', { from: socket.userId, answer });
+  });
+
+  socket.on('live_ice_candidate', (data) => {
+    const { streamId, candidate } = data;
+    socket.to(`live_${streamId}`).emit('live_ice_candidate', { from: socket.userId, candidate });
+  });
+
+  socket.on('leave_live', (data) => {
+    const { streamId } = data;
+    socket.leave(`live_${streamId}`);
+    socket.to(`live_${streamId}`).emit('viewer_left', { userId: socket.userId });
+  });
+
+  socket.on('end_live', (data) => {
+    const { streamId } = data;
+    io.to(`live_${streamId}`).emit('live_ended', { streamId });
+    socket.leave(`live_${streamId}`);
+  });
+
+  socket.on('live_reaction', (data) => {
+    const { streamId, reaction } = data;
+    socket.to(`live_${streamId}`).emit('live_reaction_received', { from: socket.userId, reaction });
   });
 });
 

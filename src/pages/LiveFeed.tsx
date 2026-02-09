@@ -1,23 +1,54 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Eye, Users, Heart, MessageCircle, Play, Plus } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getApiUrl } from "@/utils/api";
 
-// Live streams will be populated from real ongoing sessions
-const liveStreams: any[] = [];
+interface Stream {
+  streamId: string;
+  title: string;
+  host: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
+  viewerCount: number;
+  isLive: boolean;
+}
 
 const LiveFeed = () => {
-  const [selectedStream, setSelectedStream] = useState<string | null>(null);
+  const [activeStreams, setActiveStreams] = useState<Stream[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveStreams();
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchActiveStreams, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchActiveStreams = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/live/active`);
+      if (response.ok) {
+        const streams = await response.json();
+        setActiveStreams(streams);
+      }
+    } catch (error) {
+      console.error('Error fetching active streams:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const joinLive = (streamId: string) => {
-    // Navigate to live stream page
     window.location.href = `/live/${streamId}`;
   };
 
   const goLive = () => {
-    // Navigate to create live stream
     window.location.href = "/live/create";
   };
 
@@ -32,7 +63,7 @@ const LiveFeed = () => {
         >
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gradient">Live</h1>
-            {liveStreams.length > 0 && (
+            {activeStreams.length > 0 && (
               <Button onClick={goLive} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Go Live
@@ -44,22 +75,20 @@ const LiveFeed = () => {
         {/* Live Streams Grid */}
         <div className="p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {liveStreams.map((stream, index) => (
+            {activeStreams.map((stream, index) => (
               <motion.div
-                key={stream.id}
+                key={stream.streamId}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className="relative group cursor-pointer"
-                onClick={() => joinLive(stream.id)}
+                onClick={() => joinLive(stream.streamId)}
               >
                 {/* Stream Thumbnail */}
                 <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-muted">
-                  <img
-                    src={stream.thumbnail}
-                    alt={stream.title}
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="w-full h-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
+                    <span className="text-white text-4xl">📺</span>
+                  </div>
 
                   {/* Live Badge */}
                   <div className="absolute top-3 left-3">
@@ -73,7 +102,7 @@ const LiveFeed = () => {
                   <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
                     <div className="flex items-center gap-1 text-white text-sm">
                       <Eye className="w-3 h-3" />
-                      {stream.viewers.toLocaleString()}
+                      {stream.viewerCount.toLocaleString()}
                     </div>
                   </div>
 
@@ -88,14 +117,12 @@ const LiveFeed = () => {
                 {/* Stream Info */}
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={stream.avatar}
-                      alt={stream.username}
-                      className="w-10 h-10 rounded-full"
-                    />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                      {stream.host.username ? stream.host.username.charAt(0).toUpperCase() : '?'}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">
-                        {stream.username}
+                        {stream.host.username}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate">
                         {stream.title}
@@ -105,11 +132,9 @@ const LiveFeed = () => {
 
                   {/* Tags */}
                   <div className="flex gap-2">
-                    {stream.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    <Badge variant="secondary" className="text-xs">
+                      Live
+                    </Badge>
                   </div>
                 </div>
               </motion.div>
@@ -118,7 +143,7 @@ const LiveFeed = () => {
         </div>
 
         {/* Empty State - Waiting for Live Sessions */}
-        {liveStreams.length === 0 && (
+        {activeStreams.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 px-4">
             <div className="w-24 h-24 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-6">
               <div className="relative">
