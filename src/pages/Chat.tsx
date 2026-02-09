@@ -43,6 +43,7 @@ interface Message {
 
 interface Conversation {
   id: string;
+  otherUserId: string;
   username: string;
   avatar: string;
   lastMessage: string;
@@ -55,6 +56,7 @@ interface Conversation {
 const mockConversations: Conversation[] = [
   {
     id: "1",
+    otherUserId: "user123",
     username: "Sarah",
     avatar: avatar1,
     lastMessage: "Hey! Did you see the new reel I posted?",
@@ -64,6 +66,7 @@ const mockConversations: Conversation[] = [
   },
   {
     id: "2",
+    otherUserId: "user456",
     username: "Mike",
     avatar: avatar2,
     lastMessage: "That concert was amazing! 🎸",
@@ -73,6 +76,7 @@ const mockConversations: Conversation[] = [
   },
   {
     id: "3",
+    otherUserId: "user789",
     username: "Alex",
     avatar: avatar3,
     lastMessage: "Let's meet up this weekend",
@@ -921,8 +925,8 @@ const Chat = () => {
 
   const startCall = (callType: 'audio' | 'video') => {
     if (!selectedConversation || !socket || !user) return;
-    socket.emit('call-user', { to: selectedConversation.id, from: user.id, callType });
-    setCurrentCall({ userId: selectedConversation.id, callType, isIncoming: false });
+    socket.emit('call-user', { to: selectedConversation.otherUserId, from: user.id, callType });
+    setCurrentCall({ userId: selectedConversation.otherUserId, callType, isIncoming: false });
   };
 
   const handleAcceptCall = () => {

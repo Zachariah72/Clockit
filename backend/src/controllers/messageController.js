@@ -27,6 +27,7 @@ const getConversations = async (req, res) => {
 
       return {
         id: conv._id,
+        otherUserId: otherParticipant?._id?.toString() || '',
         username: otherParticipant?.username || 'Unknown',
         avatar: otherParticipant?.avatar_url || '/api/placeholder/40/40',
         lastMessage: conv.lastMessage?.content || 'No messages yet',
