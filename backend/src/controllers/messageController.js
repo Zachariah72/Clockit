@@ -92,6 +92,7 @@ const sendMessage = async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log("sendMessage - userId from JWT:", userId);
     // Verify user is part of conversation
     const conversation = await Conversation.findOne({
       _id: conversationId,
