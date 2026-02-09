@@ -173,14 +173,19 @@ io.on('connection', async (socket) => {
   socket.on('send_message', async (data) => {
     try {
       const { conversationId, content, type = 'text' } = data;
+      
+      if (!conversationId || !socket.userId) {
+        console.error('Missing conversationId or userId in send_message');
+        return;
+      }
 
       // Save message to database
       const Message = require('./models/Message');
       const message = new Message({
-        conversation_id: conversationId,
-        sender_id: socket.userId,
+        conversationId,
+        senderId: socket.userId,
         content,
-        type,
+        messageType: type,
         is_read: false
       });
 
@@ -195,7 +200,7 @@ io.on('connection', async (socket) => {
 
       // Populate message with sender info
       const populatedMessage = await Message.findById(message._id)
-        .populate('sender_id', 'username display_name avatar_url');
+        .populate('senderId', 'username display_name avatar_url');
 
       // Send to all participants in conversation
       const conversation = await Conversation.findById(conversationId);
