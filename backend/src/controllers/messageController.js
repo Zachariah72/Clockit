@@ -88,18 +88,21 @@ const sendMessage = async (req, res) => {
     // Handle both JWT structures
     const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
 
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
     console.log("sendMessage - userId from JWT:", userId);
+    console.log("sendMessage - conversationId:", conversationId);
+    
     // Verify user is part of conversation
     const conversation = await Conversation.findOne({
       _id: conversationId,
       participants: userId
     });
 
+    console.log("sendMessage - conversation found:", !!conversation);
+    
     if (!conversation) {
+      // Check what participants are in the conversation
+      const conv = await Conversation.findById(conversationId);
+      console.log("sendMessage - conversation participants:", conv?.participants);
       return res.status(403).json({ error: 'Access denied' });
     }
 
