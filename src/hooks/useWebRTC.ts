@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseWebRTCProps {
   remoteUserId: string;
@@ -10,6 +11,7 @@ interface UseWebRTCProps {
 
 export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRTCProps) => {
   const { socket } = useSocket();
+  const { user } = useAuth();
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
@@ -55,7 +57,7 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   };
 
   const startCall = async () => {
-    if (!socket) return;
+    if (!socket || !user) return;
 
     const pc = createPeerConnection();
     const stream = await getUserMedia(callType === 'video');
@@ -64,25 +66,25 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
     if (isCaller) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socket.emit('offer', { to: remoteUserId, offer });
+      socket.emit('offer', { to: remoteUserId, from: user.id, offer });
     }
 
     socket.emit('start-call');
   };
 
   const acceptCall = async () => {
-    if (!socket) return;
+    if (!socket || !user) return;
 
     const pc = createPeerConnection();
     const stream = await getUserMedia(callType === 'video');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-    socket.emit('accept-call', { callId });
+    socket.emit('accept-call', { callId, from: user.id });
   };
 
   const rejectCall = () => {
-    if (!socket) return;
-    socket.emit('reject-call', { callId });
+    if (!socket || !user) return;
+    socket.emit('reject-call', { callId, from: user.id });
   };
 
   const endCall = () => {

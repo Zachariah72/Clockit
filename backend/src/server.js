@@ -267,7 +267,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('accept-call', async (data) => {
-    const { callId } = data;
+    const { callId, from } = data;
     try {
       const CallSession = require('./models/CallSession');
       await CallSession.findByIdAndUpdate(callId, { status: 'active' });
@@ -275,7 +275,9 @@ io.on('connection', async (socket) => {
       // Find the call session to get caller
       const callSession = await CallSession.findById(callId);
       if (callSession) {
-        io.to(callSession.caller.toString()).emit('call-accepted');
+        // Use the 'from' field if provided, otherwise use socket.userId
+        const recipientId = from || socket.userId;
+        io.to(recipientId).emit('call-accepted');
       }
     } catch (error) {
       console.error('Error accepting call:', error);
@@ -283,7 +285,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('reject-call', async (data) => {
-    const { callId } = data;
+    const { callId, from } = data;
     try {
       const CallSession = require('./models/CallSession');
       const callSession = await CallSession.findById(callId);
@@ -296,7 +298,9 @@ io.on('connection', async (socket) => {
 
         // Create call history
         const CallHistory = require('./models/CallHistory');
-        const isCallerRejecting = callSession.caller.toString() === socket.userId;
+        // Use the 'from' field if provided, otherwise determine from socket
+        const currentUserId = from || socket.userId;
+        const isCallerRejecting = callSession.caller.toString() === currentUserId;
         const status = isCallerRejecting ? 'cancelled' : 'missed';
 
         const history = new CallHistory({
@@ -310,7 +314,9 @@ io.on('connection', async (socket) => {
         });
         await history.save();
 
-        io.to(callSession.caller.toString()).emit('call-rejected');
+        // Notify the caller using 'from' if provided
+        const recipientId = callSession.caller.toString();
+        io.to(recipientId).emit('call-rejected');
       }
     } catch (error) {
       console.error('Error rejecting call:', error);
