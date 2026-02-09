@@ -119,26 +119,38 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));
 
-// Socket.IO authentication middleware - temporarily disabled
-// io.use((socket, next) => {
-//   const token = socket.handshake.auth.token;
-//   if (!token) {
-//     return next(new Error('Authentication error'));
-//   }
-//   try {
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//     socket.userId = decoded.id;
-//     next();
-//   } catch (err) {
-//     next(new Error('Authentication error'));
-//   }
-// });
-
-// For now, set userId from query or something - TODO: proper auth
+// Socket.IO authentication middleware - use JWT token like REST API
 io.use((socket, next) => {
-  // Assume userId is passed in query for demo
-  socket.userId = socket.handshake.query.userId || 'test-user';
-  next();
+  const token = socket.handshake.auth.token;
+  
+  if (!token) {
+    // Try to get token from query params as fallback
+    const queryToken = socket.handshake.query.token;
+    if (!queryToken) {
+      // Allow connection without auth for demo, but set userId to null
+      socket.userId = null;
+      return next();
+    }
+    
+    try {
+      const decoded = jwt.verify(queryToken, process.env.JWT_SECRET);
+      socket.userId = decoded.id;
+      next();
+    } catch (err) {
+      socket.userId = null;
+      next();
+    }
+    return;
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.id;
+    next();
+  } catch (err) {
+    socket.userId = null;
+    next();
+  }
 });
 
 // Socket.IO setup

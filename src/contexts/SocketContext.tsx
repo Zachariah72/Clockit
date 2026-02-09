@@ -22,8 +22,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       console.log('Connecting to Socket.IO:', apiUrl);
       
       const newSocket = io(apiUrl, {
-        query: {
-          userId: session.user.id, // Assuming user.id is the ID
+        auth: {
+          token: session.access_token,
         },
         transports: ['websocket', 'polling'],
         reconnection: true,
