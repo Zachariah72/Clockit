@@ -5,7 +5,7 @@ import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Fil
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StoriesRow } from "@/components/stories/StoriesRow";
 import { StoryViewer } from "@/components/stories/StoryViewer";
 import { StoryCreator } from "@/components/stories/StoryCreator";
