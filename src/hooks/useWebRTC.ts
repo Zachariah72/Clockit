@@ -19,6 +19,7 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(callType === 'audio');
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [hasOffer, setHasOffer] = useState(false);
 
   const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -75,6 +76,14 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   const acceptCall = async () => {
     if (!socket || !user) return;
 
+    // If we already received the offer, don't create a new peer connection
+    // The offer handler already set up the connection
+    if (hasOffer) {
+      socket.emit('accept-call', { callId, from: user.id });
+      return;
+    }
+
+    // Create peer connection only if we haven't received the offer yet
     const pc = createPeerConnection();
     const stream = await getUserMedia(callType === 'video');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -155,6 +164,19 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
     if (!socket) return;
 
     socket.on('offer', async (data) => {
+      // Mark that we've received the offer
+      setHasOffer(true);
+      
+      // If we already have a peer connection with tracks from acceptCall, use it
+      if (peerConnectionRef.current && localStreamRef.current) {
+        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await peerConnectionRef.current.createAnswer();
+        await peerConnectionRef.current.setLocalDescription(answer);
+        socket.emit('answer', { to: data.from, answer });
+        return;
+      }
+
+      // Create new peer connection
       const pc = createPeerConnection();
       const stream = await getUserMedia(callType === 'video');
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
