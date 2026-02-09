@@ -80,6 +80,7 @@ const AppRouter: React.FC = () => {
           <Route path="/music" element={<Music />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/reels" element={<Reels />} />
           <Route path="/live" element={<LiveFeed />} />
           <Route path="/live/create" element={<Live />} />

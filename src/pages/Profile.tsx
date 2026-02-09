@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Layout } from "@/components/layout/Layout";
 import { Insights } from "@/components/Insights";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { StoriesModal } from "@/components/profile/StoriesModal";
@@ -80,6 +80,7 @@ const draftItems = [
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { userId } = useParams();
   const { user, session, loading: authLoading } = useAuth();
 
   // Loading and data states
@@ -122,16 +123,16 @@ const Profile = () => {
     // If we have a session but no backend token, we'll still try to load
     // but it might fail - that's okay, we'll show empty state
     loadProfileData();
-  }, [session]);
+  }, [session, userId]);
 
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      console.log('loadProfileData called');
+      console.log('loadProfileData called, userId:', userId);
       
       // Make API calls individually to handle partial failures
       try {
-        const profileRes = await profileApi.getProfile();
+        const profileRes = await profileApi.getProfile(userId);
         console.log('Profile fetched:', profileRes);
         setProfile(profileRes);
       } catch (e) {
@@ -139,14 +140,14 @@ const Profile = () => {
       }
       
       try {
-        const followersRes = await profileApi.getFollowers();
+        const followersRes = await profileApi.getFollowers(userId);
         setFollowers(followersRes.followers);
       } catch (e) {
         // Followers fetch failed
       }
       
       try {
-        const followingRes = await profileApi.getFollowing();
+        const followingRes = await profileApi.getFollowing(userId);
         setFollowing(followingRes.following);
       } catch (e) {
         // Following fetch failed
@@ -154,7 +155,7 @@ const Profile = () => {
       
       try {
         console.log('Fetching stories...');
-        const storiesRes = await profileApi.getStories();
+        const storiesRes = await profileApi.getStories(userId);
         console.log('Stories fetched:', storiesRes);
         setStories(storiesRes);
       } catch (e) {
