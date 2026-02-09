@@ -61,13 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('onAuthStateChange triggered:', _event, session ? 'with session' : 'no session');
       setSession(session);
-      setUser(session ? { id: session.user.id, email: session.user.email } : null);
       
-      // If session exists, ensure backend token is saved
+      // If session exists, ensure backend token is saved and get MongoDB user id
       if (session && session.user) {
-        const existingToken = localStorage.getItem('auth_token');
-        console.log('Existing token:', existingToken ? 'yes' : 'no');
-        
         try {
           // Always verify/refresh token for OAuth users
           console.log('Calling /auth/oauth-verify...');
@@ -89,20 +85,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data.token) {
               localStorage.setItem('auth_token', data.token);
               console.log('✅ Backend token saved for OAuth user');
+              // Use MongoDB ObjectId from backend, not Supabase UUID
+              setUser({ id: data.user.id, email: data.user.email });
             }
           } else {
+            // Fallback to Supabase session user
+            setUser({ id: session.user.id, email: session.user.email });
             const error = await response.json();
             console.error('OAuth verify failed:', error);
           }
         } catch (e) {
+          // Fallback to Supabase session user
+          setUser({ id: session.user.id, email: session.user.email });
           console.warn('Failed to create backend token for OAuth user:', e);
         }
+      } else {
+        setUser(null);
       }
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('getSession result:', session ? 'has session' : 'no session');
       setSession(session);
-      setUser(session ? { id: session.user.id, email: session.user.email } : null);
+      
+      if (session && session.user) {
+        try {
+          const response = await fetch(`${getApiUrl()}/auth/oauth-verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: session.user.email,
+              userId: session.user.id
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('auth_token', data.token);
+            setUser({ id: data.user.id, email: data.user.email });
+          } else {
+            setUser({ id: session.user.id, email: session.user.email });
+          }
+        } catch (e) {
+          setUser({ id: session.user.id, email: session.user.email });
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
     });
     return () => subscription.unsubscribe();
   }, []);
