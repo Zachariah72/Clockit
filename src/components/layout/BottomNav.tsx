@@ -8,6 +8,7 @@ const navItems = [
   { icon: Camera, label: "Snaply", path: "/stories" },
   { icon: Music, label: "Music", path: "/music" },
   { icon: Film, label: "Reels", path: "/reels" },
+  { icon: MessageCircle, label: "Chat", path: "/chat" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
