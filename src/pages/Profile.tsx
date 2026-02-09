@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image } from "lucide-react";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -102,6 +102,29 @@ const Profile = () => {
     type: 'followers'
   });
   const [isStoriesModalOpen, setIsStoriesModalOpen] = useState(false);
+  
+  // Follow state for other users' profiles
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  // Check if viewing own profile
+  const isOwnProfile = !userId || (user?.id && userId === user.id);
+
+  // Handle follow/unfollow
+  const handleFollowToggle = async () => {
+    if (!userId || isFollowLoading) return;
+    
+    try {
+      setIsFollowLoading(true);
+      const response = await profileApi.toggleFollow(userId);
+      setIsFollowing(response.action === 'followed');
+      toast.success(response.action === 'followed' ? 'Followed user' : 'Unfollowed user');
+    } catch (error) {
+      toast.error('Failed to update follow status');
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   // Load profile data on mount
   useEffect(() => {
@@ -389,14 +412,35 @@ const Profile = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button variant="gradient" className="gap-2" onClick={handleEditProfile}>
-                <Edit2 className="w-4 h-4" />
-                Edit Profile
-              </Button>
-              <Button variant="glass" className="gap-2" onClick={handleShareMusic}>
-                <Music className="w-4 h-4" />
-                Share Music
-              </Button>
+              {isOwnProfile ? (
+                <>
+                  <Button variant="gradient" className="gap-2" onClick={handleEditProfile}>
+                    <Edit2 className="w-4 h-4" />
+                    Edit Profile
+                  </Button>
+                  <Button variant="glass" className="gap-2" onClick={handleShareMusic}>
+                    <Music className="w-4 h-4" />
+                    Share Music
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant={isFollowing ? "outline" : "gradient"} 
+                    className="gap-2" 
+                    onClick={handleFollowToggle}
+                    disabled={isFollowLoading}
+                  >
+                    {isFollowLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isFollowing ? (
+                      <><UserCheck className="w-4 h-4" /> Following</>
+                    ) : (
+                      <><UserPlus className="w-4 h-4" /> Follow</>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </motion.section>
