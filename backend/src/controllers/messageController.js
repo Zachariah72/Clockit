@@ -23,7 +23,7 @@ const getConversations = async (req, res) => {
     // Format conversations for frontend
     const formattedConversations = conversations.map(conv => {
       const otherParticipant = conv.participants.find(p => p._id.toString() !== userId);
-      const unreadCount = conv.lastMessage && conv.lastMessage.sender_id.toString() !== userId && !conv.lastMessage.is_read ? 1 : 0;
+      const unreadCount = conv.lastMessage && conv.lastMessage.senderId.toString() !== userId && !conv.lastMessage.is_read ? 1 : 0;
 
       return {
         id: conv._id,
@@ -64,13 +64,13 @@ const getMessages = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const messages = await Message.find({ conversation_id: conversationId })
-      .populate('sender_id', 'username display_name avatar_url')
-      .sort({ created_at: 1 });
+    const messages = await Message.find({ conversationId })
+      .populate('senderId', 'username display_name avatar_url')
+      .sort({ createdAt: 1 });
 
     // Mark messages as read
     await Message.updateMany(
-      { conversation_id: conversationId, sender_id: { $ne: userId }, is_read: false },
+      { conversationId, senderId: { $ne: userId }, is_read: false },
       { is_read: true }
     );
 
@@ -103,8 +103,8 @@ const sendMessage = async (req, res) => {
     }
 
     const message = new Message({
-      conversation_id: conversationId,
-      sender_id: userId,
+      conversationId,
+      senderId: userId,
       content,
       type,
       is_read: false
@@ -119,7 +119,7 @@ const sendMessage = async (req, res) => {
     });
 
     const populatedMessage = await Message.findById(message._id)
-      .populate('sender_id', 'username display_name avatar_url');
+      .populate('senderId', 'username display_name avatar_url');
 
     res.status(201).json(populatedMessage);
   } catch (error) {
@@ -165,8 +165,8 @@ const startConversation = async (req, res) => {
     // Send initial message if provided
     if (initialMessage) {
       const message = new Message({
-        conversation_id: conversation._id,
-        sender_id: userId,
+        conversationId: conversation._id,
+        senderId: userId,
         content: initialMessage,
         type: 'text',
         is_read: false
