@@ -30,6 +30,9 @@ export const Live = () => {
   const [isBroadcaster, setIsBroadcaster] = useState(false);
   const [currentStream, setCurrentStream] = useState<Stream | null>(null);
   const [activeStreams, setActiveStreams] = useState<Stream[]>([]);
+  const [streamTitle, setStreamTitle] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [localStreamId, setLocalStreamId] = useState<string | null>(null);
 
   // Fetch stream details if streamId is in URL (viewer joining)
   useEffect(() => {
@@ -47,16 +50,13 @@ export const Live = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setCurrentStream(data.stream);
+        setCurrentStream(data.stream || data);
         setIsBroadcaster(false);
       }
     } catch (error) {
       console.error('Failed to fetch stream details:', error);
     }
   };
-  const [streamTitle, setStreamTitle] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [localStreamId, setLocalStreamId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActiveStreams();
@@ -189,7 +189,6 @@ export const Live = () => {
   };
 
   const uploadRecording = async () => {
-    // This will be handled by LiveViewer
     return null;
   };
 

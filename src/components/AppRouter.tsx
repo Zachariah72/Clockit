@@ -8,7 +8,6 @@ import Groups from '@/pages/Groups';
 import Profile from '@/pages/Profile';
 import Reels from '@/pages/Reels';
 import { Live } from '@/pages/Live';
-import LiveFeed from '@/pages/LiveFeed';
 import Chat from '@/pages/Chat';
 import Auth from '@/pages/Auth';
 import Onboarding from '@/pages/Onboarding';
@@ -82,8 +81,7 @@ const AppRouter: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/reels" element={<Reels />} />
-          <Route path="/live" element={<LiveFeed />} />
-          <Route path="/live/create" element={<Live />} />
+          <Route path="/live" element={<Live />} />
           <Route path="/live/:id" element={<Live />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/podcasts" element={<Podcasts />} />

@@ -70,69 +70,41 @@ export const LiveViewer = ({
     }
   ];
 
-  // Start camera when component mounts (broadcaster only)
-  useEffect(() => {
-    if (!localVideoRef.current) {
-      const timer = setTimeout(() => {
-        if (isBroadcaster) startCamera();
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (isBroadcaster) {
-      startCamera();
-    }
-  }, [isBroadcaster, streamId]);
-
-  const startCamera = async () => {
-    try {
-      console.log('Requesting camera access...');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: true
-      });
-
-      console.log('Camera access granted, tracks:', stream.getTracks().length);
-      localStreamRef.current = stream;
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        console.log('Camera attached to video element');
-      } else {
-        console.warn('Video ref not available yet');
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.error('Could not access camera. Please allow camera permissions.');
-    }
-  };
-
-  // Join stream room and setup WebRTC when socket connects
+  // Setup camera and WebRTC when socket connects
   useEffect(() => {
     if (!socket || !streamId) return;
 
     // Join the stream room
     socket.emit('join_live', { streamId, userId: session?.user?.id });
     
-    const startMedia = async () => {
+    const initializeStream = async () => {
       try {
+        let localStream: MediaStream | null = null;
+
         // For broadcaster: get local camera
-        if (isBroadcaster && !localStreamRef.current) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+        if (isBroadcaster) {
+          console.log('Starting broadcaster camera...');
+          localStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
             audio: true
           });
-          localStreamRef.current = stream;
+          
+          localStreamRef.current = localStream;
+          
           if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.srcObject = localStream;
+            console.log('Camera attached to video element');
           }
         }
 
         const pc = new RTCPeerConnection({ iceServers });
         peerConnectionRef.current = pc;
 
+        // Add local tracks to peer connection
         if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach(track => {
             pc.addTrack(track, localStreamRef.current!);
@@ -150,23 +122,29 @@ export const LiveViewer = ({
         };
 
         pc.ontrack = (event) => {
-          // Show remote stream in remote video element
-          if (remoteVideoRef.current && event.streams[0]) {
-            remoteVideoRef.current.srcObject = event.streams[0];
+          // Show remote stream in main video element for viewers
+          if (!isBroadcaster && event.streams[0]) {
+            console.log('Received remote track, attaching to video');
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = event.streams[0];
+            }
           }
         };
 
-        if (isBroadcaster) {
+        // Broadcaster creates and sends offer
+        if (isBroadcaster && localStreamRef.current) {
+          console.log('Creating WebRTC offer...');
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           socket.emit('live_offer', { streamId, offer, from: session?.user?.id });
+          console.log('Offer sent to viewers');
         }
       } catch (error) {
-        console.error('Error accessing media devices:', error);
+        console.error('Error initializing stream:', error);
       }
     };
 
-    startMedia();
+    initializeStream();
 
     return () => {
       if (localStreamRef.current) {
@@ -185,10 +163,12 @@ export const LiveViewer = ({
     socket.on('live_offer', async (data: { from: string; offer: RTCSessionDescriptionInit }) => {
       if (isBroadcaster) return;
 
+      console.log('Received offer from broadcaster, creating answer...');
+      
       const pc = new RTCPeerConnection({ iceServers });
       peerConnectionRef.current = pc;
 
-      // Get viewer stream for sending back
+      // For viewer: get local camera/mic to send back
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
       if (localVideoRef.current) {
@@ -200,9 +180,11 @@ export const LiveViewer = ({
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit('live_answer', { streamId, answer, from: session?.user?.id });
+      console.log('Answer sent to broadcaster');
     });
 
     socket.on('live_answer', async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
+      console.log('Received answer from:', data.from);
       if (peerConnectionRef.current) {
         await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
       }
@@ -336,40 +318,14 @@ export const LiveViewer = ({
     <div className="fixed inset-0 bg-black">
       {/* Video Container */}
       <div className="relative w-full h-full">
-        {/* Remote/Broadcaster Video - Full Screen */}
-        {isBroadcaster ? (
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className="w-full h-full object-cover"
-          />
-        )}
-
-        {/* Local Video (Picture-in-Picture) - Only for broadcaster */}
-        {isBroadcaster && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute bottom-24 right-4 w-32 h-48 rounded-xl overflow-hidden border-2 border-white shadow-xl"
-          >
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-          </motion.div>
-        )}
+        {/* Main Video - Shows local camera for broadcaster, remote stream for viewers */}
+        <video
+          ref={localVideoRef}
+          autoPlay
+          playsInline
+          muted={isBroadcaster}
+          className="w-full h-full object-cover"
+        />
 
         {/* Recording Indicator */}
         {isRecording && (
