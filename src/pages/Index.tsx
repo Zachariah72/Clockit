@@ -649,6 +649,7 @@ const Index = () => {
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="text-left">Search</DialogTitle>
+              <DialogDescription>Search for songs, artists, and users</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">

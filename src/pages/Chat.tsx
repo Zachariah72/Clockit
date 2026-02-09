@@ -176,6 +176,7 @@ const ChatList = ({
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Start New Conversation</DialogTitle>
+                  <DialogDescription>Search for users to start a new conversation</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="relative">

@@ -703,6 +703,7 @@ const genres = [
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create New Playlist</DialogTitle>
+                    <DialogDescription>Create a new playlist to organize your favorite music</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>

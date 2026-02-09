@@ -194,8 +194,8 @@ const checkMessagingPermission = async (userId, recipientId) => {
     // Check if they follow each other
     const followRelationship = await Follow.findOne({
       $or: [
-        { follower_id: userId, following_id: recipientId },
-        { follower_id: recipientId, following_id: userId }
+        { follower: userId, following: recipientId },
+        { follower: recipientId, following: userId }
       ]
     });
 
@@ -242,10 +242,10 @@ const getUserSuggestions = async (req, res) => {
       .limit(10);
     } else {
       // Get users you follow
-      const following = await Follow.find({ follower_id: userId })
-        .populate('following_id', 'username display_name avatar_url');
+      const following = await Follow.find({ follower: userId })
+        .populate('following', 'username display_name avatar_url');
 
-      users = following.map(f => f.following_id);
+      users = following.map(f => f.following);
     }
 
     res.json(users);

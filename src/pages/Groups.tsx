@@ -396,6 +396,7 @@ const Groups = () => {
                 <Plus className="w-5 h-5" />
                 Create New Group
               </DialogTitle>
+              <DialogDescription>Create a new group to connect with other users</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
