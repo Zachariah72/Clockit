@@ -389,14 +389,6 @@ const Profile = () => {
                   />
                 </div>
               </div>
-              <Button
-                variant="glow"
-                size="icon-sm"
-                className="absolute bottom-0 right-0"
-                onClick={handleEditProfile}
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
             </div>
 
             {/* Name & Bio */}
