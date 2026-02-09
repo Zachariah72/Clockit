@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Radio, Users, MessageCircle, Heart, Share, Settings, Mic, MicOff, Video, VideoOff, PhoneOff, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,11 +24,36 @@ interface Stream {
 }
 
 export const Live = () => {
+  const { streamId } = useParams();
   const { socket, isConnected } = useSocket();
   const { session } = useAuth();
   const [isBroadcaster, setIsBroadcaster] = useState(false);
   const [currentStream, setCurrentStream] = useState<Stream | null>(null);
   const [activeStreams, setActiveStreams] = useState<Stream[]>([]);
+
+  // Fetch stream details if streamId is in URL (viewer joining)
+  useEffect(() => {
+    if (streamId && !currentStream) {
+      fetchStreamDetails(streamId);
+    }
+  }, [streamId]);
+
+  const fetchStreamDetails = async (id: string) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/live/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentStream(data.stream);
+        setIsBroadcaster(false);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stream details:', error);
+    }
+  };
   const [streamTitle, setStreamTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [localStreamId, setLocalStreamId] = useState<string | null>(null);

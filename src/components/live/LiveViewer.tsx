@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Video, VideoOff, PhoneOff, Users, MessageCircle, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocket } from '@/contexts/SocketContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { LiveChat } from './LiveChat';
 import { getApiUrl } from '@/utils/api';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ export const LiveViewer = ({
   onUploadRecording
 }: LiveViewerProps) => {
   const { socket } = useSocket();
+  const { session } = useAuth();
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [viewerCount, setViewerCount] = useState(1);
@@ -34,6 +36,7 @@ export const LiveViewer = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -50,7 +53,6 @@ export const LiveViewer = ({
     { urls: 'stun:global.stun.twilio.com:3478' },
     
     // Free TURN servers (public, may have limits)
-    // Note: For production, use your own TURN credentials from Twilio/Xirsys
     { 
       urls: 'turn:turn.rtccloud.net:80',
       username: 'guest',
@@ -68,15 +70,14 @@ export const LiveViewer = ({
     }
   ];
 
-  // Start camera when component mounts
+  // Start camera when component mounts (broadcaster only)
   useEffect(() => {
     if (!localVideoRef.current) {
-      // Wait for video element to be available
       const timer = setTimeout(() => {
-        startCamera();
+        if (isBroadcaster) startCamera();
       }, 100);
       return () => clearTimeout(timer);
-    } else {
+    } else if (isBroadcaster) {
       startCamera();
     }
   }, [isBroadcaster, streamId]);
@@ -86,7 +87,7 @@ export const LiveViewer = ({
       console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user', // Use front camera
+          facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
@@ -108,48 +109,57 @@ export const LiveViewer = ({
     }
   };
 
+  // Join stream room and setup WebRTC when socket connects
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !streamId) return;
 
+    // Join the stream room
+    socket.emit('join_live', { streamId, userId: session?.user?.id });
+    
     const startMedia = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        });
-
-        localStreamRef.current = stream;
-
-        if (localVideoRef.current && isBroadcaster) {
-          localVideoRef.current.srcObject = stream;
+        // For broadcaster: get local camera
+        if (isBroadcaster && !localStreamRef.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          localStreamRef.current = stream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+          }
         }
 
         const pc = new RTCPeerConnection({ iceServers });
         peerConnectionRef.current = pc;
 
-        stream.getTracks().forEach(track => {
-          pc.addTrack(track, stream);
-        });
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(track => {
+            pc.addTrack(track, localStreamRef.current!);
+          });
+        }
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
             socket.emit('live_ice_candidate', {
               streamId,
-              candidate: event.candidate
+              candidate: event.candidate,
+              from: session?.user?.id
             });
           }
         };
 
         pc.ontrack = (event) => {
-          if (!isBroadcaster && localVideoRef.current) {
-            localVideoRef.current.srcObject = event.streams[0];
+          // Show remote stream in remote video element
+          if (remoteVideoRef.current && event.streams[0]) {
+            remoteVideoRef.current.srcObject = event.streams[0];
           }
         };
 
         if (isBroadcaster) {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
-          socket.emit('live_offer', { streamId, offer });
+          socket.emit('live_offer', { streamId, offer, from: session?.user?.id });
         }
       } catch (error) {
         console.error('Error accessing media devices:', error);
@@ -159,7 +169,6 @@ export const LiveViewer = ({
     startMedia();
 
     return () => {
-      // Stop all media tracks
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -167,8 +176,9 @@ export const LiveViewer = ({
         peerConnectionRef.current.close();
       }
     };
-  }, [socket, streamId, isBroadcaster]);
+  }, [socket, streamId, isBroadcaster, session]);
 
+  // Handle WebRTC signaling events
   useEffect(() => {
     if (!socket) return;
 
@@ -178,23 +188,18 @@ export const LiveViewer = ({
       const pc = new RTCPeerConnection({ iceServers });
       peerConnectionRef.current = pc;
 
-      // Use existing local stream if available
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current!));
-      } else {
-        // Get new stream if not available
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      // Get viewer stream for sending back
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      socket.emit('live_answer', { streamId, answer });
+      socket.emit('live_answer', { streamId, answer, from: session?.user?.id });
     });
 
     socket.on('live_answer', async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
@@ -224,7 +229,7 @@ export const LiveViewer = ({
       socket.off('viewer_joined');
       socket.off('viewer_left');
     };
-  }, [socket, streamId, isBroadcaster]);
+  }, [socket, streamId, isBroadcaster, session]);
 
   // Recording functions
   const startRecording = () => {
@@ -249,12 +254,12 @@ export const LiveViewer = ({
       toast.success('Recording saved!');
     };
 
+    mediaRecorder.start(1000);
     mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start(1000); // Record in 1-second chunks
     setIsRecording(true);
     setRecordingTime(0);
-    
-    // Start recording timer
+
+    // Update timer every second
     recordingIntervalRef.current = setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
@@ -262,58 +267,39 @@ export const LiveViewer = ({
     toast.success('Recording started');
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+  const stopRecording = async () => {
+    if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
       }
-    }
-  };
 
-  const uploadRecording = async () => {
-    if (recordedChunksRef.current.length === 0) {
-      return null;
-    }
+      // Create and download the recording
+      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `live-recording-${streamId}-${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append('video', blob, 'recording.webm');
-
-    try {
-      const token = localStorage.getItem('auth_token');
-      const apiUrl = getApiUrl();
-
-      const response = await fetch(`${apiUrl}/live/${streamId}/recording`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast.success('Recording uploaded successfully');
-        return data.recordingUrl;
-      } else {
-        toast.error('Failed to upload recording');
-        return null;
+      // Optionally upload to backend
+      if (onUploadRecording) {
+        const uploadUrl = await onUploadRecording();
+        if (uploadUrl) {
+          toast.success('Recording uploaded to cloud');
+        }
       }
-    } catch (error) {
-      console.error('Error uploading recording:', error);
-      toast.error('Failed to upload recording');
-      return null;
     }
   };
 
   const toggleMute = () => {
-    if (localVideoRef.current?.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getAudioTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(track => {
         track.enabled = !track.enabled;
       });
       setIsMuted(!isMuted);
@@ -321,147 +307,189 @@ export const LiveViewer = ({
   };
 
   const toggleVideo = () => {
-    if (localVideoRef.current?.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getVideoTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach(track => {
         track.enabled = !track.enabled;
       });
       setIsVideoOff(!isVideoOff);
     }
   };
 
+  const endCall = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+    }
+    onEndStream();
+  };
+
+  // Format recording time
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="relative h-screen bg-black flex">
-      <div className="flex-1 relative">
+    <div className="fixed inset-0 bg-black">
+      {/* Video Container */}
+      <div className="relative w-full h-full">
+        {/* Remote/Broadcaster Video - Full Screen */}
         {isBroadcaster ? (
           <video
             ref={localVideoRef}
             autoPlay
-            muted
             playsInline
+            muted
             className="w-full h-full object-cover"
           />
         ) : (
           <video
-            ref={localVideoRef}
+            ref={remoteVideoRef}
             autoPlay
             playsInline
             className="w-full h-full object-cover"
           />
         )}
-        
-        {/* Fallback when no video */}
-        {!localStreamRef.current && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">📹</span>
-              </div>
-              <p className="text-gray-400">Camera starting...</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={startCamera}
-              >
-                Start Camera
-              </Button>
-            </div>
-          </div>
+
+        {/* Local Video (Picture-in-Picture) - Only for broadcaster */}
+        {isBroadcaster && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute bottom-24 right-4 w-32 h-48 rounded-xl overflow-hidden border-2 border-white shadow-xl"
+          >
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
         )}
 
-        <div className="absolute top-4 left-4 flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-white text-sm font-medium">LIVE</span>
-          </div>
-          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-            <Users className="w-4 h-4 text-white" />
-            <span className="text-white text-sm">{viewerCount}</span>
-          </div>
-        </div>
+        {/* Recording Indicator */}
+        {isRecording && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/80 backdrop-blur-sm px-4 py-2 rounded-full"
+          >
+            <Circle className="w-4 h-4 animate-pulse fill-current" />
+            <span className="text-white font-medium">{formatTime(recordingTime)}</span>
+          </motion.div>
+        )}
 
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <div className="bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-            <span className="text-white text-sm">{hostName}</span>
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/50 to-transparent"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                {hostName?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div>
+                <h2 className="text-white font-semibold">{hostName}</h2>
+                <p className="text-white/70 text-sm">{title}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-red-500/80 backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className="text-white text-sm font-medium">LIVE</span>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-3">
-          {isBroadcaster && (
-            <>
-              <Button
-                variant={isMuted ? 'destructive' : 'secondary'}
-                size="lg"
-                onClick={toggleMute}
-                className="rounded-full"
-              >
-                {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </Button>
-              <Button
-                variant={isVideoOff ? 'destructive' : 'secondary'}
-                size="lg"
-                onClick={toggleVideo}
-                className="rounded-full"
-              >
-                {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
-              </Button>
-              {!isRecording ? (
-                <Button
-                  variant="destructive"
-                  size="lg"
-                  onClick={startRecording}
-                  className="rounded-full gap-2"
-                >
-                  <Circle className="w-5 h-5 fill-red-500" />
-                  Record
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={stopRecording}
-                  className="rounded-full gap-2 bg-red-500 hover:bg-red-600 text-white"
-                >
-                  <Circle className="w-5 h-5 fill-red-500 animate-pulse" />
-                  Stop ({Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')})
-                </Button>
-              )}
-            </>
+        {/* Viewer Count */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full"
+        >
+          <Users className="w-4 h-4 text-white" />
+          <span className="text-white text-sm">{viewerCount}</span>
+        </motion.div>
+
+        {/* Chat */}
+        <AnimatePresence>
+          {showChat && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="absolute top-20 right-4 bottom-24 w-80 bg-black/50 backdrop-blur-xl rounded-2xl overflow-hidden"
+            >
+              <LiveChat streamId={streamId} />
+            </motion.div>
           )}
-          <Button
-            variant="destructive"
-            size="lg"
-            onClick={async () => {
-              // Stop recording if active
-              if (isRecording) {
-                stopRecording();
-              }
-              // Upload recording if available
-              if (isBroadcaster && onUploadRecording) {
-                await onUploadRecording();
-              }
-              onEndStream();
-            }}
-            className="rounded-full"
-          >
-            <PhoneOff className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => setShowChat(!showChat)}
-            className="rounded-full"
-          >
-            <MessageCircle className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
+        </AnimatePresence>
 
-      {showChat && (
-        <div className="w-80 border-l border-border hidden md:block">
-          <LiveChat streamId={streamId} />
-        </div>
-      )}
+        {/* Bottom Controls */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent"
+        >
+          <div className="flex items-center justify-center gap-4">
+            {/* Mute Button */}
+            <button
+              onClick={toggleMute}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                isMuted ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
+
+            {/* Video Button */}
+            <button
+              onClick={toggleVideo}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                isVideoOff ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+            </button>
+
+            {/* Record Button (Broadcaster Only) */}
+            {isBroadcaster && (
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                  isRecording 
+                    ? 'bg-red-500 text-white animate-pulse' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                <Circle className={`w-5 h-5 ${isRecording ? 'fill-current' : ''}`} />
+              </button>
+            )}
+
+            {/* End Call Button */}
+            <button
+              onClick={endCall}
+              className="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all"
+            >
+              <PhoneOff className="w-5 h-5" />
+            </button>
+
+            {/* Toggle Chat */}
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                showChat ? 'bg-purple-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              <MessageCircle className="w-5 h-5" />
+            </button>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

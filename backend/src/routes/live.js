@@ -37,7 +37,7 @@ const upload = multer({
 router.post('/start', auth, startLiveStream);
 router.post('/end/:streamId', auth, endLiveStream);
 router.get('/active', getActiveStreams);
-router.get('/:streamId', getStreamDetails);
+router.get('/:streamId', auth, getStreamDetails);
 router.get('/user/:userId', getUserStreams);
 router.post('/:streamId/join', auth, joinStream);
 router.post('/:streamId/leave', auth, leaveStream);
