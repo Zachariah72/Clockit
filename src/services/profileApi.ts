@@ -93,6 +93,10 @@ export const profileApi = {
   toggleFollow: (userId: string) =>
     api.post<{ action: 'followed' | 'unfollowed' }>(`/profile/${userId}/follow`),
 
+  // Search
+  search: (query: string, type?: string, limit = 10) =>
+    api.get<{ success: boolean; data: { query: string; total: number; results: any[] } }>(`/search?q=${encodeURIComponent(query)}&type=${type || ''}&limit=${limit}`),
+
   // Content features
   getStories: (userId?: string) =>
     api.get<Story[]>(userId ? `/profile/${userId}/stories` : '/profile/stories'),

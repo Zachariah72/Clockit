@@ -106,22 +106,29 @@ const Search = () => {
       return;
     }
 
+    // Require at least 2 characters
+    if (searchQuery.trim().length < 2) {
+      return;
+    }
+
     setIsSearching(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const filtered = mockResults.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setSearchResults(filtered);
-      setIsSearching(false);
-
-      // Add to search history
-      if (searchQuery.trim() && !searchHistory.includes(searchQuery.trim())) {
-        setSearchHistory(prev => [searchQuery.trim(), ...prev.slice(0, 4)]);
+    try {
+      const response = await profileApi.search(searchQuery);
+      if (response.success && response.data) {
+        setSearchResults(response.data.results || []);
       }
-    }, 300);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+
+    // Add to search history
+    if (searchQuery.trim() && !searchHistory.includes(searchQuery.trim())) {
+      setSearchHistory(prev => [searchQuery.trim(), ...prev.slice(0, 4)]);
+    }
   };
 
   const handleResultClick = (result: any) => {
