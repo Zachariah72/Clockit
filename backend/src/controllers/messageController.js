@@ -6,7 +6,12 @@ const Follow = require('../models/Follow');
 // Get conversations for a user
 const getConversations = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // Handle both JWT structures
+    const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const conversations = await Conversation.find({
       participants: userId
@@ -42,7 +47,12 @@ const getConversations = async (req, res) => {
 const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const userId = req.user.id;
+    // Handle both JWT structures
+    const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Verify user is part of conversation
     const conversation = await Conversation.findOne({
@@ -75,7 +85,12 @@ const getMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
   try {
     const { conversationId, content, type = 'text' } = req.body;
-    const userId = req.user.id;
+    // Handle both JWT structures
+    const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Verify user is part of conversation
     const conversation = await Conversation.findOne({
@@ -117,7 +132,12 @@ const sendMessage = async (req, res) => {
 const startConversation = async (req, res) => {
   try {
     const { recipientId, initialMessage } = req.body;
-    const userId = req.user.id;
+    // Handle both JWT structures
+    const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     if (userId === recipientId) {
       return res.status(400).json({ error: 'Cannot start conversation with yourself' });
@@ -195,7 +215,12 @@ const checkMessagingPermission = async (userId, recipientId) => {
 // Get user suggestions for messaging
 const getUserSuggestions = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // Handle both JWT structures
+    const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
     const { query } = req.query;
 
     let users = [];
