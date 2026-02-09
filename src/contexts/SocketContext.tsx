@@ -16,14 +16,17 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { session } = useAuth();
 
   useEffect(() => {
-    if (session?.access_token) {
+    const backendToken = localStorage.getItem('auth_token');
+    const token = backendToken || session?.access_token;
+    
+    if (token) {
       // Get the backend URL from our utility function
       const apiUrl = getApiUrl().replace('/api', ''); // Remove /api suffix for socket connection
       console.log('Connecting to Socket.IO:', apiUrl);
       
       const newSocket = io(apiUrl, {
         auth: {
-          token: session.access_token,
+          token: token,
         },
         transports: ['websocket', 'polling'],
         reconnection: true,
