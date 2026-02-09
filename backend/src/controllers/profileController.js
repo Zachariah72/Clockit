@@ -5,6 +5,7 @@ const SavedContent = require('../models/SavedContent');
 const DraftContent = require('../models/DraftContent');
 const MusicShare = require('../models/MusicShare');
 const Video = require('../models/Video');
+const { uploadImage } = require('../utils/cloudinary');
 
 // Get user profile
 exports.getProfile = async (req, res) => {
@@ -204,11 +205,51 @@ exports.uploadAvatar = async (req, res) => {
       return res.status(401).json({ message: 'User not found. Please log in again.' });
     }
 
-    // Build avatar URL - use a reliable construction method
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000';
-    const baseUrl = `${protocol}://${host}`;
-    const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+    // Upload to Cloudinary
+    let avatarUrl;
+    try {
+      // If using multer with file uploaded, get the path
+      const filePath = req.file?.path;
+      
+      if (filePath) {
+        // Local file upload via multer
+        const result = await uploadImage(filePath, {
+          folder: 'clockit/avatars',
+          public_id: `avatar_${userId}`,
+          transformation: [
+            { width: 200, height: 200, crop: 'fill' },
+            { quality: 'auto' },
+            { fetch_format: 'auto' }
+          ]
+        });
+        avatarUrl = result.secure_url;
+      } else {
+        // Check if base64 data is in the body
+        const base64Data = req.body.avatar;
+        if (base64Data && base64Data.startsWith('data:')) {
+          const result = await uploadImage(base64Data, {
+            folder: 'clockit/avatars',
+            public_id: `avatar_${userId}`,
+            transformation: [
+              { width: 200, height: 200, crop: 'fill' },
+              { quality: 'auto' },
+              { fetch_format: 'auto' }
+            ]
+          });
+          avatarUrl = result.secure_url;
+        } else {
+          return res.status(400).json({ message: 'No file uploaded' });
+        }
+      }
+    } catch (cloudinaryError) {
+      console.error('Cloudinary upload error:', cloudinaryError);
+      // Fallback to local storage if Cloudinary fails
+      const protocol = req.protocol || 'http';
+      const host = req.get('host') || 'localhost:5000';
+      const baseUrl = `${protocol}://${host}`;
+      avatarUrl = `${baseUrl}/uploads/avatars/${req.file?.filename}`;
+    }
+
     console.log('Avatar URL:', avatarUrl);
 
     const user = await User.findByIdAndUpdate(
