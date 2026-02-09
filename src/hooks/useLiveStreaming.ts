@@ -16,7 +16,31 @@ export const useLiveStreaming = ({ streamId, isBroadcaster }: UseLiveStreamingPr
   const [viewerCount, setViewerCount] = useState(1);
 
   const iceServers = [
-    { urls: 'stun:stun.l.google.com:19302' }
+    // Google STUN servers (free, no auth needed)
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    
+    // Twilio STUN servers (free)
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    
+    // Free TURN servers (public, may have limits)
+    // Note: For production, use your own TURN credentials from Twilio/Xirsys
+    { 
+      urls: 'turn:turn.rtccloud.net:80',
+      username: 'guest',
+      credential: 'guest'
+    },
+    {
+      urls: 'turn:turn.rtccloud.net:443',
+      username: 'guest',
+      credential: 'guest'
+    },
+    {
+      urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+      username: import.meta.env.VITE_TWILIO_USERNAME || '',
+      credential: import.meta.env.VITE_TWILIO_CREDENTIAL || ''
+    }
   ];
 
   const createPeerConnection = useCallback(() => {

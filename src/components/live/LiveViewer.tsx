@@ -41,8 +41,72 @@ export const LiveViewer = ({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const iceServers = [
-    { urls: 'stun:stun.l.google.com:19302' }
+    // Google STUN servers (free, no auth needed)
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    
+    // Twilio STUN servers (free)
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    
+    // Free TURN servers (public, may have limits)
+    // Note: For production, use your own TURN credentials from Twilio/Xirsys
+    { 
+      urls: 'turn:turn.rtccloud.net:80',
+      username: 'guest',
+      credential: 'guest'
+    },
+    {
+      urls: 'turn:turn.rtccloud.net:443',
+      username: 'guest',
+      credential: 'guest'
+    },
+    {
+      urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+      username: import.meta.env.VITE_TWILIO_USERNAME || '',
+      credential: import.meta.env.VITE_TWILIO_CREDENTIAL || ''
+    }
   ];
+
+  // Start camera when component mounts
+  useEffect(() => {
+    if (!localVideoRef.current) {
+      // Wait for video element to be available
+      const timer = setTimeout(() => {
+        startCamera();
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      startCamera();
+    }
+  }, [isBroadcaster, streamId]);
+
+  const startCamera = async () => {
+    try {
+      console.log('Requesting camera access...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user', // Use front camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: true
+      });
+
+      console.log('Camera access granted, tracks:', stream.getTracks().length);
+      localStreamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        console.log('Camera attached to video element');
+      } else {
+        console.warn('Video ref not available yet');
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast.error('Could not access camera. Please allow camera permissions.');
+    }
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -95,6 +159,10 @@ export const LiveViewer = ({
     startMedia();
 
     return () => {
+      // Stop all media tracks
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
@@ -110,12 +178,18 @@ export const LiveViewer = ({
       const pc = new RTCPeerConnection({ iceServers });
       peerConnectionRef.current = pc;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+      // Use existing local stream if available
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current!));
+      } else {
+        // Get new stream if not available
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
       }
-
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await pc.createAnswer();
@@ -257,7 +331,7 @@ export const LiveViewer = ({
   };
 
   return (
-    <div className="relative h-full bg-black flex">
+    <div className="relative h-screen bg-black flex">
       <div className="flex-1 relative">
         {isBroadcaster ? (
           <video
@@ -274,6 +348,25 @@ export const LiveViewer = ({
             playsInline
             className="w-full h-full object-cover"
           />
+        )}
+        
+        {/* Fallback when no video */}
+        {!localStreamRef.current && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📹</span>
+              </div>
+              <p className="text-gray-400">Camera starting...</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={startCamera}
+              >
+                Start Camera
+              </Button>
+            </div>
+          </div>
         )}
 
         <div className="absolute top-4 left-4 flex items-center gap-3">
