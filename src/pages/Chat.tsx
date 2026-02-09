@@ -10,6 +10,7 @@ import { CallInterface } from "@/components/CallInterface";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { getApiUrl } from "@/utils/api";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -125,7 +126,8 @@ const ChatList = ({
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`/api/messages/users/suggestions?query=${encodeURIComponent(query)}`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/messages/users/suggestions?query=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -328,7 +330,8 @@ const ChatView = ({
         return;
       }
 
-      const response = await fetch(`/api/messages/conversations/${conversation.id}/messages`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/messages/conversations/${conversation.id}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -411,7 +414,8 @@ const ChatView = ({
       });
 
       // Also send via API to ensure persistence
-      const response = await fetch(`/api/messages/conversations/${conversation.id}/messages`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/messages/conversations/${conversation.id}/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -39,3 +39,4 @@ public/assets/*.m4v
 public/assets/*.3gp
 public/assets/*.mpg
 public/assets/*.mpeg
+.vercel

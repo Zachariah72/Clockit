@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getApiUrl } from '@/utils/api';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -16,9 +17,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (session?.access_token) {
-      // Assuming backend accepts Supabase token or we have JWT
-      // For now, use session.access_token as token
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+      // Get the backend URL from our utility function
+      const apiUrl = getApiUrl().replace('/api', ''); // Remove /api suffix for socket connection
       console.log('Connecting to Socket.IO:', apiUrl);
       
       const newSocket = io(apiUrl, {
