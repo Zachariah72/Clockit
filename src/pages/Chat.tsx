@@ -991,12 +991,26 @@ const Chat = () => {
     setIsCalling(false);
     
     if (incomingCall) {
+      // Emit accept-call event to server
+      if (socket) {
+        socket.emit('accept-call', { 
+          callId: incomingCall.callId, 
+          from: user?.id 
+        });
+      }
       setCurrentCall({ userId: incomingCall.from, callType: incomingCall.callType, isIncoming: true });
       setIncomingCall(null);
     }
   };
 
   const handleRejectCall = () => {
+    // Emit reject-call event to server
+    if (socket && incomingCall) {
+      socket.emit('reject-call', { 
+        callId: incomingCall.callId, 
+        from: user?.id 
+      });
+    }
     setIncomingCall(null);
   };
 
