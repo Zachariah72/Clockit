@@ -34,8 +34,8 @@ const formatMessageDate = (dateString: string | Date | undefined | null): string
     return dateStr;
   }
   
-  // If it already says "Invalid Date", return empty
-  if (dateStr === 'Invalid Date') {
+  // If it already says "Invalid Date", return empty (case-insensitive)
+  if (dateStr.toLowerCase() === 'invalid date') {
     return '';
   }
   
@@ -522,7 +522,12 @@ const ChatView = ({
 
       socket.on('new_message', (data) => {
         if (data.conversationId === conversation.id) {
-          setMessages(prev => [...prev, data.message]);
+          // Normalize date field for socket messages too
+          const normalizedMessage = {
+            ...data.message,
+            created_at: data.message.created_at || data.message.createdAt || new Date().toISOString()
+          };
+          setMessages(prev => [...prev, normalizedMessage]);
         }
       });
 
