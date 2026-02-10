@@ -169,37 +169,80 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
       
       // If we already have a peer connection with tracks from acceptCall, use it
       if (peerConnectionRef.current && localStreamRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peerConnectionRef.current.createAnswer();
-        await peerConnectionRef.current.setLocalDescription(answer);
-        socket.emit('answer', { to: data.from, answer });
+        try {
+          const pc = peerConnectionRef.current;
+          // Check if we can set remote description
+          if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-offer') {
+            console.warn('Cannot set remote offer, signaling state:', pc.signalingState);
+            return;
+          }
+          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socket.emit('answer', { to: data.from, answer });
+        } catch (error) {
+          console.error('Error handling offer:', error);
+        }
         return;
       }
 
-      // Create new peer connection
-      const pc = createPeerConnection();
-      const stream = await getUserMedia(callType === 'video');
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      try {
+        // Create new peer connection
+        const pc = createPeerConnection();
+        const stream = await getUserMedia(callType === 'video');
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.emit('answer', { to: data.from, answer });
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('answer', { to: data.from, answer });
+      } catch (error) {
+        console.error('Error creating answer:', error);
+      }
     });
 
     socket.on('answer', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+      try {
+        if (peerConnectionRef.current) {
+          const pc = peerConnectionRef.current;
+          // Only set remote description if in the correct state
+          if (pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          } else if (pc.signalingState === 'stable') {
+            console.warn('Already in stable state, ignoring answer');
+          } else {
+            console.warn('Cannot set remote answer, signaling state:', pc.signalingState);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling answer:', error);
       }
     });
 
     socket.on('ice-candidate', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+      try {
+        if (peerConnectionRef.current) {
+          const pc = peerConnectionRef.current;
+          // Only add ICE candidate if remote description is set
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } else {
+            console.warn('Remote description not set, queuing ICE candidate');
+            // Queue the ICE candidate for later
+            setTimeout(() => {
+              if (pc.remoteDescription) {
+                pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+              }
+            }, 100);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling ICE candidate:', error);
       }
     });
 
     socket.on('call-ended', () => {
+      setHasOffer(false);
       cleanup();
     });
 
