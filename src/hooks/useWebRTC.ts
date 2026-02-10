@@ -83,19 +83,25 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
       localStreamRef.current = stream;
     }
 
-    // If we already have a peer connection, just add tracks and emit accept
+    // If we already have a peer connection, add tracks if they don't exist
     if (peerConnectionRef.current) {
       const pc = peerConnectionRef.current;
-      // Add tracks to existing connection
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      // Add tracks to existing connection if they don't exist
+      stream.getTracks().forEach(track => {
+        const senders = pc.getSenders();
+        const trackExists = senders.some(sender => sender.track?.kind === track.kind);
+        if (!trackExists) {
+          pc.addTrack(track, stream);
+        }
+      });
       socket.emit('accept-call', { callId, from: user.id });
       return;
     }
 
-    // Create peer connection and wait for offer
+    // Create peer connection
     const pc = createPeerConnection();
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    
+
     socket.emit('accept-call', { callId, from: user.id });
   };
 
