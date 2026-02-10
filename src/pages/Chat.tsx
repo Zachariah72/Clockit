@@ -898,19 +898,25 @@ const Chat = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('Socket not available in Chat');
+      return;
+    }
+
+    console.log('Socket connected in Chat, setting up listeners');
 
     socket.on('incoming-call', (data) => {
-      setIncomingCall({ from: data.from, callType: data.callType, callerName: 'Caller', callId: data.callId }); // TODO: get name
+      console.log('Received incoming-call event:', data);
+      setIncomingCall({ from: data.from, callType: data.callType, callerName: 'Caller', callId: data.callId });
     });
 
     socket.on('call-initiated', (data) => {
-      // Start calling animation and sound
+      console.log('Call initiated:', data);
       setIsCalling(true);
     });
 
     socket.on('call-accepted', () => {
-      // Stop calling sound
+      console.log('Call accepted event received');
       if (callingAudioRef.current) {
         callingAudioRef.current.pause();
         callingAudioRef.current.currentTime = 0;
@@ -922,7 +928,7 @@ const Chat = () => {
     });
 
     socket.on('call-rejected', () => {
-      // Stop calling sound
+      console.log('Call rejected event received');
       if (callingAudioRef.current) {
         callingAudioRef.current.pause();
         callingAudioRef.current.currentTime = 0;
@@ -932,7 +938,7 @@ const Chat = () => {
     });
 
     socket.on('call-ended', () => {
-      // Stop calling sound
+      console.log('Call ended event received');
       if (callingAudioRef.current) {
         callingAudioRef.current.pause();
         callingAudioRef.current.currentTime = 0;

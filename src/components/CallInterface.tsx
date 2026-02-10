@@ -90,20 +90,26 @@ export const CallInterface = ({
   }, [isIncoming]);
 
   const handleAccept = () => {
+    console.log('Accept button clicked');
     if (ringingAudioRef.current) {
       ringingAudioRef.current.pause();
       ringingAudioRef.current.currentTime = 0;
     }
+    console.log('Calling acceptCall from useWebRTC');
     acceptCall();
+    console.log('Calling onAccept callback');
     onAccept?.();
   };
 
   const handleReject = () => {
+    console.log('Reject button clicked');
     if (ringingAudioRef.current) {
       ringingAudioRef.current.pause();
       ringingAudioRef.current.currentTime = 0;
     }
+    console.log('Calling rejectCall from useWebRTC');
     rejectCall();
+    console.log('Calling onReject callback');
     onReject?.();
   };
 
