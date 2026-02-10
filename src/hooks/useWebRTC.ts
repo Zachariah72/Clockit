@@ -20,6 +20,10 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   const [isVideoOff, setIsVideoOff] = useState(callType === 'audio');
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [hasOffer, setHasOffer] = useState(false);
+  
+  // Use refs to track state for event handlers (avoids stale closures)
+  const hasOfferRef = useRef(false);
+  const isProcessingOfferRef = useRef(false);
 
   const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -177,6 +181,11 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
     }
+    peerConnectionRef.current = null;
+    localStreamRef.current = null;
+    remoteStreamRef.current = null;
+    hasOfferRef.current = false;
+    isProcessingOfferRef.current = false;
     setIsConnected(false);
   };
 
@@ -184,29 +193,38 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
     if (!socket) return;
 
     socket.on('offer', async (data) => {
-      // Mark that we've received the offer
-      setHasOffer(true);
+      console.log('Received offer event, signaling state:', peerConnectionRef.current?.signalingState);
       
-      // If we already have a peer connection with tracks from acceptCall, use it
-      if (peerConnectionRef.current && localStreamRef.current) {
-        try {
-          const pc = peerConnectionRef.current;
-          // Check if we can set remote description
-          if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-offer') {
-            console.warn('Cannot set remote offer, signaling state:', pc.signalingState);
-            return;
-          }
-          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('answer', { to: data.from, answer });
-        } catch (error) {
-          console.error('Error handling offer:', error);
-        }
+      // Prevent duplicate offer processing
+      if (isProcessingOfferRef.current) {
+        console.log('Already processing an offer, ignoring duplicate');
         return;
       }
-
+      
+      // Check if we already have a remote description (offer already processed)
+      if (peerConnectionRef.current?.remoteDescription) {
+        console.log('Already have remote description, ignoring duplicate offer');
+        return;
+      }
+      
+      isProcessingOfferRef.current = true;
+      
       try {
+        // If we already have a peer connection with tracks from acceptCall, use it
+        if (peerConnectionRef.current && localStreamRef.current) {
+          const pc = peerConnectionRef.current;
+          // Check if we can set remote description
+          if (pc.signalingState === 'stable' || pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('answer', { to: data.from, answer });
+          } else {
+            console.warn('Cannot set remote offer, signaling state:', pc.signalingState);
+          }
+          return;
+        }
+
         // Create new peer connection
         const pc = createPeerConnection();
         const stream = await getUserMedia(callType === 'video');
@@ -217,7 +235,9 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
         await pc.setLocalDescription(answer);
         socket.emit('answer', { to: data.from, answer });
       } catch (error) {
-        console.error('Error creating answer:', error);
+        console.error('Error handling offer:', error);
+      } finally {
+        isProcessingOfferRef.current = false;
       }
     });
 
