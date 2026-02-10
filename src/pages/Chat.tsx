@@ -16,6 +16,59 @@ import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 import callingSound from "@/assets/phone-ringing-382734.mp3";
 
+// Helper function to format message dates
+const formatMessageDate = (dateString: string | undefined | null): string => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date:', dateString);
+      return '';
+    }
+    
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMins = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    // For messages from today, show time
+    if (diffInDays === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // For messages from yesterday
+    if (diffInDays === 1) {
+      return 'Yesterday';
+    }
+    
+    // For messages from this week, show day name
+    if (diffInDays < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    }
+    
+    // For older messages, show date
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
+
+// Helper function to get avatar with placeholder
+const getAvatarWithPlaceholder = (avatarUrl: string | null | undefined, size: number = 40): string => {
+  if (avatarUrl && avatarUrl.trim() !== '') {
+    return avatarUrl;
+  }
+  return `/api/placeholder/${size}/${size}`;
+};
+
+// Default avatar for new chat search
+const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+
 interface Message {
   _id?: string;
   id?: string;
@@ -218,9 +271,13 @@ const ChatList = ({
                           className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
                         >
                           <img
-                            src={user.avatar_url || '/api/placeholder/40/40'}
+                            src={user.avatar_url || DEFAULT_AVATAR}
                             alt={user.username}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-muted"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+                            }}
                           />
                           <div>
                             <p className="font-medium">{user.username}</p>
@@ -281,12 +338,16 @@ const ChatList = ({
             {/* Avatar */}
             <div className="relative">
               <img
-                src={conv.avatar}
+                src={getAvatarWithPlaceholder(conv.avatar, 56)}
                 alt={conv.username}
-                className="w-14 h-14 rounded-full object-cover"
+                className="w-14 h-14 rounded-full object-cover ring-2 ring-offset-2 ring-offset-background ring-muted"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.username}`;
+                }}
               />
               {conv.isOnline && (
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-background animate-pulse" />
               )}
             </div>
 
@@ -478,12 +539,16 @@ const ChatView = ({
           
           <div className="relative">
             <img
-              src={conversation.avatar}
+              src={getAvatarWithPlaceholder(conversation.avatar, 40)}
               alt={conversation.username}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-offset-2 ring-offset-background ring-muted"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
+              }}
             />
             {conversation.isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />
             )}
           </div>
 
@@ -555,22 +620,22 @@ const ChatView = ({
                     )}
                   </div>
                   <p className={`text-xs mt-1 text-muted-foreground`}>
-                    {message.created_at}
-                  </p>
+                      {formatMessageDate(message.created_at)}
+                    </p>
                 </div>
               ) : (
                 <div
-                  className={`max-w-[75%] p-3 rounded-2xl ${
+                  className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
                     isOutgoing(message)
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-muted text-foreground rounded-bl-sm"
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-br-sm"
+                      : "bg-muted/80 text-foreground rounded-bl-sm"
                   }`}
                 >
-                  <p>{message.content}</p>
+                  <p className="text-sm leading-relaxed">{message.content}</p>
                   <p className={`text-xs mt-1 ${
                     isOutgoing(message) ? "text-primary-foreground/70" : "text-muted-foreground"
                   }`}>
-                    {message.created_at}
+                    {formatMessageDate(message.created_at)}
                   </p>
                 </div>
               )}
