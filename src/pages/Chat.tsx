@@ -81,7 +81,8 @@ const getAvatarWithPlaceholder = (avatarUrl: string | null | undefined, size: nu
   if (avatarUrl && avatarUrl.trim() !== '') {
     return avatarUrl;
   }
-  return `/api/placeholder/${size}/${size}`;
+  // Use DiceBear avatar generator for nice placeholder avatars
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`;
 };
 
 // Default avatar for new chat search
