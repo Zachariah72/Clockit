@@ -17,22 +17,35 @@ import avatar3 from "@/assets/avatar-3.jpg";
 import callingSound from "@/assets/phone-ringing-382734.mp3";
 
 // Helper function to format message dates
-const formatMessageDate = (dateString: string | undefined | null): string => {
-  if (!dateString) return '';
+const formatMessageDate = (dateString: string | Date | undefined | null): string => {
+  if (!dateString || dateString === '') return '';
+  
+  // Handle Date objects
+  let dateStr = typeof dateString === 'object' ? (dateString as Date).toISOString() : dateString;
+  dateStr = dateStr.trim();
+  
+  // If it looks like a time string (e.g., "10:30 AM"), return it as-is
+  if (/^\d{1,2}:\d{2}(\s*(AM|PM))?$/i.test(dateStr)) {
+    return dateStr;
+  }
+  
+  // If it already says "Invalid Date", return empty
+  if (dateStr === 'Invalid Date') {
+    return '';
+  }
   
   try {
-    const date = new Date(dateString);
+    const date = new Date(dateStr);
     
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.warn('Invalid date:', dateString);
+      // If parsing failed, return empty
+      console.warn('Invalid date:', dateStr);
       return '';
     }
     
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();
-    const diffInMins = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
     
     // For messages from today, show time
