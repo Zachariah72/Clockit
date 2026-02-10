@@ -278,9 +278,9 @@ io.on('connection', async (socket) => {
       // Find the call session to get caller
       const callSession = await CallSession.findById(callId);
       if (callSession) {
-        // Use the 'from' field if provided, otherwise use socket.userId
-        const recipientId = from || socket.userId;
-        io.to(recipientId).emit('call-accepted');
+        // Send call-accepted to the CALLER (not the callee)
+        // The callSession.caller is the caller's user ID
+        io.to(callSession.caller.toString()).emit('call-accepted');
       }
     } catch (error) {
       console.error('Error accepting call:', error);

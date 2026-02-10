@@ -76,18 +76,26 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   const acceptCall = async () => {
     if (!socket || !user) return;
 
-    // If we already received the offer, don't create a new peer connection
-    // The offer handler already set up the connection
-    if (hasOffer) {
+    // Get local media stream first (for callee to speak)
+    let stream = localStreamRef.current;
+    if (!stream) {
+      stream = await getUserMedia(callType === 'video');
+      localStreamRef.current = stream;
+    }
+
+    // If we already have a peer connection, just add tracks and emit accept
+    if (peerConnectionRef.current) {
+      const pc = peerConnectionRef.current;
+      // Add tracks to existing connection
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
       socket.emit('accept-call', { callId, from: user.id });
       return;
     }
 
-    // Create peer connection only if we haven't received the offer yet
+    // Create peer connection and wait for offer
     const pc = createPeerConnection();
-    const stream = await getUserMedia(callType === 'video');
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
+    
     socket.emit('accept-call', { callId, from: user.id });
   };
 
