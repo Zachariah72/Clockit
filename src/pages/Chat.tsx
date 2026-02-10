@@ -496,7 +496,12 @@ const ChatView = ({
 
       if (response.ok) {
         const data = await response.json();
-        setMessages(data);
+        // Normalize date fields - handle both createdAt (from MongoDB) and created_at
+        const normalizedMessages = data.map((msg: any) => ({
+          ...msg,
+          created_at: msg.created_at || msg.createdAt || new Date().toISOString()
+        }));
+        setMessages(normalizedMessages);
       } else if (response.status === 401) {
         localStorage.removeItem('auth_token');
         toast.error("Session expired. Please log in again.");
