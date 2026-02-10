@@ -1,6 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, MoreVertical, Phone, PhoneOff, Video, Search, Users, Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { 
+  Send, ArrowLeft, MoreVertical, Phone, PhoneOff, Video, Search, Users, 
+  Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, 
+  PhoneOutgoing, ArrowUpRight, ArrowDownLeft, Smile, Check, CheckCheck, 
+  CircleDashed, ImagePlus, Mic
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
@@ -81,6 +86,40 @@ const getAvatarWithPlaceholder = (avatarUrl: string | null | undefined, size: nu
 
 // Default avatar for new chat search
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+
+// Helper function to get message status icon
+const getMessageStatus = (isOutgoing: boolean, isRead: boolean) => {
+  if (!isOutgoing) return null;
+  
+  if (isRead) {
+    return <CheckCheck className="w-3 h-3 text-primary-foreground/70" />;
+  }
+  return <Check className="w-3 h-3 text-primary-foreground/70" />;
+};
+
+// Helper function to format last seen
+const formatLastSeen = (lastSeen: string | null | undefined): string => {
+  if (!lastSeen) return "Offline";
+  
+  try {
+    const date = new Date(lastSeen);
+    if (isNaN(date.getTime())) return "Offline";
+    
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMins = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInMins < 1) return "Just now";
+    if (diffInMins < 60) return `${diffInMins}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return date.toLocaleDateString();
+  } catch {
+    return "Offline";
+  }
+};
 
 interface Message {
   _id?: string;
@@ -346,14 +385,22 @@ const ChatList = ({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={() => onSelectChat(conv)}
-            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-muted/50 cursor-pointer transition-colors"
+            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-200 ${
+              conv.unreadCount > 0 
+                ? 'bg-primary/5 hover:bg-primary/10' 
+                : 'hover:bg-muted/50'
+            }`}
           >
             {/* Avatar */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <img
                 src={getAvatarWithPlaceholder(conv.avatar, 56)}
                 alt={conv.username}
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-offset-2 ring-offset-background ring-muted"
+                className={`w-14 h-14 rounded-full object-cover ring-2 ${
+                  conv.unreadCount > 0 
+                    ? 'ring-primary/30' 
+                    : 'ring-muted'
+                }`}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.username}`;
@@ -367,18 +414,32 @@ const ChatList = ({
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-foreground">{conv.username}</span>
-                <span className="text-xs text-muted-foreground">{conv.lastMessageTime}</span>
+                <span className={`font-semibold ${conv.unreadCount > 0 ? 'text-foreground' : 'text-foreground'}`}>
+                  {conv.username}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className={`text-xs ${conv.unreadCount > 0 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                    {conv.lastMessageTime}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+              <div className="flex items-center gap-2">
+                <p className={`flex-1 truncate text-sm ${
+                  conv.unreadCount > 0 
+                    ? 'text-foreground font-medium' 
+                    : 'text-muted-foreground'
+                }`}>
+                  {conv.lastMessage}
+                </p>
+                {conv.unreadCount > 0 && (
+                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-primary-foreground">
+                      {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* Unread Badge */}
-            {conv.unreadCount > 0 && (
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold text-primary-foreground">{conv.unreadCount}</span>
-              </div>
-            )}
           </motion.div>
           ))
         )}
@@ -567,8 +628,22 @@ const ChatView = ({
 
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">{conversation.username}</h2>
-            <p className="text-xs text-muted-foreground">
-              {conversation.isOnline ? "Online" : "Offline"}
+            <p className={`text-xs flex items-center gap-1 ${
+              conversation.isOnline 
+                ? "text-green-500" 
+                : "text-muted-foreground"
+            }`}>
+              {conversation.isOnline ? (
+                <>
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  Online
+                </>
+              ) : (
+                <>
+                  <CircleDashed className="w-3 h-3" />
+                  Last seen {formatLastSeen(null)}
+                </>
+              )}
             </p>
           </div>
 
@@ -644,12 +719,15 @@ const ChatView = ({
                       : "bg-muted/80 text-foreground rounded-bl-sm"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-                  <p className={`text-xs mt-1 ${
-                    isOutgoing(message) ? "text-primary-foreground/70" : "text-muted-foreground"
+                  <p className="text-sm leading-relaxed break-words">{message.content}</p>
+                  <div className={`flex items-center justify-end gap-1 mt-1 ${
+                    isOutgoing(message) ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
                   }`}>
-                    {formatMessageDate(message.created_at)}
-                  </p>
+                    <span className="text-xs">
+                      {formatMessageDate(message.created_at)}
+                    </span>
+                    {getMessageStatus(isOutgoing(message), message.is_read)}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -661,33 +739,48 @@ const ChatView = ({
 
       {/* Input */}
       <div className="p-4 glass-card rounded-t-3xl">
-        <div className="flex items-center gap-2 mb-2">
-          <Button variant="ghost" size="icon">
-            <Image className="w-5 h-5" />
+        {/* Attachment buttons */}
+        <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
+          <Button variant="ghost" size="icon" className="flex-shrink-0 rounded-full hover:bg-muted">
+            <Smile className="w-5 h-5 text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <Music className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="flex-shrink-0 rounded-full hover:bg-muted">
+            <ImagePlus className="w-5 h-5 text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <File className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="flex-shrink-0 rounded-full hover:bg-muted">
+            <Mic className="w-5 h-5 text-muted-foreground" />
           </Button>
         </div>
+        
+        {/* Message input */}
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1 h-12 rounded-xl bg-muted/50 border-border/50"
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              className="pr-12 h-12 rounded-2xl bg-muted/50 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+            {newMessage.trim() && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                {newMessage.length}
+              </div>
+            )}
+          </div>
+          
+          {/* Send button */}
           <Button
-            variant="glow"
-            size="icon"
             onClick={handleSend}
             disabled={!newMessage.trim()}
-            className="h-12 w-12 rounded-xl"
+            className={`h-12 w-12 rounded-2xl transition-all duration-200 ${
+              newMessage.trim()
+                ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25'
+                : 'bg-muted'
+            }`}
+            size="icon"
           >
-            <Send className="w-5 h-5" />
+            <Send className={`w-5 h-5 ${newMessage.trim() ? 'animate-pulse' : ''}`} />
           </Button>
         </div>
       </div>
