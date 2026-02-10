@@ -31,7 +31,7 @@ const getConversations = async (req, res) => {
         username: otherParticipant?.username || 'Unknown',
         avatar: otherParticipant?.avatar_url || '/api/placeholder/40/40',
         lastMessage: conv.lastMessage?.content || 'No messages yet',
-        lastMessageTime: conv.lastMessage ? new Date(conv.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        lastMessageTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt || conv.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         unreadCount,
         isOnline: false // TODO: Implement online status
       };
