@@ -74,7 +74,12 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
   };
 
   const acceptCall = async () => {
-    if (!socket || !user) return;
+    if (!socket || !user) {
+      console.log('acceptCall early return - socket:', !!socket, 'user:', !!user);
+      return;
+    }
+
+    console.log('acceptCall proceeding - socket connected, user exists');
 
     // Get local media stream first (for callee to speak)
     let stream = localStreamRef.current;
@@ -103,6 +108,7 @@ export const useWebRTC = ({ remoteUserId, isCaller, callType, callId }: UseWebRT
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
     socket.emit('accept-call', { callId, from: user.id });
+    console.log('accept-call event emitted', { callId, from: user.id });
   };
 
   const rejectCall = () => {
