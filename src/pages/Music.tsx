@@ -353,7 +353,7 @@ const genres = [
   // Playlist View Component
   const PlaylistView = ({ playlist }: { playlist: any }) => (
     <Layout hideBottomNav={!showBottomNav}>
-      <div className={`min-h-screen ${currentMood?.color || 'bg-background'} transition-colors duration-500`}>
+      <div className={`min-h-screen ${currentMood?.color || 'bg-background'} transition-colors duration-500 overflow-x-hidden`}>
       {/* Playlist Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -438,7 +438,7 @@ const genres = [
       {selectedPlaylist ? (
         <PlaylistView playlist={selectedPlaylist} />
       ) : (
-        <div className={`min-h-screen ${currentMood?.color || 'bg-background'} transition-colors duration-500`}>
+        <div className={`min-h-screen ${currentMood?.color || 'bg-background'} transition-colors duration-500 overflow-x-hidden`}>
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}

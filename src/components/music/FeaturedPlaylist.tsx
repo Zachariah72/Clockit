@@ -22,7 +22,7 @@ export const FeaturedPlaylist = ({
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative min-w-[200px] h-[240px] rounded-2xl overflow-hidden cursor-pointer group"
+      className="relative w-full max-w-[200px] h-[240px] rounded-2xl overflow-hidden cursor-pointer group"
     >
       {/* Background image */}
       <img
