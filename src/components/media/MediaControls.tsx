@@ -76,7 +76,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
       {!compact && (
         <div className="flex items-center gap-3 mb-4">
           <img
-            src={currentTrack.artwork || '/api/placeholder/40/40'}
+            src={currentTrack.artwork || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.title}`}
             alt={currentTrack.title}
             className="w-12 h-12 rounded-lg object-cover"
           />

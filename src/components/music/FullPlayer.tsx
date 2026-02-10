@@ -61,7 +61,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl overflow-hidden">
+      <SheetContent side="bottom" className="h-[85dvh] sm:h-[90vh] rounded-t-3xl overflow-hidden w-full max-w-full">
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-blue-900/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
@@ -99,9 +99,9 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                   {/* Glow Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-50 animate-pulse" />
                   <img
-                    src={currentTrack.artwork || '/api/placeholder/300/300'}
+                    src={currentTrack.artwork || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.title}`}
                     alt={currentTrack.title}
-                    className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-3xl object-cover shadow-2xl border border-white/20"
+                    className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl sm:rounded-3xl object-cover shadow-2xl border border-white/20"
                   />
                   {/* Inner Glow */}
                   <div className="absolute inset-2 rounded-2xl bg-gradient-to-br from-white/10 to-transparent" />
@@ -170,9 +170,9 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                 </h3>
                 <div className="flex items-start gap-3 sm:gap-4">
                   <img
-                    src="/api/placeholder/60/60"
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.artist}`}
                     alt={currentTrack.artist}
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover flex-shrink-0"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">{currentTrack.artist}</h4>
