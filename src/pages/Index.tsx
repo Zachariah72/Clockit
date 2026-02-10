@@ -495,6 +495,9 @@ const Index = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/live'}>
+                <Radio className="w-5 h-5" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => window.location.href = '/profile'}>
                 <User className="w-5 h-5" />
               </Button>
