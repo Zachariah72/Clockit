@@ -99,6 +99,14 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
+  
+  // Use refs to access current state inside event listeners
+  const stateRef = useRef(state);
+  
+  // Keep stateRef in sync with state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Spotify player integration
   const spotifyPlayer = useSpotifyPlayer();
@@ -115,8 +123,8 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       });
 
       audioRef.current.addEventListener('ended', () => {
-        console.log('Audio track ended, playbackSource:', state.playbackSource, 'calling handleTrackEnd');
-        handleTrackEnd();
+        console.log('Audio track ended, playbackSource:', stateRef.current.playbackSource, 'calling handleTrackEnd');
+        handleTrackEndWithRef();
       });
 
       audioRef.current.addEventListener('loadedmetadata', () => {
@@ -209,6 +217,54 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       console.log('Playing next track');
       // Play next track if available
       next();
+    } else {
+      console.log('End of playlist, stopping playback');
+      // End of playlist - stop playback cleanly
+      setState(prev => ({ ...prev, isPlaying: false }));
+    }
+  };
+
+  // Updated handleTrackEnd that uses refs for event listeners
+  const handleTrackEndWithRef = () => {
+    const currentState = stateRef.current;
+    console.log('handleTrackEndWithRef called, repeatMode:', currentState.repeatMode, 'currentIndex:', currentState.currentIndex, 'playlistLength:', currentState.playlist.length);
+
+    // If no playlist, stop playback
+    if (currentState.playlist.length === 0) {
+      console.log('No playlist, stopping playback');
+      setState(prev => ({ ...prev, isPlaying: false }));
+      return;
+    }
+
+    // Ensure currentIndex is valid
+    let validIndex = currentState.currentIndex;
+    if (validIndex < 0 || validIndex >= currentState.playlist.length) {
+      console.warn('Invalid currentIndex, resetting to 0');
+      validIndex = 0;
+    }
+
+    if (currentState.repeatMode === 'one') {
+      console.log('Repeating current track');
+      // Replay current track
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else if (currentState.repeatMode === 'all') {
+      console.log('Repeat all mode, playing next');
+      // Calculate next index and play next track
+      let nextIndex = currentState.currentIndex + 1;
+      if (nextIndex >= currentState.playlist.length) {
+        nextIndex = 0; // Loop back to start
+      }
+      const nextTrack = currentState.playlist[nextIndex];
+      playTrack(nextTrack, currentState.playlist, nextIndex);
+    } else if (validIndex < currentState.playlist.length - 1) {
+      console.log('Playing next track');
+      // Play next track if available
+      let nextIndex = currentState.currentIndex + 1;
+      const nextTrack = currentState.playlist[nextIndex];
+      playTrack(nextTrack, currentState.playlist, nextIndex);
     } else {
       console.log('End of playlist, stopping playback');
       // End of playlist - stop playback cleanly
