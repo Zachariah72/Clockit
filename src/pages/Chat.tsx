@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, MoreVertical, Phone, Video, Search, Users, Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical, Phone, PhoneOff, Video, Search, Users, Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, PhoneOutgoing, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
