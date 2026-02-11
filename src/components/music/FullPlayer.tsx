@@ -82,17 +82,17 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
           ))}
         </div>
 
-        <div className="relative flex flex-col h-full z-10">
+        <div className="relative flex flex-col h-full z-10 items-center">
           {/* Fixed Header */}
           <div className="flex-shrink-0">
-            <SheetHeader className="text-left mb-4 sm:mb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+            <SheetHeader className="text-center mb-4 sm:mb-6 px-4 sm:pt-6 w-full max-w-sm">
               <SheetTitle className="text-2xl sm:text-3xl font-bold text-gradient">Now Playing</SheetTitle>
             </SheetHeader>
           </div>
 
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 px-4 sm:px-6">
-            <div className="space-y-6 sm:space-y-8 pb-6 sm:pb-8">
+          <ScrollArea className="flex-1 w-full">
+            <div className="space-y-6 sm:space-y-8 pb-6 sm:pb-8 flex flex-col items-center">
               {/* Album Art with Enhanced Styling */}
               <div className="flex justify-center">
                 <div className="relative">
@@ -116,12 +116,12 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Media Controls with Enhanced Styling */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <MediaControls showDeviceControls />
               </div>
 
               {/* Song Details */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
                     <Info className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -161,7 +161,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Artist Info */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-pink-500 to-red-500 rounded-lg flex items-center justify-center text-white">
                     <User className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -189,7 +189,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Social Actions */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center text-white">
                     <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -239,7 +239,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Related Songs */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                   <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
                     <Music className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -269,7 +269,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
               </div>
 
               {/* Lyrics Section with Modern Design */}
-              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl">
+              <div className="glass-card-modern p-4 sm:p-6 rounded-2xl w-full max-w-sm mx-auto">
                 <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
                   <span className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white">
                     <Mic className="w-3 h-3 sm:w-4 sm:h-4" />
