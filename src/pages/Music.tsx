@@ -453,7 +453,7 @@ const genres = [
             {/* Mood Selector */}
             <div className="mb-4">
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Mood Mode</h3>
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {moodModes.map((mood) => (
                   <Button
                     key={mood.key}
@@ -475,9 +475,9 @@ const genres = [
             <div className="mt-4">
               <Tabs value={selectedGenre} onValueChange={setSelectedGenre}>
                 <TabsList className="w-full justify-start h-auto overflow-x-auto scrollbar-hide">
-                  <div className="flex gap-1 px-1">
-                    {genres.slice(0, 8).map((genre) => (
-                      <TabsTrigger key={genre} value={genre} className="text-xs px-3 py-1 whitespace-nowrap flex-shrink-0">
+                  <div className="flex gap-1 px-1 w-max">
+                    {genres.map((genre) => (
+                      <TabsTrigger key={genre} value={genre} className="text-xs px-3 py-1.5 whitespace-nowrap flex-shrink-0">
                         {genre}
                       </TabsTrigger>
                     ))}

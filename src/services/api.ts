@@ -161,3 +161,24 @@ class ApiService {
 }
 
 export const api = new ApiService(API_BASE_URL);
+
+// Artist follow API functions
+export const followArtist = async (artistId: string, artistName: string, artistImage: string = '') => {
+  return api.post('/artists/follow/follow', { artistId, artistName, artistImage });
+};
+
+export const unfollowArtist = async (artistId: string) => {
+  return api.delete(`/artists/follow/unfollow/${artistId}`);
+};
+
+export const checkArtistFollow = async (artistId: string) => {
+  return api.get<{ isFollowing: boolean }>(`/artists/follow/check/${artistId}`);
+};
+
+export const checkMultipleArtistFollows = async (artistIds: string[]) => {
+  return api.post<{ following: Record<string, boolean> }>('/artists/follow/check-multiple', { artistIds });
+};
+
+export const getFollowedArtists = async () => {
+  return api.get<any[]>('/artists/follow/following');
+};

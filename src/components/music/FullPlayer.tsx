@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { MediaControls } from "@/components/media/MediaControls";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, User, Share2, Music, Heart, Plus, Download, Play, Mic } from "lucide-react";
+import { Info, User, Share2, Music, Heart, Plus, Download, Play, Mic, Check, UserPlus, UserCheck } from "lucide-react";
 import { toast } from "sonner";
+import { followArtist, unfollowArtist, checkArtistFollow } from "@/services/api";
 
 interface FullPlayerProps {
   open: boolean;
@@ -14,6 +15,50 @@ interface FullPlayerProps {
 export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
   const { currentTrack, cacheTrack, isTrackCached } = useMediaPlayer();
   const [isLiked, setIsLiked] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
+
+  // Check if following artist when track changes
+  useEffect(() => {
+    if (!currentTrack?.artist) return;
+    
+    const checkFollow = async () => {
+      try {
+        const artistId = encodeURIComponent(currentTrack.artist);
+        const result = await checkArtistFollow(artistId);
+        setIsFollowing(result.isFollowing);
+      } catch (error) {
+        // Not following or error - assume not following
+        setIsFollowing(false);
+      }
+    };
+    
+    checkFollow();
+  }, [currentTrack?.artist]);
+
+  const handleFollowToggle = async () => {
+    if (!currentTrack?.artist || isFollowingLoading) return;
+    
+    setIsFollowingLoading(true);
+    try {
+      const artistId = encodeURIComponent(currentTrack.artist);
+      const artistImage = currentTrack.artwork || '';
+      
+      if (isFollowing) {
+        await unfollowArtist(artistId);
+        setIsFollowing(false);
+        toast.success(`Unfollowed ${currentTrack.artist}`);
+      } else {
+        await followArtist(artistId, currentTrack.artist, artistImage);
+        setIsFollowing(true);
+        toast.success(`Following ${currentTrack.artist}`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update follow status');
+    } finally {
+      setIsFollowingLoading(false);
+    }
+  };
 
   if (!currentTrack) return null;
 
@@ -175,7 +220,30 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
                     className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">{currentTrack.artist}</h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-base sm:text-lg">{currentTrack.artist}</h4>
+                      <button
+                        onClick={handleFollowToggle}
+                        disabled={isFollowingLoading}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          isFollowing
+                            ? 'bg-primary/20 text-primary hover:bg-primary/30'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        }`}
+                      >
+                        {isFollowing ? (
+                          <>
+                            <UserCheck className="w-3 h-3" />
+                            <span>Following</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-3 h-3" />
+                            <span>Follow</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                       Midnight Wave is an electronic music producer known for blending synthwave aesthetics with modern electronic production techniques. Their music explores themes of nostalgia, technology, and urban life.
                     </p>
