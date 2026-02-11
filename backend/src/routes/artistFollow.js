@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { followArtist, unfollowArtist, checkArtistFollow, getFollowedArtists, checkMultipleArtistFollows } = require('../controllers/artistFollowController');
-const { authenticateJWT } = require('../middlewares/auth');
+const auth = require('../middlewares/auth');
 
 // All routes require authentication
-router.use(authenticateJWT);
+router.use(auth);
 
 // Follow an artist
 router.post('/follow', followArtist);
