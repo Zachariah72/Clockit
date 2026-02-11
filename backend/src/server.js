@@ -106,6 +106,8 @@ app.use('/api/comments', require('./routes/comments'));
 app.use('/api/likes', require('./routes/likes'));
 app.use('/api/feeds', require('./routes/feeds'));
 app.use('/api/playlists', require('./routes/playlists'));
+// artistFollow must come BEFORE artists to avoid /:id matching /follow
+app.use('/api/artists/follow', require('./routes/artistFollow'));
 app.use('/api/artists', require('./routes/artists'));
 app.use('/api/albums', require('./routes/albums'));
 app.use('/api/wrapped', require('./routes/wrapped'));
@@ -119,7 +121,6 @@ app.use('/api/tiktok', require('./routes/tiktok'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));
-app.use('/api/artists/follow', require('./routes/artistFollow'));
 app.use('/api/live', require('./routes/live'));
 
 // Socket.IO authentication middleware - use JWT token like REST API
