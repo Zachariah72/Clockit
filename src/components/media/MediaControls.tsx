@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, RotateCcw, Bluetooth, BluetoothConnected, Download } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, RotateCcw, Bluetooth, BluetoothConnected, Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
@@ -190,40 +190,47 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
           {getRepeatIcon()}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (currentTrack) {
-              if (isTrackCached(currentTrack.id)) {
-                // Could show a message or different action for already downloaded tracks
-              } else {
-                cacheTrack(currentTrack.id);
+        {/* Download Control */}
+        <div className="relative flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (currentTrack) {
+                if (isTrackCached(currentTrack.id)) {
+                  // Could show a message or different action for already downloaded tracks
+                } else {
+                  cacheTrack(currentTrack.id);
+                }
               }
-            }
-          }}
-          className={`rounded-full p-2 ${currentTrack && isTrackCached(currentTrack.id) ? 'text-green-500 bg-green-500/10' : 'text-muted-foreground hover:text-primary'}`}
-          title={currentTrack && isTrackCached(currentTrack.id) ? 'Downloaded for offline' : 'Download for offline'}
-        >
-          <Download className="w-4 h-4" />
-        </Button>
+            }}
+            className={`rounded-full p-2 ${currentTrack && isTrackCached(currentTrack.id) ? 'text-green-500 bg-green-500/10' : 'text-muted-foreground hover:text-primary'}`}
+            title={currentTrack && isTrackCached(currentTrack.id) ? 'Downloaded for offline' : 'Download for offline'}
+          >
+            {currentTrack && isTrackCached(currentTrack.id) ? (
+              <Check className="w-4 h-4 text-green-500" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
 
-        {/* Bluetooth Control - positioned after repeat button */}
+        {/* Bluetooth Control */}
         {showDeviceControls && (
           <div className="flex items-center">
             {deviceConnected ? (
-              <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
-                <BluetoothConnected className="w-3 h-3 text-blue-500" />
-                <span className="text-xs text-muted-foreground max-w-16 truncate">
-                  {deviceName}
+              <div className="flex items-center gap-1.5 bg-muted/50 rounded-full px-3 py-1.5 border border-blue-500/30">
+                <BluetoothConnected className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-xs font-medium text-blue-500 max-w-[80px] truncate">
+                  {deviceName || 'Connected'}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={disconnectDevice}
-                  className="h-5 px-1 text-xs ml-1"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
                 >
-                  ✕
+                  <span className="text-xs text-muted-foreground hover:text-foreground">✕</span>
                 </Button>
               </div>
             ) : (
@@ -231,9 +238,10 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={connectBluetoothDevice}
-                className="rounded-full p-1.5 bg-muted/50 hover:bg-muted/70"
+                className="rounded-full p-2 bg-muted/50 hover:bg-muted/70"
+                title="Connect Bluetooth Device"
               >
-                <Bluetooth className="w-3 h-3" />
+                <Bluetooth className="w-4 h-4 text-muted-foreground" />
               </Button>
             )}
           </div>
