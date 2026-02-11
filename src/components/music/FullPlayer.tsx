@@ -82,7 +82,7 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
           ))}
         </div>
 
-        <div className="relative flex flex-col h-full z-10 items-center">
+        <div className="relative flex flex-col h-full z-10 items-center justify-start">
           {/* Fixed Header */}
           <div className="flex-shrink-0">
             <SheetHeader className="text-center mb-4 sm:mb-6 px-4 sm:pt-6 w-full max-w-sm">
