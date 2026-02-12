@@ -47,7 +47,7 @@ export const StoryCircle = ({
       >
         <div
           className={cn(
-            "rounded-full bg-background p-[2px]",
+            "rounded-full bg-background p-[2px] overflow-hidden",
             innerSizeClasses[size]
           )}
         >
