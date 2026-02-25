@@ -26,6 +26,7 @@ import { FullPlayer } from "@/components/music/FullPlayer";
 import { StoriesRow } from "@/components/stories/StoriesRow";
 import { StoryViewer } from "@/components/stories/StoryViewer";
 import { StoryCreator } from "@/components/stories/StoryCreator";
+import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { getApiUrl } from "@/utils/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
@@ -100,6 +101,7 @@ const Music = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const { currentTrack } = useMediaPlayer();
 
   const [stories, setStories] = useState([
     { id: "1", username: "Sarah", image: avatar1, hasUnseenStory: true },
@@ -611,8 +613,9 @@ const Music = () => {
                       >
                         <SongCard
                           title={song.title} artist={song.artist} albumArt={song.albumArt}
-                          duration={song.duration} isPlaying={index === 0}
-                          onClick={() => { setActiveMode("library"); setLibraryTab("all"); }}
+                          duration={song.duration}
+                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                          onClick={() => { /* Stay on current mode when playing */ }}
                           trackUrl={song.trackUrl}
                           playlist={recentSongs.map(s => ({
                             id: `${s.title}-${s.artist}`, title: s.title, artist: s.artist,
@@ -752,7 +755,9 @@ const Music = () => {
                           >
                             <SongCard
                               title={song.title} artist={song.artist} albumArt={song.albumArt}
-                              duration={song.duration} isPlaying={index === 0} trackUrl={song.trackUrl}
+                              duration={song.duration}
+                              isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                              trackUrl={song.trackUrl}
                               playlist={filteredSongs.map(s => ({
                                 id: `${s.title}-${s.artist}`, title: s.title, artist: s.artist,
                                 album: "Clockit", duration: 180, url: s.trackUrl, artwork: s.albumArt,
