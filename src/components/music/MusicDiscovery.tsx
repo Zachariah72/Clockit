@@ -36,7 +36,7 @@ interface LastfmAlbum {
   mbid?: string;
   url: string;
   image: Array<{ '#text': string; size: string }>;
-  artist: string;
+  artist: string | { name: string; mbid?: string; url?: string };
   streamable: string;
   playcount?: string;
 }
@@ -215,7 +215,7 @@ const MusicDiscovery: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {topAlbums.map((album, index) => (
                   <div
-                    key={album.mbid || `${album.artist}-${album.name}`}
+                    key={album.mbid || `${typeof album.artist === 'object' ? album.artist.name : album.artist}-${album.name}`}
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <div className="flex items-center justify-center w-6 h-6 bg-secondary/20 rounded-full">
@@ -231,7 +231,7 @@ const MusicDiscovery: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium truncate">{album.name}</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {album.artist}
+                        {typeof album.artist === 'object' ? album.artist.name : album.artist}
                       </p>
                     </div>
 
