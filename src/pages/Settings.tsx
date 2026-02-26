@@ -521,35 +521,43 @@ const Settings = () => {
             }}>Cancel</Button>
             {!codeSent ? (
               <Button 
-                onClick={() => {
+                onClick={async () => {
                   if (!phoneNumber || phoneNumber.length < 10) {
                     toast.error("Please enter a valid phone number");
                     return;
                   }
-                  setCodeSent(true);
-                  toast.success(`Verification code sent to ${phoneNumber}`);
+                  try {
+                    await profileApi.sendVerificationCode(phoneNumber);
+                    setCodeSent(true);
+                    toast.success(`Verification code sent to ${phoneNumber}`);
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to send code");
+                  }
                 }}
               >
                 Send Code
               </Button>
             ) : (
               <Button 
-                onClick={() => {
+                onClick={async () => {
                   if (!verificationCode || verificationCode.length !== 6) {
                     toast.error("Please enter the 6-digit verification code");
                     return;
                   }
                   setVerifying(true);
-                  // Simulate verification
-                  setTimeout(() => {
+                  try {
+                    await profileApi.verifyPhoneCode(phoneNumber, verificationCode);
                     setTwoFactorEnabled(true);
                     setTwoFactorModalOpen(false);
                     toast.success("Two-factor authentication enabled!");
                     setPhoneNumber("");
                     setVerificationCode("");
                     setCodeSent(false);
+                  } catch (error: any) {
+                    toast.error(error.message || "Invalid verification code");
+                  } finally {
                     setVerifying(false);
-                  }, 1500);
+                  }
                 }}
                 disabled={verifying}
               >

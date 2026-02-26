@@ -126,4 +126,11 @@ export const profileApi = {
     recipientUsers?: string[];
   }) =>
     api.post<{ message: string; share: any }>(`/profile/share-music`, data),
+
+  // Phone verification for 2FA
+  sendVerificationCode: (phone: string) =>
+    api.post<{ message: string }>(`/verification/send`, { phone }),
+
+  verifyPhoneCode: (phone: string, code: string) =>
+    api.post<{ message: string }>(`/verification/verify`, { phone, code }),
 };
