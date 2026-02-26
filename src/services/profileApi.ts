@@ -85,10 +85,10 @@ export const profileApi = {
 
   // Social features
   getFollowers: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ followers: User[]; pagination: any }>(userId ? `/profile/${userId}/followers?page=${page}&limit=${limit}` : `/profile/followers?page=${page}&limit=${limit}`),
+    api.get<{ followers: User[]; pagination: any }>(userId ? `/profile/${userId}/followers?page=${page}&limit=${limit}` : `/profile/followers?page=${page}&limit=${limit}`),
 
   getFollowing: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ following: User[]; pagination: any }>(userId ? `/profile/${userId}/following?page=${page}&limit=${limit}` : `/profile/following?page=${page}&limit=${limit}`),
+    api.get<{ following: User[]; pagination: any }>(userId ? `/profile/${userId}/following?page=${page}&limit=${limit}` : `/profile/following?page=${page}&limit=${limit}`),
 
   toggleFollow: (userId: string) =>
     api.post<{ action: 'followed' | 'unfollowed' }>(`/profile/${userId}/follow`),
