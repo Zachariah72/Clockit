@@ -48,9 +48,6 @@ const upload = multer({
 // ============================================
 
 // Specific public routes - MUST come before parameterized routes
-router.get('/followers', profileController.getFollowers);
-router.get('/following', profileController.getFollowing);
-router.get('/stories', profileController.getStories);
 router.get('/reels', profileController.getReels);
 router.get('/saved', profileController.getSavedContent);
 router.get('/drafts', profileController.getDrafts);
@@ -58,6 +55,11 @@ router.get('/drafts', profileController.getDrafts);
 // Base profile - requires auth for own profile
 router.get('/', auth, profileController.getProfile);
 router.get('/:userId', profileController.getProfile);
+
+// Stories, Followers, Following - require auth for own profile
+router.get('/stories', auth, profileController.getStories);
+router.get('/followers', auth, profileController.getFollowers);
+router.get('/following', auth, profileController.getFollowing);
 
 // Public social routes with userId (specific paths)
 router.get('/:userId/followers', profileController.getFollowers);

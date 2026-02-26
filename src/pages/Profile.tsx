@@ -251,8 +251,8 @@ const Profile = () => {
     switch (action) {
       case 'stories':
         try {
-          console.log('Fetching stories for modal...');
-          const storiesRes = await profileApi.getStories();
+          console.log('Fetching stories for modal with userId:', userId);
+          const storiesRes = await profileApi.getStories(userId);
           console.log('Stories fetched for modal:', storiesRes);
           setStories(storiesRes);
         } catch (error) {
@@ -263,7 +263,7 @@ const Profile = () => {
         break;
       case 'followers':
         try {
-          const response = await profileApi.getFollowers();
+          const response = await profileApi.getFollowers(userId);
           setFollowers(response.followers);
           setFollowersModal({ isOpen: true, type: 'followers' });
         } catch (error) {
@@ -272,7 +272,7 @@ const Profile = () => {
         break;
       case 'following':
         try {
-          const response = await profileApi.getFollowing();
+          const response = await profileApi.getFollowing(userId);
           setFollowing(response.following);
           setFollowersModal({ isOpen: true, type: 'following' });
         } catch (error) {
