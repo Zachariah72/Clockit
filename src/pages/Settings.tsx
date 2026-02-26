@@ -162,7 +162,31 @@ const Settings = () => {
           </div>
         </motion.header>
 
-        {/* Settings Sections */}
+        {/* Settings Sections or Section Detail View */}
+        {selectedSection ? (
+          <div className="p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-card border border-border rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <Button variant="ghost" size="icon" onClick={() => { setSelectedSection(null); navigate('/settings'); }}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <h2 className="text-xl font-bold capitalize">{selectedSection.replace('-', ' ')} Settings</h2>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                This section is coming soon. We're working on providing you with the best {selectedSection} settings experience.
+              </p>
+              <div className="bg-muted rounded-xl p-4">
+                <p className="text-sm text-muted-foreground">
+                  🚧 Under construction
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        ) : (
         <div className="p-4 space-y-3">
           <AnimatePresence>
             {filteredSections.map((section, index) => {
@@ -199,31 +223,6 @@ const Settings = () => {
             </div>
           )}
         </div>
-
-        {/* Section Detail View */}
-        {selectedSection && (
-          <div className="p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-card border border-border rounded-2xl p-6"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedSection(null)}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <h2 className="text-xl font-bold capitalize">{selectedSection.replace('-', ' ')} Settings</h2>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                This section is coming soon. We're working on providing you with the best {selectedSection} settings experience.
-              </p>
-              <div className="bg-muted rounded-xl p-4">
-                <p className="text-sm text-muted-foreground">
-                  🚧 Under construction
-                </p>
-              </div>
-            </motion.div>
-          </div>
         )}
 
         {/* Logout Section */}
