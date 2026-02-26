@@ -75,9 +75,11 @@ const Settings = () => {
     if (item.type === 'toggle') {
       handleToggle(item.id);
     } else if (item.type === 'link') {
-      // Handle specific links - navigate to relevant pages
+      // Handle specific links - show info or navigate to appropriate pages
       if (item.id === 'edit-profile') {
-        navigate('/profile/me?edit=true');
+        toast.info("Edit Profile - Feature loading...");
+        // Navigate only if profile page is working
+        navigate('/profile/me');
       } else if (item.id === 'change-email') {
         toast.info("Email change feature coming soon");
       } else if (item.id === 'change-password') {

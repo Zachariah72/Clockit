@@ -12,6 +12,11 @@ exports.getProfile = async (req, res) => {
   try {
     let userId = req.params.userId || req.user?.id;
     
+    // Handle 'me' - resolve to actual user ID
+    if (userId === 'me' && req.user) {
+      userId = req.user.id;
+    }
+    
     // If no user ID, try to find user by email or supabaseId (OAuth case)
     if (!userId && req.user?.email) {
       const userByEmail = await User.findOne({ email: req.user.email });
@@ -281,7 +286,20 @@ exports.uploadAvatar = async (req, res) => {
 // Get followers
 exports.getFollowers = async (req, res) => {
   try {
-    const userId = req.params.userId || (req.user ? req.user.id : null);
+    let userId = req.params.userId || (req.user ? req.user.id : null);
+    
+    // Handle 'me' - resolve to actual user ID
+    if (userId === 'me' && req.user) {
+      userId = req.user.id;
+    }
+    
+    // Also try to find by email if still not found
+    if (!userId && req.user?.email) {
+      const userByEmail = await User.findOne({ email: req.user.email });
+      if (userByEmail) {
+        userId = userByEmail._id;
+      }
+    }
 
     if (!userId) {
       // Return empty for unauthenticated users without userId
@@ -321,7 +339,20 @@ exports.getFollowers = async (req, res) => {
 // Get following
 exports.getFollowing = async (req, res) => {
   try {
-    const userId = req.params.userId || (req.user ? req.user.id : null);
+    let userId = req.params.userId || (req.user ? req.user.id : null);
+    
+    // Handle 'me' - resolve to actual user ID
+    if (userId === 'me' && req.user) {
+      userId = req.user.id;
+    }
+    
+    // Also try to find by email if still not found
+    if (!userId && req.user?.email) {
+      const userByEmail = await User.findOne({ email: req.user.email });
+      if (userByEmail) {
+        userId = userByEmail._id;
+      }
+    }
 
     if (!userId) {
       // Return empty for unauthenticated users without userId
@@ -410,7 +441,13 @@ exports.getStories = async (req, res) => {
       return res.json([]);
     }
     
-    const userId = req.params.userId || req.user?.id;
+    let userId = req.params.userId || req.user?.id;
+    
+    // Handle 'me' - resolve to actual user ID
+    if (userId === 'me' && req.user) {
+      userId = req.user.id;
+    }
+    
     console.log('getStories: userId from request:', userId);
     console.log('getStories: req.params.userId:', req.params.userId);
     console.log('getStories: req.user:', req.user);
