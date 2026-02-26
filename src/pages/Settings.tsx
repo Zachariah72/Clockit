@@ -167,11 +167,12 @@ const Settings = () => {
             <p className="text-muted-foreground text-sm mb-4">{currentSectionData.description}</p>
 
             {/* Settings items */}
-            <div className="space-y-2">
+            <div className="space-y-2" style={{ pointerEvents: 'auto' }}>
               {currentSectionData.items.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => handleSettingClick(item)}
+                  style={{ pointerEvents: 'auto' }}
                   className={`flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors ${
                     item.type === 'info' ? 'opacity-75' : ''
                   }`}
