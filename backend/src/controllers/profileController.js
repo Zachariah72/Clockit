@@ -70,8 +70,15 @@ exports.getProfile = async (req, res) => {
       return res.json(mockUser);
     }
 
+    // Compute storiesCount dynamically (only non-expired stories)
+    const storiesCount = await Story.countDocuments({
+      userId,
+      expiresAt: { $gt: new Date() }
+    });
+
     // Convert avatar URL to full URL if it's a relative path
     const userObj = user.toObject();
+    userObj.storiesCount = storiesCount;
     if (userObj.avatar && userObj.avatar.startsWith('/')) {
       const protocol = req.protocol || 'http';
       const host = req.get('host') || 'localhost:5000';
