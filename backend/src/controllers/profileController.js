@@ -399,12 +399,17 @@ exports.getStories = async (req, res) => {
   try {
     // Return empty array for unauthenticated users or demo mode
     if (!req.user && !req.params.userId) {
+      console.log('getStories: No user or userId, returning empty array');
       return res.json([]);
     }
     
     const userId = req.params.userId || req.user?.id;
+    console.log('getStories: userId from request:', userId);
+    console.log('getStories: req.params.userId:', req.params.userId);
+    console.log('getStories: req.user:', req.user);
 
     if (!userId) {
+      console.log('getStories: No userId found, returning empty array');
       return res.json([]);
     }
 
@@ -415,6 +420,7 @@ exports.getStories = async (req, res) => {
     .sort({ createdAt: -1 })
     .select('contentType mediaUrl thumbnailUrl caption viewsCount likesCount createdAt');
 
+    console.log('getStories: Found stories:', stories.length);
     res.json(stories);
   } catch (error) {
     console.error('Error fetching stories:', error);
