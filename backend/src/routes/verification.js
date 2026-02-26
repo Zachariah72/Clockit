@@ -22,7 +22,8 @@ router.post('/send', auth, async (req, res) => {
       return res.status(400).json({ message: result.error });
     }
     
-    res.json({ message: 'Verification code sent successfully' });
+    // Return code in demo mode so user can see it
+    res.json({ message: 'Verification code sent successfully', code: result.code });
   } catch (error) {
     console.error('Send verification error:', error);
     res.status(500).json({ message: 'Failed to send verification code' });

@@ -527,9 +527,13 @@ const Settings = () => {
                     return;
                   }
                   try {
-                    await profileApi.sendVerificationCode(phoneNumber);
+                    const response = await profileApi.sendVerificationCode(phoneNumber) as { message: string; code?: string };
                     setCodeSent(true);
                     toast.success(`Verification code sent to ${phoneNumber}`);
+                    // Show code in demo mode
+                    if (response.code) {
+                      toast.info(`Demo mode - your code is: ${response.code}`, { duration: 10000 });
+                    }
                   } catch (error: any) {
                     toast.error(error.message || "Failed to send code");
                   }

@@ -74,13 +74,13 @@ const sendVerificationCode = async (phone) => {
       return { success: true };
     } catch (error) {
       console.error('Twilio error:', error.message);
-      // Fall back to demo mode if Twilio fails
+      // Fall back to demo mode - return code so user can see it
     }
   }
   
-  // Demo mode - just log the code
+  // Demo mode - return code so frontend can display it
   console.log(`[DEMO] Verification code for ${formattedPhone}: ${code}`);
-  return { success: true };
+  return { success: true, code };
 };
 
 const verifyCode = async (phone, code) => {

@@ -129,7 +129,7 @@ export const profileApi = {
 
   // Phone verification for 2FA
   sendVerificationCode: (phone: string) =>
-    api.post<{ message: string }>(`/verification/send`, { phone }),
+    api.post<{ message: string; code?: string }>(`/verification/send`, { phone }),
 
   verifyPhoneCode: (phone: string, code: string) =>
     api.post<{ message: string }>(`/verification/verify`, { phone, code }),
