@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, User, Shield, MessageCircle, Music, Eye, BarChart3,
-  Bell, Users, Palette, Clock, HardDrive, FileText, LogOut,
-  ChevronRight, Settings as SettingsIcon, Search, ToggleLeft, ToggleRight,
-  ExternalLink, Info, Trash2, Download, HelpCircle
+  Bell, Palette, Clock, HardDrive, FileText, LogOut,
+  ChevronRight, Settings as SettingsIcon, Search, ToggleLeft, ToggleRight, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,11 +119,7 @@ const Settings = () => {
     <Layout>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="sticky top-0 z-20 glass-card rounded-b-3xl"
-        >
+        <div className="sticky top-0 z-20 glass-card rounded-b-3xl">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-4">
               <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -148,7 +142,7 @@ const Settings = () => {
               />
             </div>
           </div>
-        </motion.header>
+        </div>
 
         {/* Settings Sections or Section Detail View */}
         {selectedSection && currentSectionData ? (
@@ -174,12 +168,9 @@ const Settings = () => {
 
             {/* Settings items */}
             <div className="space-y-2">
-              {currentSectionData.items.map((item, index) => (
-                <motion.div
+              {currentSectionData.items.map((item) => (
+                <div
                   key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
                   onClick={() => handleSettingClick(item)}
                   className={`flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors ${
                     item.type === 'info' ? 'opacity-75' : ''
@@ -202,39 +193,33 @@ const Settings = () => {
                   
                   {/* Icon based on type */}
                   {renderSettingIcon(item)}
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            <AnimatePresence>
-              {filteredSections.map((section, index) => {
-                const Icon = section.icon;
-                return (
-                  <motion.div
-                    key={section.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleSectionClick(section.id)}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
-                  >
-                    <div className={`p-3 rounded-xl bg-muted ${section.color}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
+            {filteredSections.map((section) => {
+              const Icon = section.icon;
+              return (
+                <div
+                  key={section.id}
+                  onClick={() => handleSectionClick(section.id)}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                >
+                  <div className={`p-3 rounded-xl bg-muted ${section.color}`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground">{section.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{section.description}</p>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground">{section.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{section.description}</p>
+                  </div>
 
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              );
+            })}
 
             {filteredSections.length === 0 && (
               <div className="text-center py-12">
@@ -247,10 +232,7 @@ const Settings = () => {
 
         {/* Logout Section */}
         <div className="p-4 mt-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+          <div
             onClick={handleLogout}
             className="flex items-center gap-4 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/20 transition-colors"
           >
@@ -264,7 +246,7 @@ const Settings = () => {
             </div>
 
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </motion.div>
+          </div>
         </div>
 
         {/* Footer */}
