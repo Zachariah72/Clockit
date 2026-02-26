@@ -6,15 +6,54 @@ const DraftContent = require('../models/DraftContent');
 const MusicShare = require('../models/MusicShare');
 const Video = require('../models/Video');
 const { uploadImage } = require('../utils/cloudinary');
+const jwt = require('jsonwebtoken');
+
+// Helper function to get user ID from token (for public routes with 'me')
+async function getUserIdFromToken(req) {
+  // If req.user is already set (auth route), use it
+  if (req.user?.id) {
+    return req.user.id;
+  }
+  
+  // Try to get user from token in header for public routes
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      let userId = decoded.user?.id || decoded.id;
+      
+      // Handle Supabase OAuth users - map supabaseId to MongoDB ObjectId
+      const isMongoId = /^[0-9a-fA-F]{24}$/.test(userId);
+      
+      if (!isMongoId && decoded.user?.email) {
+        const user = await User.findOne({ email: decoded.user.email });
+        if (user) {
+          userId = user._id.toString();
+        }
+      }
+      
+      return userId;
+    } catch (err) {
+      console.log('Token verification failed:', err.message);
+    }
+  }
+  
+  return null;
+}
 
 // Get user profile
 exports.getProfile = async (req, res) => {
   try {
     let userId = req.params.userId || req.user?.id;
     
-    // Handle 'me' - resolve to actual user ID
-    if (userId === 'me' && req.user) {
-      userId = req.user.id;
+    // Handle 'me' - resolve to actual user ID from token
+    if (userId === 'me') {
+      const resolvedUserId = await getUserIdFromToken(req);
+      if (resolvedUserId) {
+        userId = resolvedUserId;
+      } else {
+        userId = null;
+      }
     }
     
     // If no user ID, try to find user by email or supabaseId (OAuth case)
@@ -288,9 +327,14 @@ exports.getFollowers = async (req, res) => {
   try {
     let userId = req.params.userId || (req.user ? req.user.id : null);
     
-    // Handle 'me' - resolve to actual user ID
-    if (userId === 'me' && req.user) {
-      userId = req.user.id;
+    // Handle 'me' - resolve to actual user ID from token
+    if (userId === 'me') {
+      const resolvedUserId = await getUserIdFromToken(req);
+      if (resolvedUserId) {
+        userId = resolvedUserId;
+      } else {
+        userId = null;
+      }
     }
     
     // Also try to find by email if still not found
@@ -341,9 +385,14 @@ exports.getFollowing = async (req, res) => {
   try {
     let userId = req.params.userId || (req.user ? req.user.id : null);
     
-    // Handle 'me' - resolve to actual user ID
-    if (userId === 'me' && req.user) {
-      userId = req.user.id;
+    // Handle 'me' - resolve to actual user ID from token
+    if (userId === 'me') {
+      const resolvedUserId = await getUserIdFromToken(req);
+      if (resolvedUserId) {
+        userId = resolvedUserId;
+      } else {
+        userId = null;
+      }
     }
     
     // Also try to find by email if still not found
@@ -443,9 +492,15 @@ exports.getStories = async (req, res) => {
     
     let userId = req.params.userId || req.user?.id;
     
-    // Handle 'me' - resolve to actual user ID
-    if (userId === 'me' && req.user) {
-      userId = req.user.id;
+    // Handle 'me' - resolve to actual user ID from token
+    if (userId === 'me') {
+      const resolvedUserId = await getUserIdFromToken(req);
+      if (resolvedUserId) {
+        userId = resolvedUserId;
+      } else {
+        console.log('getStories: No resolved userId for me, returning empty array');
+        return res.json([]);
+      }
     }
     
     console.log('getStories: userId from request:', userId);
