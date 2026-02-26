@@ -75,8 +75,46 @@ const Settings = () => {
     if (item.type === 'toggle') {
       handleToggle(item.id);
     } else if (item.type === 'link') {
-      // For link types, show info that this feature is coming soon
-      toast.info(`Opening ${item.title}...`);
+      // Handle specific links - navigate to relevant pages
+      if (item.id === 'edit-profile') {
+        navigate('/profile/me?edit=true');
+      } else if (item.id === 'change-email') {
+        toast.info("Email change feature coming soon");
+      } else if (item.id === 'change-password') {
+        toast.info("Password change feature coming soon");
+      } else if (item.id === 'linked-accounts') {
+        toast.info("Linked accounts feature coming soon");
+      } else if (item.id === 'blocked-users') {
+        navigate('/settings/privacy');
+      } else if (item.id === 'hidden-content') {
+        navigate('/settings/privacy');
+      } else if (item.id === 'equalizer') {
+        navigate('/settings/appearance');
+      } else if (item.id === 'storage') {
+        navigate('/settings/data');
+      } else if (item.id === 'content-preferences') {
+        navigate('/settings/content');
+      } else if (item.id === 'language') {
+        navigate('/settings/content');
+      } else if (item.id === 'feed-order') {
+        navigate('/settings/content');
+      } else if (item.id === 'autoplay') {
+        // Toggle handled by type
+      } else if (item.id === 'message-requests') {
+        navigate('/settings/messaging');
+      } else if (item.id === 'group-invites') {
+        navigate('/settings/messaging');
+      } else if (item.id === 'call-quality') {
+        navigate('/settings/messaging');
+      } else if (item.id === 'audio-quality') {
+        navigate('/settings/music');
+      } else if (item.id === 'downloading') {
+        navigate('/settings/music');
+      } else if (item.id === 'profile-visibility') {
+        navigate('/settings/privacy');
+      } else {
+        toast.info(`Opening ${item.title}...`);
+      }
     } else if (item.type === 'button') {
       if (item.id === 'delete-account') {
         toast.error("Please contact support to delete your account");
