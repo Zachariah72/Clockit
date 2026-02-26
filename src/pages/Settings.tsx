@@ -50,6 +50,7 @@ const Settings = () => {
   // Modal states
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
   const [linkedAccountsModalOpen, setLinkedAccountsModalOpen] = useState(false);
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -60,6 +61,12 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 2FA states
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   // Update selected section when URL changes
   useEffect(() => {
@@ -91,10 +98,12 @@ const Settings = () => {
 
   const handleToggle = (itemId: string) => {
     if (itemId === 'two-factor') {
-      setTwoFactorEnabled(!twoFactorEnabled);
       if (!twoFactorEnabled) {
-        toast.info("Two-factor authentication setup - coming soon!");
+        // Opening 2FA setup modal
+        setTwoFactorModalOpen(true);
       } else {
+        // Disable 2FA
+        setTwoFactorEnabled(false);
         toast.success("Two-factor authentication disabled");
       }
       return;
@@ -444,6 +453,109 @@ const Settings = () => {
               setNewPassword("");
               setConfirmPassword("");
             }}>Update Password</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Two-Factor Authentication Modal */}
+      <Dialog open={twoFactorModalOpen} onOpenChange={setTwoFactorModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5" /> Two-Factor Authentication
+            </DialogTitle>
+            <DialogDescription>
+              Secure your account with SMS-based 2FA.
+            </DialogDescription>
+          </DialogHeader>
+          {!codeSent ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  We'll send a verification code to this number.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Verification Code</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  maxLength={6}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-digit code sent to {phoneNumber}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setCodeSent(false);
+                  setVerificationCode("");
+                }}
+              >
+                Change Phone Number
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setTwoFactorModalOpen(false);
+              setPhoneNumber("");
+              setVerificationCode("");
+              setCodeSent(false);
+            }}>Cancel</Button>
+            {!codeSent ? (
+              <Button 
+                onClick={() => {
+                  if (!phoneNumber || phoneNumber.length < 10) {
+                    toast.error("Please enter a valid phone number");
+                    return;
+                  }
+                  setCodeSent(true);
+                  toast.success(`Verification code sent to ${phoneNumber}`);
+                }}
+              >
+                Send Code
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => {
+                  if (!verificationCode || verificationCode.length !== 6) {
+                    toast.error("Please enter the 6-digit verification code");
+                    return;
+                  }
+                  setVerifying(true);
+                  // Simulate verification
+                  setTimeout(() => {
+                    setTwoFactorEnabled(true);
+                    setTwoFactorModalOpen(false);
+                    toast.success("Two-factor authentication enabled!");
+                    setPhoneNumber("");
+                    setVerificationCode("");
+                    setCodeSent(false);
+                    setVerifying(false);
+                  }, 1500);
+                }}
+                disabled={verifying}
+              >
+                {verifying ? "Verifying..." : "Verify & Enable"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
