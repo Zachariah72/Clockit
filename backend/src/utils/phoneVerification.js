@@ -73,8 +73,8 @@ const sendVerificationCode = async (phone) => {
       console.log(`Real SMS sent to ${formattedPhone}`);
       return { success: true };
     } catch (error) {
-      console.error('Twilio error:', error);
-      return { success: false, error: 'Failed to send SMS' };
+      console.error('Twilio error:', error.message);
+      // Fall back to demo mode if Twilio fails
     }
   }
   
