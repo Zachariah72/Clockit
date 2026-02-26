@@ -133,4 +133,14 @@ export const profileApi = {
 
   verifyPhoneCode: (phone: string, code: string) =>
     api.post<{ message: string }>(`/verification/verify`, { phone, code }),
+
+  // User settings
+  getSettings: () =>
+    api.get<any>(`/settings`),
+
+  updateSettings: (settings: any) =>
+    api.put<any>(`/settings`, settings),
+
+  updateNotificationPreferences: (preferences: any) =>
+    api.put<any>(`/settings/notifications`, preferences),
 };

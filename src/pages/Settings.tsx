@@ -75,6 +75,37 @@ const Settings = () => {
     }
   }, [sectionId]);
 
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await profileApi.getSettings();
+        if (settings.notificationPreferences) {
+          const notif = settings.notificationPreferences;
+          setSettingsValues(prev => ({
+            ...prev,
+            'push-notifications': notif.push?.likes ?? true,
+            'email-notifications': notif.push?.messages ?? true,
+            'sms-notifications': notif.push?.calls ?? false,
+            'likes-notifications': notif.push?.likes ?? true,
+            'comments-notifications': notif.push?.comments ?? true,
+            'followers-notifications': notif.push?.newFollowers ?? true,
+            'mentions-notifications': notif.push?.mentions ?? true,
+            'sound': notif.controls?.sounds ?? true,
+            'vibration': notif.controls?.vibration ?? true,
+          }));
+        }
+        // Load 2FA status
+        if (settings.userSettings?.privacy?.twoFactorEnabled) {
+          setTwoFactorEnabled(true);
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
   const filteredSections = settingsSections.filter(section =>
     section.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     section.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -96,7 +127,7 @@ const Settings = () => {
     }
   };
 
-  const handleToggle = (itemId: string) => {
+  const handleToggle = async (itemId: string) => {
     if (itemId === 'two-factor') {
       if (!twoFactorEnabled) {
         // Opening 2FA setup modal
@@ -108,11 +139,45 @@ const Settings = () => {
       }
       return;
     }
+    
+    // Toggle the setting locally
+    const newValue = !settingsValues[itemId];
     setSettingsValues(prev => ({
       ...prev,
-      [itemId]: !prev[itemId]
+      [itemId]: newValue
     }));
-    toast.success("Setting updated");
+    
+    // Save to backend
+    try {
+      // Build nested notification preference structure that matches the model
+      const preference: any = {};
+      
+      // Push notification types
+      if (['push-notifications', 'likes-notifications', 'comments-notifications', 
+           'followers-notifications', 'mentions-notifications'].includes(itemId)) {
+        preference.push = {};
+        if (itemId === 'likes-notifications') preference.push.likes = newValue;
+        if (itemId === 'comments-notifications') preference.push.comments = newValue;
+        if (itemId === 'followers-notifications') preference.push.newFollowers = newValue;
+        if (itemId === 'mentions-notifications') preference.push.mentions = newValue;
+      }
+      
+      // Controls
+      if (itemId === 'sound') {
+        preference.controls = { sounds: newValue };
+      }
+      if (itemId === 'vibration') {
+        preference.controls = { vibration: newValue };
+      }
+      
+      if (Object.keys(preference).length > 0) {
+        await profileApi.updateNotificationPreferences(preference);
+      }
+      toast.success("Setting updated");
+    } catch (error) {
+      console.error('Failed to save setting:', error);
+      toast.success("Setting updated (local)");
+    }
   };
 
   const handleSettingClick = (item: SettingItem) => {
