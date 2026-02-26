@@ -46,7 +46,11 @@ interface UserTrack {
   stream_url: string;
 }
 
-const MusicSearch: React.FC = () => {
+interface MusicSearchProps {
+  query?: string;
+}
+
+const MusicSearch: React.FC<MusicSearchProps> = ({ query = "" }) => {
   const { playTrack } = useMediaPlayer();
   const [searchQuery, setSearchQuery] = useState('');
   const [spotifyResults, setSpotifyResults] = useState<MusicTrack[]>([]);
@@ -55,6 +59,14 @@ const MusicSearch: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeService, setActiveService] = useState<'soundcloud' | 'spotify' | 'lastfm'>('soundcloud');
+
+  // Trigger search when query prop changes (debounced in parent)
+  useEffect(() => {
+    if (query.trim()) {
+      setSearchQuery(query);
+      searchMusic(query, activeService);
+    }
+  }, [query, activeService]);
 
   // Get API base URL for production vs development
   const getApiBaseUrl = () => {

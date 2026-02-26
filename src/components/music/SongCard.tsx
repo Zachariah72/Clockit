@@ -27,8 +27,9 @@ export const SongCard = ({
   playlist = [],
   currentIndex = 0,
 }: SongCardProps) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const { playTrack, currentTrack } = useMediaPlayer();
+  const { playTrack, currentTrack, toggleLike, isLiked: checkLiked } = useMediaPlayer();
+  const trackId = `${title}-${artist}`;
+  const liked = checkLiked(trackId);
 
   const parseDuration = (durationStr: string): number => {
     // Parse duration string like "3:42" to seconds
@@ -45,7 +46,7 @@ export const SongCard = ({
     if (trackUrl) {
       // Create a track object for the media player
       const track = {
-        id: `${title}-${artist}`, // Simple ID generation
+        id: trackId,
         title,
         artist,
         album: 'Clockit', // Default album
@@ -110,11 +111,11 @@ export const SongCard = ({
           size="icon-sm"
           onClick={(e) => {
             e.stopPropagation();
-            setIsLiked(!isLiked);
+            toggleLike(trackId);
           }}
-          className={isLiked ? "text-secondary" : "text-muted-foreground"}
+          className={liked ? "text-secondary" : "text-muted-foreground"}
         >
-          <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+          <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
         </Button>
         <Button
           variant="ghost"

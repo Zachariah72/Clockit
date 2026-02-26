@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, User, ImagePlus, Video, Headphones
+  Bell, Check, X, Hash, Film, Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,9 @@ import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
-import { StoriesRow } from "@/components/stories/StoriesRow";
-import { StoryViewer } from "@/components/stories/StoryViewer";
-import { StoryCreator } from "@/components/stories/StoryCreator";
+import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import { getApiUrl } from "@/utils/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
@@ -95,41 +94,125 @@ const Music = () => {
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
-  const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
-  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
-  const { currentTrack } = useMediaPlayer();
+  const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
 
-  const [stories, setStories] = useState([
-    { id: "1", username: "Sarah", image: avatar1, hasUnseenStory: true },
-    { id: "2", username: "Mike", image: avatar2, hasUnseenStory: true },
-    { id: "3", username: "Alex", image: avatar3, hasUnseenStory: true },
-    { id: "4", username: "Emma", image: avatar1, hasUnseenStory: false },
-    { id: "5", username: "Jake", image: avatar2, hasUnseenStory: false },
-    { id: "6", username: "Lily", image: avatar3, hasUnseenStory: true },
-  ]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "new_release", message: "New album \"Midnight Waves\" by Synthwave is now available!", isRead: false, time: "2m ago" },
-    { id: 2, type: "follow", message: "DJ Beats started following you", isRead: false, time: "15m ago" },
-    { id: 3, type: "like", message: "Someone liked your playlist \"Chill Mix\"", isRead: true, time: "1h ago" },
-    { id: 4, type: "message", message: "New message from MusicLover", isRead: false, time: "2h ago" },
+
+  const [notifications, setNotifications] = useState<Notification[]>([
+    { 
+      id: "1", 
+      type: "new_release", 
+      message: "New album \"Midnight Waves\" by Synthwave is now available!", 
+      isRead: false, 
+      time: "2m ago",
+      sender: { name: "Synthwave", avatar: album1 },
+      targetUrl: "/music"
+    },
+    { 
+      id: "2", 
+      type: "follow", 
+      message: "DJ Beats started following you", 
+      isRead: false, 
+      time: "15m ago",
+      sender: { name: "DJ Beats", avatar: avatar1 },
+      targetUrl: "/profile/dj-beats"
+    },
+    { 
+      id: "3", 
+      type: "like", 
+      message: "Someone liked your playlist \"Chill Mix\"", 
+      isRead: true, 
+      time: "1h ago",
+      sender: { name: "Sarah J", avatar: avatar2 },
+      targetUrl: "/music"
+    },
+    { 
+      id: "4", 
+      type: "mention", 
+      message: "MusicLover mentioned you in a comment", 
+      isRead: false, 
+      time: "2h ago",
+      sender: { name: "MusicLover", avatar: avatar3 },
+      targetUrl: "/chat"
+    },
   ]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // ── Notification Actions ──────────────────────────────────────────────────
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteAll = () => {
+    setNotifications([]);
+  };
+
+  // ── Hero Carousel state ──────────────────────────────────────────────────
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  const heroBanners = [
+    {
+      id: "discover",
+      title: "Discover New Sounds",
+      subtitle: "Fresh drops every week",
+      tag: "Trending Now",
+      icon: TrendingUp,
+      image: heroMusic,
+      gradient: "from-cyan-950/90 via-cyan-900/40 to-transparent"
+    },
+    {
+      id: "groups",
+      title: "Join Listening Groups",
+      subtitle: "Experience music together",
+      tag: "Live Now",
+      icon: Radio,
+      image: album3,
+      gradient: "from-purple-900/90 via-purple-900/40 to-transparent"
+    }
+  ];
+
+  useEffect(() => {
+    if (activeMode !== "foryou") return;
+    const interval = setInterval(() => {
+      setCurrentHeroIndex(prev => (prev + 1) % heroBanners.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [activeMode, heroBanners.length]);
+
   // ── Computed ──────────────────────────────────────────────────────────────
   const filteredSongs = allSongs.filter(song => {
-    const matchesSearch = !searchQuery.trim() ||
-      song.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      song.artist?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = !debouncedSearchQuery.trim() ||
+      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
     const matchesMood = selectedMood === "All" || song.mood === selectedMood;
     return matchesSearch && matchesGenre && matchesMood;
   });
+
+  const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
+  
+  const displayedRecentSongs = recentlyPlayed.length > 0 
+    ? recentlyPlayed.map(t => ({
+        id: t.id,
+        title: t.title,
+        artist: t.artist,
+        albumArt: t.artwork || album1,
+        duration: formatDuration(t.duration * 1000),
+        trackUrl: t.url
+      }))
+    : recentSongs;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatDuration = (ms: number) => {
@@ -186,30 +269,6 @@ const Music = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [isFabOpen]);
 
-  // ── Fetch stories ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        const token = localStorage.getItem("auth_token");
-        if (!token) return;
-        const res = await fetch(`${getApiUrl()}/stories`, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStories(data.map((s: any) => ({
-            id: s._id,
-            username: s.userId?.username || "Unknown",
-            image: s.mediaUrl,
-            hasUnseenStory: true,
-          })));
-        }
-      } catch (err) {
-        console.error("Error fetching stories:", err);
-      }
-    };
-    fetchStories();
-  }, []);
 
   // ── Fetch tracks from SoundCloud ──────────────────────────────────────────
   useEffect(() => {
@@ -276,48 +335,9 @@ const Music = () => {
     }
   }, [location.state, playlists]);
 
-  // ── Story handlers ────────────────────────────────────────────────────────
-  const handleStoryClick = (id: string) => { setSelectedStoryId(id); setIsStoryViewerOpen(true); };
-  const handleCreateStory = () => setIsStoryCreatorOpen(true);
-  const handleStoryViewed = (id: string) =>
-    setStories(prev => prev.map(s => s.id === id ? { ...s, hasUnseenStory: false } : s));
-
-  const handleStoryCreated = async (media: File, type: "image" | "video") => {
-    try {
-      setIsStoryCreatorOpen(false);
-      const formData = new FormData();
-      formData.append("media", media);
-      const token = localStorage.getItem("auth_token");
-      const apiUrl = getApiUrl();
-      const uploadRes = await fetch(`${apiUrl}/stories/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const uploadData = await uploadRes.json();
-      const createRes = await fetch(`${apiUrl}/stories`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ content: "", mediaUrl: uploadData.mediaUrl, type, isPrivate: false }),
-      });
-      if (!createRes.ok) throw new Error("Create story failed");
-      const newStory = await createRes.json();
-      setStories(prev => [{ id: newStory._id, username: "You", image: newStory.mediaUrl, hasUnseenStory: true }, ...prev]);
-      alert("Story created successfully!");
-    } catch (err) {
-      console.error("Error creating story:", err);
-      alert("Failed to create story. Please try again.");
-    }
-  };
 
   // ── Notification handlers ─────────────────────────────────────────────────
-  const markAsRead = (id: number) =>
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    setIsNotificationsOpen(false);
-  };
+  // Handlers moved to NotificationCenter integration area
 
   // ── Playlist handlers ─────────────────────────────────────────────────────
   const handlePlaylistClick = (playlist: any) => setSelectedPlaylist(playlist);
@@ -417,53 +437,17 @@ const Music = () => {
                     <Search className="w-5 h-5" />
                   </Button>
 
-                  {/* Bell + Notifications dropdown */}
-                  <div className="relative" ref={notificationRef}>
+                  {/* Bell + Notifications Toggle */}
+                  <div className="relative">
                     <Button variant="ghost" size="icon" className="relative touch-manipulation"
-                      onClick={() => setIsNotificationsOpen(v => !v)}>
+                      onClick={() => setIsNotificationsOpen(true)}>
                       <Bell className="w-5 h-5" />
                       {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-secondary text-[10px] font-bold text-secondary-foreground rounded-full flex items-center justify-center border-2 border-background shadow-sm">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
                       )}
                     </Button>
-                    <AnimatePresence>
-                      {isNotificationsOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          className="absolute top-12 right-0 w-72 max-w-[calc(100vw-2rem)] bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg z-50"
-                        >
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold">Notifications</h3>
-                              {unreadCount > 0 && (
-                                <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
-                                  <Check className="w-3 h-3 mr-1" /> Mark all read
-                                </Button>
-                              )}
-                            </div>
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                              {notifications.map(n => (
-                                <motion.div
-                                  key={n.id}
-                                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                                  className={`p-3 rounded-xl cursor-pointer transition-colors ${n.isRead ? "bg-muted/30" : "bg-primary/10 border border-primary/20"}`}
-                                  onClick={() => markAsRead(n.id)}
-                                >
-                                  <p className="text-sm">{n.message}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">{n.time}</p>
-                                  {!n.isRead && <div className="w-2 h-2 bg-primary rounded-full mt-2" />}
-                                </motion.div>
-                              ))}
-                              {notifications.length === 0 && (
-                                <p className="text-sm text-muted-foreground text-center py-4">No notifications yet</p>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
               </div>
@@ -501,32 +485,71 @@ const Music = () => {
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.25 }}
               >
-                {/* Stories Row */}
-                <motion.section
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
-                  className="mt-4"
-                >
-                  <StoriesRow stories={stories} onStoryClick={handleStoryClick} onCreateStory={handleCreateStory} />
-                </motion.section>
 
-                {/* Hero Banner — exact copy from Index.tsx */}
+                {/* Hero Carousel */}
                 <motion.section
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                   className="px-4 mt-6"
                 >
-                  <div className="relative h-32 sm:h-40 rounded-2xl overflow-hidden">
-                    <img src={heroMusic} alt="Featured" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <span className="text-xs text-primary font-medium flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" /> Trending Now
-                      </span>
-                      <h2 className="text-xl font-bold text-foreground mt-1">
-                        Discover New Sounds
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        Fresh drops every week
-                      </p>
+                  <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden shadow-2xl">
+                    <AnimatePresence mode="wait">
+                      {heroBanners.map((banner, index) => index === currentHeroIndex && (
+                        <motion.div
+                          key={banner.id}
+                          initial={{ x: 300, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: -300, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          className="absolute inset-0"
+                        >
+                          <img
+                            src={banner.image}
+                            alt={banner.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
+                          <div className="absolute bottom-5 left-5 right-5">
+                            <motion.span
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.2 }}
+                              className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold flex items-center gap-1 w-fit mb-2"
+                            >
+                              {(() => {
+                                const Icon = banner.icon;
+                                return Icon ? <Icon className="w-3 h-3" /> : null;
+                              })()}
+                              {banner.tag}
+                            </motion.span>
+                            <motion.h2
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.3 }}
+                              className="text-2xl font-black text-white leading-tight"
+                            >
+                              {banner.title}
+                            </motion.h2>
+                            <motion.p
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.4 }}
+                              className="text-sm text-white/70 mt-1 font-medium"
+                            >
+                              {banner.subtitle}
+                            </motion.p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+
+                    {/* Indicators */}
+                    <div className="absolute bottom-3 right-5 flex gap-1.5 z-10">
+                      {heroBanners.map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "w-6 bg-primary" : "w-1.5 bg-white/30"}`}
+                        />
+                      ))}
                     </div>
                   </div>
                 </motion.section>
@@ -543,7 +566,7 @@ const Music = () => {
                       See all
                     </Button>
                   </div>
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
+                  <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory scroll-smooth">
                     {featuredPlaylistsMock.map(pl => (
                       <div key={pl.id} className="snap-start flex-shrink-0 w-[200px]">
                         <FeaturedPlaylist
@@ -605,7 +628,7 @@ const Music = () => {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {recentSongs.map((song, index) => (
+                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
                       <motion.div
                         key={song.id}
                         initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
@@ -617,9 +640,9 @@ const Music = () => {
                           isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
                           onClick={() => { /* Stay on current mode when playing */ }}
                           trackUrl={song.trackUrl}
-                          playlist={recentSongs.map(s => ({
-                            id: `${s.title}-${s.artist}`, title: s.title, artist: s.artist,
-                            album: "Recently Played", duration: 180, url: s.trackUrl, artwork: s.albumArt,
+                          playlist={displayedRecentSongs.map(s => ({
+                            id: s.id, title: s.title, artist: s.artist,
+                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
                           }))}
                           currentIndex={index}
                         />
@@ -662,14 +685,14 @@ const Music = () => {
                   className="px-4 mt-4"
                 >
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Mood Mode</h3>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 snap-x">
                     {moodModes.map(mood => (
                       <Button
                         key={mood.key}
                         variant={selectedMood === mood.key ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedMood(mood.key)}
-                        className={`gap-1.5 flex-shrink-0 ${mood.key === "All" && selectedMood === "All" ? mood.textColor : ""}`}
+                        className={`gap-1.5 flex-shrink-0 snap-start ${mood.key === "All" && selectedMood === "All" ? mood.textColor : ""}`}
                         style={mood.key === "All" && selectedMood === "All" ? { backgroundColor: "#2B2A2A", borderColor: "#2B2A2A" } : {}}
                       >
                         <mood.icon className="w-3.5 h-3.5" />
@@ -684,12 +707,12 @@ const Music = () => {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}
                   className="px-4 mt-3"
                 >
-                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  <div className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 snap-x">
                     {genres.map(genre => (
                       <button
                         key={genre}
                         onClick={() => setSelectedGenre(genre)}
-                        className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 font-medium transition-all duration-200 ${selectedGenre === genre
+                        className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 font-medium transition-all duration-200 snap-start ${selectedGenre === genre
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
                           }`}
@@ -747,7 +770,7 @@ const Music = () => {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {filteredSongs.map((song, index) => (
+                        {filteredSongs.slice(0, 100).map((song, index) => (
                           <motion.div
                             key={song.id}
                             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
@@ -759,13 +782,18 @@ const Music = () => {
                               isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
                               trackUrl={song.trackUrl}
                               playlist={filteredSongs.map(s => ({
-                                id: `${s.title}-${s.artist}`, title: s.title, artist: s.artist,
+                                id: s.id, title: s.title, artist: s.artist,
                                 album: "Clockit", duration: 180, url: s.trackUrl, artwork: s.albumArt,
                               }))}
                               currentIndex={index}
                             />
                           </motion.div>
                         ))}
+                        {filteredSongs.length > 100 && (
+                          <p className="text-center text-xs text-muted-foreground py-4">
+                            Showing first 100 of {filteredSongs.length} songs. Search to find more.
+                          </p>
+                        )}
                       </div>
                     )}
                   </motion.section>
@@ -812,7 +840,7 @@ const Music = () => {
                         </DialogContent>
                       </Dialog>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
+                    <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory scroll-smooth">
                       {playlists.map(pl => (
                         <div key={pl.id} className="snap-start flex-shrink-0 w-[200px]">
                           <FeaturedPlaylist
@@ -834,13 +862,37 @@ const Music = () => {
                   >
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold text-foreground">Liked Songs</h3>
-                      <span className="text-sm text-muted-foreground">0 songs</span>
+                      <span className="text-sm text-muted-foreground">{likedSongs.length} songs</span>
                     </div>
-                    <div className="text-center py-16">
-                      <Heart className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                      <h4 className="font-semibold mb-2 text-foreground">No liked songs yet</h4>
-                      <p className="text-muted-foreground text-sm">Songs you like will appear here</p>
-                    </div>
+                    {likedSongs.length > 0 ? (
+                      <div className="space-y-2">
+                        {likedSongs.map((song, index) => (
+                          <motion.div
+                            key={song.id}
+                            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 + index * 0.04 }}
+                          >
+                            <SongCard
+                              title={song.title} artist={song.artist} albumArt={song.albumArt}
+                              duration={song.duration}
+                              isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                              trackUrl={song.trackUrl}
+                              playlist={likedSongs.map(s => ({
+                                id: s.id, title: s.title, artist: s.artist,
+                                album: "Liked Songs", duration: 180, url: s.trackUrl, artwork: s.albumArt,
+                              }))}
+                              currentIndex={index}
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <Heart className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                        <h4 className="font-semibold mb-2 text-foreground">No liked songs yet</h4>
+                        <p className="text-muted-foreground text-sm">Songs you like will appear here</p>
+                      </div>
+                    )}
                   </motion.section>
                 )}
               </motion.div>
@@ -900,7 +952,7 @@ const Music = () => {
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     className="px-4 mt-5"
                   >
-                    <MusicSearch />
+                    <MusicSearch query={debouncedSearchQuery} />
                   </motion.section>
                 ) : (
                   <motion.section
@@ -934,7 +986,6 @@ const Music = () => {
                     <p className="text-xs font-semibold text-muted-foreground px-3 py-1.5 uppercase tracking-wide">Create</p>
                     {[
                       { label: "Reel", desc: "Create a new reel", icon: Video, color: "from-purple-500/20 to-pink-500/20", iconColor: "text-purple-500", action: () => navigate("/reels") },
-                      { label: "Story", desc: "Share a story", icon: ImagePlus, color: "from-orange-500/20 to-amber-500/20", iconColor: "text-orange-500", action: () => { setIsFabOpen(false); handleCreateStory(); } },
                       { label: "Group", desc: "Start a listening group", icon: Users, color: "from-blue-500/20 to-indigo-500/20", iconColor: "text-blue-500", action: () => navigate("/groups") },
                       { label: "Go Live", desc: "Start live stream", icon: Radio, color: "from-red-500/20 to-rose-500/20", iconColor: "text-red-500", action: () => navigate("/live") },
                     ].map(item => (
@@ -995,23 +1046,21 @@ const Music = () => {
             </motion.div>
           )}
 
+          <NotificationCenter
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+            notifications={notifications}
+            onMarkAsRead={handleMarkAsRead}
+            onDelete={handleDeleteNotification}
+            onMarkAllAsRead={handleMarkAllRead}
+            onDeleteAll={handleDeleteAll}
+          />
+
           <div className="pb-36" />
         </div>
       )}
 
       {/* ══════════════ OVERLAYS ══════════════ */}
-      <StoryViewer
-        isOpen={isStoryViewerOpen}
-        onClose={() => setIsStoryViewerOpen(false)}
-        initialStoryId={selectedStoryId || undefined}
-        stories={stories}
-        onStoryViewed={handleStoryViewed}
-      />
-      <StoryCreator
-        isOpen={isStoryCreatorOpen}
-        onClose={() => setIsStoryCreatorOpen(false)}
-        onStoryCreated={handleStoryCreated}
-      />
       <FullPlayer open={showFullPlayer} onOpenChange={setShowFullPlayer} />
     </Layout>
   );

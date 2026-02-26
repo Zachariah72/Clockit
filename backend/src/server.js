@@ -112,6 +112,7 @@ app.use('/api/artists', require('./routes/artists'));
 app.use('/api/albums', require('./routes/albums'));
 app.use('/api/wrapped', require('./routes/wrapped'));
 app.use('/api/listening', require('./routes/listening'));
+app.use('/api/music', require('./routes/music'));
 app.use('/api/listening-groups', require('./routes/listeningGroups'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/profile', require('./routes/profile'));
