@@ -74,6 +74,9 @@ const Settings = () => {
   const handleSettingClick = (item: SettingItem) => {
     if (item.type === 'toggle') {
       handleToggle(item.id);
+    } else if (item.type === 'link') {
+      // For link types, show info that this feature is coming soon
+      toast.info(`Opening ${item.title}...`);
     } else if (item.type === 'button') {
       if (item.id === 'delete-account') {
         toast.error("Please contact support to delete your account");
