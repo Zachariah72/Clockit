@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  toggleMusicLike, 
+  recordListeningHistory, 
+  getListeningHistory,
+  getFollowedArtists 
+} from '@/services/api';
 
 interface BluetoothDevice {
   name?: string;
@@ -36,9 +42,11 @@ interface MediaPlayerState {
   deviceConnected: boolean;
   deviceName: string | null;
   offlineMode: boolean;
-  cachedTracks: Set<string>;
   playbackSource: 'local' | 'spotify';
   spotifyPlayerReady: boolean;
+  likedTrackIDs: string[];
+  recentlyPlayed: Track[];
+  cachedTracks: Set<string>;
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
@@ -60,6 +68,9 @@ interface MediaPlayerContextType extends MediaPlayerState {
   toggleOfflineMode: () => void;
   cacheTrack: (trackId: string) => void;
   isTrackCached: (trackId: string) => boolean;
+  toggleLike: (trackId: string) => void;
+  isLiked: (trackId: string) => boolean;
+  clearHistory: () => void;
 }
 
 const MediaPlayerContext = createContext<MediaPlayerContextType | undefined>(undefined);
@@ -92,21 +103,94 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     deviceConnected: false,
     deviceName: null,
     offlineMode: false,
-    cachedTracks: new Set(),
     playbackSource: 'local',
     spotifyPlayerReady: false,
+    likedTrackIDs: JSON.parse(localStorage.getItem('likedTrackIDs') || '[]'),
+    recentlyPlayed: JSON.parse(localStorage.getItem('recentlyPlayed') || '[]'),
+    cachedTracks: new Set<string>(),
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
-  
+
   // Use refs to access current state inside event listeners
   const stateRef = useRef(state);
-  
+
   // Keep stateRef in sync with state
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // Persist likes and history
+  useEffect(() => {
+    localStorage.setItem('likedTrackIDs', JSON.stringify(state.likedTrackIDs));
+  }, [state.likedTrackIDs]);
+
+  useEffect(() => {
+    localStorage.setItem('recentlyPlayed', JSON.stringify(state.recentlyPlayed));
+  }, [state.recentlyPlayed]);
+
+  // Sync with Backend on Mount
+  useEffect(() => {
+    const syncWithBackend = async () => {
+      if (!auth.user) return;
+
+      try {
+        // Fetch History
+        const backendHistory = await getListeningHistory();
+        if (backendHistory && backendHistory.length > 0) {
+          // Merge or replace local history with backend
+          // For now, let's prefer backend as source of truth
+          const formattedHistory = backendHistory.map((item: any) => ({
+            id: item.trackId,
+            title: item.metadata.title,
+            artist: item.metadata.artist,
+            artwork: item.metadata.artwork,
+            duration: item.metadata.duration,
+            url: item.metadata.url,
+            source: item.source
+          }));
+          
+          setState(prev => ({ 
+            ...prev, 
+            recentlyPlayed: formattedHistory 
+          }));
+        }
+
+        // Fetch Likes (Optional: If we have a GET /likes/music)
+        // For now, toggleLike handles persistence.
+      } catch (err) {
+        console.error('Failed to sync with backend:', err);
+      }
+    };
+
+    syncWithBackend();
+  }, [auth.user]);
+
+  // Record History on Track Change
+  useEffect(() => {
+    if (state.currentTrack && state.isPlaying) {
+      const record = async () => {
+        try {
+          await recordListeningHistory(
+            state.currentTrack!.id,
+            state.currentTrack!.source || 'local',
+            {
+              title: state.currentTrack!.title,
+              artist: state.currentTrack!.artist,
+              artwork: state.currentTrack!.artwork,
+              duration: state.currentTrack!.duration,
+              url: state.currentTrack!.url
+            }
+          );
+        } catch (err) {
+          console.error('Failed to record history to backend:', err);
+        }
+      };
+      
+      record();
+    }
+  }, [state.currentTrack?.id, state.isPlaying]);
 
   // Spotify player integration
   const spotifyPlayer = useSpotifyPlayer();
@@ -365,14 +449,22 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     const finalPlaylist = playlist.length > 0 ? playlist : [track];
     const playbackSource = track.source === 'spotify' && spotifyTokens ? 'spotify' : 'local';
 
-    setState(prev => ({
-      ...prev,
-      currentTrack: track,
-      playlist: finalPlaylist,
-      currentIndex: playlist.length > 0 ? index : 0,
-      currentTime: 0,
-      playbackSource,
-    }));
+    setState(prev => {
+      const exists = prev.recentlyPlayed.find(t => t.id === track.id);
+      const newHistory = exists
+        ? [track, ...prev.recentlyPlayed.filter(t => t.id !== track.id)]
+        : [track, ...prev.recentlyPlayed];
+
+      return {
+        ...prev,
+        currentTrack: track,
+        playlist: finalPlaylist,
+        currentIndex: playlist.length > 0 ? index : 0,
+        currentTime: 0,
+        playbackSource,
+        recentlyPlayed: newHistory.slice(0, 50), // Keep last 50
+      };
+    });
 
     if (playbackSource === 'spotify' && spotifyPlayer.isReady && track.spotifyUri) {
       // Play Spotify track
@@ -464,100 +556,140 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   };
 
   const isTrackCached = (trackId: string) => {
-    return state.cachedTracks.has(trackId);
+    return state.cachedTracks?.has(trackId) || false;
   };
 
-  // Media Session integration for mobile media controls
-  useEffect(() => {
-    if ('mediaSession' in navigator && state.currentTrack) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: state.currentTrack.title,
-        artist: state.currentTrack.artist,
-        album: state.currentTrack.album || 'Clockit',
-        artwork: state.currentTrack.artwork ? [
-          { src: state.currentTrack.artwork, sizes: '512x512', type: 'image/png' }
-        ] : []
-      });
+  const toggleLike = async (trackId: string) => {
+    // 1. Optimistic Update
+    const isCurrentlyLiked = state.likedTrackIDs.includes(trackId);
+    setState(prev => ({
+      ...prev,
+      likedTrackIDs: isCurrentlyLiked
+        ? prev.likedTrackIDs.filter(id => id !== trackId)
+        : [...prev.likedTrackIDs, trackId]
+    }));
 
-      // Set up action handlers
-      navigator.mediaSession.setActionHandler('play', play);
-      navigator.mediaSession.setActionHandler('pause', pause);
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        // Only call next if there are actually more tracks to play
-        if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
-          next();
-        }
-        // If no more tracks, do nothing to prevent navigation
-      });
-      navigator.mediaSession.setActionHandler('previoustrack', previous);
-      navigator.mediaSession.setActionHandler('seekto', (details) => {
-        if (details.seekTime) {
-          seekTo(details.seekTime);
-        }
-      });
-
-      // Update playback state
-      navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
-
-      // Set position state if duration is available
-      if (state.currentTrack.duration && state.currentTrack.duration > 0) {
-        try {
-          const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
-          navigator.mediaSession.setPositionState({
-            duration: state.currentTrack.duration,
-            playbackRate: 1,
-            position: clampedPosition
-          });
-        } catch (error) {
-          console.warn('Failed to set media session position state:', error);
-        }
+    // 2. Backend Sync
+    if (auth.user) {
+      try {
+        const track = state.currentTrack?.id === trackId 
+          ? state.currentTrack 
+          : state.playlist.find(t => t.id === trackId);
+        
+        await toggleMusicLike(trackId, track ? {
+          title: track.title,
+          artist: track.artist,
+          artwork: track.artwork
+        } : {});
+      } catch (err) {
+        console.error('Failed to sync like to backend:', err);
+        // Rollback on failure (optional, user experience decision)
       }
     }
-  }, [state.currentTrack, state.isPlaying, state.currentTime]);
-
-  // Legacy media session hook for additional features
-  useMediaSession({
-    mediaData: state.currentTrack ? {
-      title: state.currentTrack.title,
-      artist: state.currentTrack.artist,
-      album: state.currentTrack.album,
-      artwork: state.currentTrack.artwork,
-      duration: state.currentTrack.duration,
-      currentTime: state.currentTime,
-      isPlaying: state.isPlaying,
-    } : null,
-    onPlay: play,
-    onPause: pause,
-    onNext: next,
-    onPrevious: previous,
-    onSeek: seekTo,
-  });
-
-  const contextValue: MediaPlayerContextType = {
-    ...state,
-    play,
-    pause,
-    stop,
-    next,
-    previous,
-    seekTo,
-    setVolume,
-    toggleMute,
-    playTrack,
-    addToQueue,
-    removeFromQueue,
-    toggleShuffle,
-    setRepeatMode,
-    connectBluetoothDevice,
-    disconnectDevice,
-    toggleOfflineMode,
-    cacheTrack,
-    isTrackCached,
   };
 
-  return (
-    <MediaPlayerContext.Provider value={contextValue}>
-      {children}
-    </MediaPlayerContext.Provider>
-  );
+  const isLiked = (trackId: string) => {
+    return state.likedTrackIDs.includes(trackId);
+  };
+
+  const clearHistory = () => {
+    setState(prev => ({ ...prev, recentlyPlayed: [] }));
+  };
+
+// Media Session integration for mobile media controls
+useEffect(() => {
+  if ('mediaSession' in navigator && state.currentTrack) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: state.currentTrack.title,
+      artist: state.currentTrack.artist,
+      album: state.currentTrack.album || 'Clockit',
+      artwork: state.currentTrack.artwork ? [
+        { src: state.currentTrack.artwork, sizes: '512x512', type: 'image/png' }
+      ] : []
+    });
+
+    // Set up action handlers
+    navigator.mediaSession.setActionHandler('play', play);
+    navigator.mediaSession.setActionHandler('pause', pause);
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      // Only call next if there are actually more tracks to play
+      if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
+        next();
+      }
+      // If no more tracks, do nothing to prevent navigation
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', previous);
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime) {
+        seekTo(details.seekTime);
+      }
+    });
+
+    // Update playback state
+    navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+
+    // Set position state if duration is available
+    if (state.currentTrack.duration && state.currentTrack.duration > 0) {
+      try {
+        const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
+        navigator.mediaSession.setPositionState({
+          duration: state.currentTrack.duration,
+          playbackRate: 1,
+          position: clampedPosition
+        });
+      } catch (error) {
+        console.warn('Failed to set media session position state:', error);
+      }
+    }
+  }
+}, [state.currentTrack, state.isPlaying, state.currentTime]);
+
+// Legacy media session hook for additional features
+useMediaSession({
+  mediaData: state.currentTrack ? {
+    title: state.currentTrack.title,
+    artist: state.currentTrack.artist,
+    album: state.currentTrack.album,
+    artwork: state.currentTrack.artwork,
+    duration: state.currentTrack.duration,
+    currentTime: state.currentTime,
+    isPlaying: state.isPlaying,
+  } : null,
+  onPlay: play,
+  onPause: pause,
+  onNext: next,
+  onPrevious: previous,
+  onSeek: seekTo,
+});
+
+const contextValue: MediaPlayerContextType = {
+  ...state,
+  play,
+  pause,
+  stop,
+  next,
+  previous,
+  seekTo,
+  setVolume,
+  toggleMute,
+  playTrack,
+  addToQueue,
+  removeFromQueue,
+  toggleShuffle,
+  setRepeatMode,
+  connectBluetoothDevice,
+  disconnectDevice,
+  toggleOfflineMode,
+  cacheTrack,
+  isTrackCached,
+  toggleLike,
+  isLiked,
+  clearHistory,
+};
+
+return (
+  <MediaPlayerContext.Provider value={contextValue}>
+    {children}
+  </MediaPlayerContext.Provider>
+);
 };

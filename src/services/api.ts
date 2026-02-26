@@ -182,3 +182,24 @@ export const checkMultipleArtistFollows = async (artistIds: string[]) => {
 export const getFollowedArtists = async () => {
   return api.get<any[]>('/artists/follow/following');
 };
+
+// Music & Likes API functions
+export const toggleMusicLike = async (trackId: string, metadata: any) => {
+  return api.post<{ liked: boolean }>('/likes/toggle', { 
+    contentId: trackId, 
+    contentType: 'song',
+    metadata 
+  });
+};
+
+export const checkMusicLike = async (trackId: string) => {
+  return api.get<{ liked: boolean }>(`/likes/check/${trackId}/song`);
+};
+
+export const recordListeningHistory = async (trackId: string, source: string, metadata: any) => {
+  return api.post('/music/history', { trackId, source, metadata });
+};
+
+export const getListeningHistory = async () => {
+  return api.get<any[]>('/music/history');
+};

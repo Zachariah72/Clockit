@@ -13,10 +13,11 @@ interface FullPlayerProps {
 }
 
 export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
-  const { currentTrack, cacheTrack, isTrackCached } = useMediaPlayer();
-  const [isLiked, setIsLiked] = useState(false);
+  const { currentTrack, cacheTrack, isTrackCached, toggleLike, isLiked: checkLiked } = useMediaPlayer();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowingLoading, setIsFollowingLoading] = useState(false);
+
+  const liked = currentTrack ? checkLiked(currentTrack.id) : false;
 
   // Check if following artist when track changes
   useEffect(() => {
@@ -63,8 +64,10 @@ export const FullPlayer = ({ open, onOpenChange }: FullPlayerProps) => {
   if (!currentTrack) return null;
 
   const handleLike = () => {
-    setIsLiked(!isLiked);
-    toast.success(isLiked ? "Removed from liked songs" : "Added to liked songs");
+    if (currentTrack) {
+      toggleLike(currentTrack.id);
+      toast.success(liked ? "Removed from liked songs" : "Added to liked songs");
+    }
   };
 
   const handleShare = async () => {
