@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Layout } from "@/components/layout/Layout";
 import { Insights } from "@/components/Insights";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { FollowersModal } from "@/components/profile/FollowersModal";
 import { StoriesModal } from "@/components/profile/StoriesModal";
@@ -81,6 +81,7 @@ const draftItems = [
 const Profile = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const [searchParams] = useSearchParams();
   const { user, session, loading: authLoading } = useAuth();
 
   // Loading and data states
@@ -109,6 +110,15 @@ const Profile = () => {
 
   // Check if viewing own profile
   const isOwnProfile = !userId || (user?.id && userId === user.id);
+
+  // Check for edit query param and open modal
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && isOwnProfile) {
+      setIsEditProfileOpen(true);
+      // Remove the query param after opening modal
+      navigate('/profile/me', { replace: true });
+    }
+  }, [searchParams, isOwnProfile, navigate]);
 
   // Handle follow/unfollow
   const handleFollowToggle = async () => {
