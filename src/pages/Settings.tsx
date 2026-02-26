@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, User, Shield, MessageCircle, Music, Eye, BarChart3,
   Bell, Users, Palette, Clock, HardDrive, FileText, LogOut,
-  ChevronRight, Settings as SettingsIcon, Search
+  ChevronRight, Settings as SettingsIcon, Search, ToggleLeft, ToggleRight,
+  ExternalLink, Info, Trash2, Download, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,86 +12,21 @@ import { Layout } from "@/components/layout/Layout";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { settingsData, getSettingsSection, SettingItem } from "@/data/settingsData";
 
 // Settings sections
 const settingsSections = [
-  {
-    id: 'account',
-    title: 'Account',
-    description: 'Manage your account settings and preferences',
-    icon: User,
-    color: 'text-blue-500'
-  },
-  {
-    id: 'privacy',
-    title: 'Privacy & Security',
-    description: 'Control your privacy and security settings',
-    icon: Shield,
-    color: 'text-green-500'
-  },
-  {
-    id: 'messaging',
-    title: 'Messaging & Calls',
-    description: 'Configure messaging and calling preferences',
-    icon: MessageCircle,
-    color: 'text-purple-500'
-  },
-  {
-    id: 'music',
-    title: 'Music & Audio',
-    description: 'Customize your music listening experience',
-    icon: Music,
-    color: 'text-pink-500'
-  },
-  {
-    id: 'content',
-    title: 'Content & Feed',
-    description: 'Personalize your content and feed preferences',
-    icon: Eye,
-    color: 'text-orange-500'
-  },
-  {
-    id: 'analytics',
-    title: 'Analytics & Insights',
-    description: 'Manage your analytics and performance data',
-    icon: BarChart3,
-    color: 'text-cyan-500'
-  },
-  {
-    id: 'notifications',
-    title: 'Notifications',
-    description: 'Control your notification preferences',
-    icon: Bell,
-    color: 'text-yellow-500'
-  },
-  {
-    id: 'appearance',
-    title: 'Appearance & Themes',
-    description: 'Customize your app appearance and themes',
-    icon: Palette,
-    color: 'text-indigo-500'
-  },
-  {
-    id: 'wellbeing',
-    title: 'Screen Time & Wellbeing',
-    description: 'Manage your screen time and digital wellbeing',
-    icon: Clock,
-    color: 'text-teal-500'
-  },
-  {
-    id: 'data',
-    title: 'App & Data',
-    description: 'Manage app data and storage settings',
-    icon: HardDrive,
-    color: 'text-gray-500'
-  },
-  {
-    id: 'legal',
-    title: 'Legal & Support',
-    description: 'Legal information and support resources',
-    icon: FileText,
-    color: 'text-slate-500'
-  }
+  { id: 'account', title: 'Account', description: 'Manage your account settings and preferences', icon: User, color: 'text-blue-500' },
+  { id: 'privacy', title: 'Privacy & Security', description: 'Control your privacy and security settings', icon: Shield, color: 'text-green-500' },
+  { id: 'messaging', title: 'Messaging & Calls', description: 'Configure messaging and calling preferences', icon: MessageCircle, color: 'text-purple-500' },
+  { id: 'music', title: 'Music & Audio', description: 'Customize your music listening experience', icon: Music, color: 'text-pink-500' },
+  { id: 'content', title: 'Content & Feed', description: 'Personalize your content and feed preferences', icon: Eye, color: 'text-orange-500' },
+  { id: 'analytics', title: 'Analytics & Insights', description: 'Manage your analytics and performance data', icon: BarChart3, color: 'text-cyan-500' },
+  { id: 'notifications', title: 'Notifications', description: 'Control your notification preferences', icon: Bell, color: 'text-yellow-500' },
+  { id: 'appearance', title: 'Appearance & Themes', description: 'Customize your app appearance and themes', icon: Palette, color: 'text-indigo-500' },
+  { id: 'wellbeing', title: 'Screen Time & Wellbeing', description: 'Manage your screen time and digital wellbeing', icon: Clock, color: 'text-teal-500' },
+  { id: 'data', title: 'App & Data', description: 'Manage app data and storage settings', icon: HardDrive, color: 'text-gray-500' },
+  { id: 'legal', title: 'Legal & Support', description: 'Legal information and support resources', icon: FileText, color: 'text-slate-500' }
 ];
 
 const Settings = () => {
@@ -99,6 +35,7 @@ const Settings = () => {
   const { signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(sectionId || null);
+  const [settingsValues, setSettingsValues] = useState<Record<string, boolean>>({});
 
   // Update selected section when URL changes
   useEffect(() => {
@@ -114,7 +51,6 @@ const Settings = () => {
 
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
-    // Navigate to specific settings section
     navigate(`/settings/${sectionId}`);
   };
 
@@ -128,6 +64,58 @@ const Settings = () => {
       toast.error("Failed to logout. Please try again.");
     }
   };
+
+  const handleToggle = (itemId: string) => {
+    setSettingsValues(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+    toast.success("Setting updated");
+  };
+
+  const handleSettingClick = (item: SettingItem) => {
+    if (item.type === 'toggle') {
+      handleToggle(item.id);
+    } else if (item.type === 'button') {
+      if (item.id === 'delete-account') {
+        toast.error("Please contact support to delete your account");
+      } else if (item.id === 'clear-cache') {
+        toast.success("Cache cleared successfully");
+      } else if (item.id === 'export-data') {
+        toast.info("Preparing your data for download...");
+      } else if (item.id === 'backup') {
+        toast.info("Starting backup...");
+      } else if (item.id === 'report') {
+        toast.info("Opening report form...");
+      } else {
+        toast.info(`Opening ${item.title}...`);
+      }
+    }
+  };
+
+  const renderSettingIcon = (item: SettingItem) => {
+    switch (item.type) {
+      case 'toggle':
+        return settingsValues[item.id] || item.value ? 
+          <ToggleRight className="w-5 h-5 text-green-500" /> : 
+          <ToggleLeft className="w-5 h-5 text-muted-foreground" />;
+      case 'link':
+        return <ChevronRight className="w-5 h-5 text-muted-foreground" />;
+      case 'button':
+        return <ChevronRight className="w-5 h-5 text-muted-foreground" />;
+      case 'info':
+        return <Info className="w-5 h-5 text-muted-foreground" />;
+      default:
+        return <ChevronRight className="w-5 h-5 text-muted-foreground" />;
+    }
+  };
+
+  const getCurrentSectionData = () => {
+    if (!selectedSection) return null;
+    return getSettingsSection(selectedSection);
+  };
+
+  const currentSectionData = getCurrentSectionData();
 
   return (
     <Layout>
@@ -163,66 +151,98 @@ const Settings = () => {
         </motion.header>
 
         {/* Settings Sections or Section Detail View */}
-        {selectedSection ? (
-          <div className="p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-card border border-border rounded-2xl p-6"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Button variant="ghost" size="icon" onClick={() => { setSelectedSection(null); navigate('/settings'); }}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <h2 className="text-xl font-bold capitalize">{selectedSection.replace('-', ' ')} Settings</h2>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                This section is coming soon. We're working on providing you with the best {selectedSection} settings experience.
-              </p>
-              <div className="bg-muted rounded-xl p-4">
-                <p className="text-sm text-muted-foreground">
-                  🚧 Under construction
-                </p>
-              </div>
-            </motion.div>
+        {selectedSection && currentSectionData ? (
+          <div className="p-4 space-y-4">
+            {/* Back button and title */}
+            <div className="flex items-center gap-3 mb-4">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => { 
+                  setSelectedSection(null); 
+                  navigate('/settings'); 
+                }}
+                className="hover:bg-muted"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h2 className="text-xl font-bold">{currentSectionData.title}</h2>
+            </div>
+
+            {/* Section description */}
+            <p className="text-muted-foreground text-sm mb-4">{currentSectionData.description}</p>
+
+            {/* Settings items */}
+            <div className="space-y-2">
+              {currentSectionData.items.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  onClick={() => handleSettingClick(item)}
+                  className={`flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors ${
+                    item.type === 'info' ? 'opacity-75' : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-foreground">{item.title}</h3>
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
+                    )}
+                  </div>
+                  
+                  {/* Value display for certain types */}
+                  {item.type === 'link' && item.value && (
+                    <span className="text-sm text-muted-foreground capitalize">{item.value}</span>
+                  )}
+                  {item.type === 'info' && item.value && (
+                    <span className="text-sm text-muted-foreground">{item.value}</span>
+                  )}
+                  
+                  {/* Icon based on type */}
+                  {renderSettingIcon(item)}
+                </motion.div>
+              ))}
+            </div>
           </div>
         ) : (
-        <div className="p-4 space-y-3">
-          <AnimatePresence>
-            {filteredSections.map((section, index) => {
-              const Icon = section.icon;
-              return (
-                <motion.div
-                  key={section.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => handleSectionClick(section.id)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <div className={`p-3 rounded-xl bg-muted ${section.color}`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
+          <div className="p-4 space-y-3">
+            <AnimatePresence>
+              {filteredSections.map((section, index) => {
+                const Icon = section.icon;
+                return (
+                  <motion.div
+                    key={section.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleSectionClick(section.id)}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <div className={`p-3 rounded-xl bg-muted ${section.color}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{section.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{section.description}</p>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground">{section.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{section.description}</p>
+                    </div>
 
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
 
-          {filteredSections.length === 0 && (
-            <div className="text-center py-12">
-              <SettingsIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No settings found matching "{searchQuery}"</p>
-            </div>
-          )}
-        </div>
+            {filteredSections.length === 0 && (
+              <div className="text-center py-12">
+                <SettingsIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No settings found matching "{searchQuery}"</p>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Logout Section */}
