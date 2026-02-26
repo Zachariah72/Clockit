@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -95,9 +95,17 @@ const settingsSections = [
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { sectionId } = useParams();
   const { signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(sectionId || null);
+
+  // Update selected section when URL changes
+  useEffect(() => {
+    if (sectionId) {
+      setSelectedSection(sectionId);
+    }
+  }, [sectionId]);
 
   const filteredSections = settingsSections.filter(section =>
     section.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -191,6 +199,32 @@ const Settings = () => {
             </div>
           )}
         </div>
+
+        {/* Section Detail View */}
+        {selectedSection && (
+          <div className="p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-card border border-border rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <Button variant="ghost" size="icon" onClick={() => setSelectedSection(null)}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <h2 className="text-xl font-bold capitalize">{selectedSection.replace('-', ' ')} Settings</h2>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                This section is coming soon. We're working on providing you with the best {selectedSection} settings experience.
+              </p>
+              <div className="bg-muted rounded-xl p-4">
+                <p className="text-sm text-muted-foreground">
+                  🚧 Under construction
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Logout Section */}
         <div className="p-4 mt-8">

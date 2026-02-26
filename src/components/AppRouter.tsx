@@ -91,6 +91,7 @@ const AppRouter: React.FC = () => {
           <Route path="/camera-test" element={<CameraTest />} />
           <Route path="/snap" element={<Snap />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/:sectionId" element={<Settings />} />
           <Route path="/settings/appearance" element={<Appearance />} />
         </>
       ) : (
