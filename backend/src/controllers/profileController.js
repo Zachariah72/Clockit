@@ -10,7 +10,7 @@ const { uploadImage } = require('../utils/cloudinary');
 // Get user profile
 exports.getProfile = async (req, res) => {
   try {
-    let userId = req.params.userId || req.user?.user?.id || (req.user ? req.user.id : null);
+    let userId = req.params.userId || req.user?.id;
     
     // If no user ID, try to find user by email or supabaseId (OAuth case)
     if (!userId && req.user?.email) {
@@ -88,7 +88,7 @@ exports.getProfile = async (req, res) => {
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    let userId = req.user?.user?.id || req.user?.id;
+    let userId = req.user?.id;
     
     // If no user ID in token, try to find user by email
     if (!userId && req.user?.email) {
@@ -160,7 +160,7 @@ exports.uploadAvatar = async (req, res) => {
     console.log('File received:', req.file.originalname, req.file.size, req.file.mimetype);
     console.log('Full req.user object:', JSON.stringify(req.user));
     
-    let userId = req.user?.user?.id || req.user?.id;
+    let userId = req.user?.id;
     console.log('Extracted userId:', userId);
     
     // If no user ID in token, try to find user by email
@@ -402,7 +402,7 @@ exports.getStories = async (req, res) => {
       return res.json([]);
     }
     
-    const userId = req.params.userId || req.user?.user?.id || req.user?.id;
+    const userId = req.params.userId || req.user?.id;
 
     if (!userId) {
       return res.json([]);
