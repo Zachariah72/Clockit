@@ -52,20 +52,22 @@ router.get('/reels', profileController.getReels);
 router.get('/saved', profileController.getSavedContent);
 router.get('/drafts', profileController.getDrafts);
 
-// Base profile - requires auth for own profile
-router.get('/', auth, profileController.getProfile);
-router.get('/:userId', profileController.getProfile);
-
-// Stories, Followers, Following - require auth for own profile
+// Stories, Followers, Following - require auth for own profile (MUST come before /:userId)
 router.get('/stories', auth, profileController.getStories);
 router.get('/followers', auth, profileController.getFollowers);
 router.get('/following', auth, profileController.getFollowing);
 
-// Public social routes with userId (specific paths)
+// Base profile - requires auth for own profile
+router.get('/', auth, profileController.getProfile);
+
+// Public social routes with userId (specific paths - MUST come before /:userId)
 router.get('/:userId/followers', profileController.getFollowers);
 router.get('/:userId/following', profileController.getFollowing);
 router.get('/:userId/stories', profileController.getStories);
 router.get('/:userId/reels', profileController.getReels);
+
+// Parameterized route for other users' profiles - MUST be last
+router.get('/:userId', profileController.getProfile);
 
 // ============================================
 // AUTHENTICATED ROUTES (auth middleware)
