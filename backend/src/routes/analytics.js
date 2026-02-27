@@ -18,4 +18,7 @@ router.get('/audience/:userId', analyticsController.getAudienceInsights);
 // Get activity summary
 router.get('/activity/:userId', analyticsController.getActivitySummary);
 
+// Get music insights
+router.get('/music/:userId', analyticsController.getMusicInsights);
+
 module.exports = router;

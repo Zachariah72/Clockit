@@ -2,6 +2,9 @@ const UserStat = require('../models/UserStat');
 const ContentAnalytic = require('../models/ContentAnalytic');
 const AudienceInsight = require('../models/AudienceInsight');
 const EngagementLog = require('../models/EngagementLog');
+const ListeningHistory = require('../models/ListeningHistory');
+const UserTrack = require('../models/UserTrack');
+const Streak = require('../models/Streak');
 
 // Get user stats
 exports.getUserStats = async (req, res) => {
@@ -172,6 +175,103 @@ exports.getActivitySummary = async (req, res) => {
       postingFrequency: Math.round(postingFrequency * 100) / 100,
       engagementConsistency: Math.round(engagementConsistency),
       timeSpentOnPlatform: Math.round(timeSpent),
+      period
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get music insights
+exports.getMusicInsights = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { period = 'weekly' } = req.query;
+
+    const now = new Date();
+    let startDate;
+
+    switch (period) {
+      case 'monthly':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default: // weekly
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Get listening history
+    const listeningHistory = await ListeningHistory.find({
+      userId,
+      playedAt: { $gte: startDate }
+    }).sort({ playedAt: -1 });
+
+    // Get user tracks (liked songs)
+    const userTracks = await UserTrack.find({ userId });
+    const likedTracks = userTracks.filter(t => t.isLiked);
+
+    // Get streak data
+    const streak = await Streak.findOne({ userId });
+
+    // Calculate total listening time in hours
+    const totalListeningTime = listeningHistory.reduce((sum, h) => sum + (h.duration || 0), 0) / 3600;
+
+    // Get unique songs played
+    const uniqueSongs = new Set(listeningHistory.map(h => h.trackId?.toString()));
+
+    // Get top artists (simplified - based on play count)
+    const artistPlays = {};
+    listeningHistory.forEach(h => {
+      if (h.artist) {
+        artistPlays[h.artist] = (artistPlays[h.artist] || 0) + 1;
+      }
+    });
+    const topArtists = Object.entries(artistPlays)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, plays]) => ({ name, plays }));
+
+    // Get genre distribution
+    const genrePlays = {};
+    listeningHistory.forEach(h => {
+      if (h.genre) {
+        genrePlays[h.genre] = (genrePlays[h.genre] || 0) + 1;
+      }
+    });
+    const genreDistribution = Object.entries(genrePlays)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, value]) => ({ name, value }));
+
+    // Get top genre
+    const topGenre = genreDistribution[0]?.name || 'N/A';
+
+    // Generate listening trends (daily data)
+    const listeningByDay = {};
+    listeningHistory.forEach(h => {
+      const day = new Date(h.playedAt).toLocaleDateString('en-US', { weekday: 'short' });
+      listeningByDay[day] = (listeningByDay[day] || 0) + 1;
+    });
+    const listeningTrends = Object.entries(listeningByDay).map(([day, count]) => ({ day, count }));
+
+    // Calculate monthly average
+    const monthlyAverage = (totalListeningTime / 7) * 30;
+
+    res.json({
+      totalSongsPlayed: uniqueSongs.size,
+      totalListeningTime: Math.round(totalListeningTime * 10) / 10,
+      topGenre,
+      currentStreak: streak?.currentStreak || 0,
+      longestStreak: streak?.longestStreak || 0,
+      weeklyGoal: 7,
+      monthlyAverage: Math.round(monthlyAverage * 10) / 10,
+      listeningTrends,
+      topArtists,
+      genreDistribution,
+      listeningByDay: listeningTrends,
+      favoritePlaylists: [],
+      newArtistsDiscovered: topArtists.length,
+      songsLiked: likedTracks.length,
+      playlistsCreated: 0,
       period
     });
   } catch (error) {
