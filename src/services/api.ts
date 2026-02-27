@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 const getApiBaseUrl = () => {
   const devUrl = 'http://localhost:5000/api';
   const prodUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  
+
   // In development, try to use proxy if available, otherwise use direct URL
   if (import.meta.env.DEV) {
     // Check if there's a proxy configured (Vite dev server)
@@ -41,7 +41,7 @@ class ApiService {
 
     const config: RequestInit = {
       ...options,
-      headers: isFormData 
+      headers: isFormData
         ? { ...options.headers }  // Don't set Content-Type for FormData
         : { 'Content-Type': 'application/json', ...options.headers },
     };
@@ -185,15 +185,19 @@ export const getFollowedArtists = async () => {
 
 // Music & Likes API functions
 export const toggleMusicLike = async (trackId: string, metadata: any) => {
-  return api.post<{ liked: boolean }>('/likes/toggle', { 
-    contentId: trackId, 
+  return api.post<{ liked: boolean }>('/likes/toggle', {
+    contentId: trackId,
     contentType: 'song',
-    metadata 
+    metadata
   });
 };
 
 export const checkMusicLike = async (trackId: string) => {
   return api.get<{ liked: boolean }>(`/likes/check/${trackId}/song`);
+};
+
+export const getUserLikes = async () => {
+  return api.get<any[]>('/likes/user');
 };
 
 export const recordListeningHistory = async (trackId: string, source: string, metadata: any) => {
@@ -202,4 +206,62 @@ export const recordListeningHistory = async (trackId: string, source: string, me
 
 export const getListeningHistory = async () => {
   return api.get<any[]>('/music/history');
+};
+
+export const searchMusic = async (query: string) => {
+  return api.get<any[]>(`/music/search?q=${encodeURIComponent(query)}`);
+};
+
+// Playlist API functions
+export const getUserPlaylists = async () => {
+  return api.get<any[]>('/playlists');
+};
+
+export const getPlaylistById = async (id: string) => {
+  return api.get<any>(`/playlists/${id}`);
+};
+
+export const createPlaylist = async (data: { name: string; description?: string; isPublic?: boolean; coverImage?: string; theme?: any }) => {
+  return api.post<any>('/playlists', data);
+};
+
+export const updatePlaylist = async (id: string, data: any) => {
+  return api.put<any>(`/playlists/${id}`, data);
+};
+
+export const deletePlaylist = async (id: string) => {
+  return api.delete(`/playlists/${id}`);
+};
+
+export const addTrackToPlaylist = async (playlistId: string, trackId: string, source: string, metadata: any) => {
+  return api.post(`/playlists/${playlistId}/tracks`, { trackId, source, metadata });
+};
+
+export const removeTrackFromPlaylist = async (playlistId: string, trackId: string, source: string) => {
+  return api.delete(`/playlists/${playlistId}/tracks`, { body: JSON.stringify({ trackId, source }) });
+};
+
+// Listening Group API functions
+export const getJoinedGroups = async () => {
+  return api.get<any[]>('/listening-groups');
+};
+
+export const discoverPublicGroups = async () => {
+  return api.get<any[]>('/listening-groups/discover');
+};
+
+export const createListeningGroup = async (data: { name: string; description?: string; isPublic?: boolean }) => {
+  return api.post<any>('/listening-groups', data);
+};
+
+export const joinListeningGroup = async (groupId: string) => {
+  return api.post<any>(`/listening-groups/${groupId}/join`);
+};
+
+export const leaveListeningGroup = async (groupId: string) => {
+  return api.post(`/listening-groups/${groupId}/leave`);
+};
+
+export const updateGroupPlayback = async (groupId: string, data: { currentTrack: any; isPlaying: boolean; currentTime: number }) => {
+  return api.put(`/listening-groups/${groupId}/playback`, data);
 };
