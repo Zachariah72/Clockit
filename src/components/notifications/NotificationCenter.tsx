@@ -14,7 +14,9 @@ import { toast } from "sonner";
 export interface Notification {
   id: string;
   type: 'follow' | 'like' | 'mention' | 'system' | 'new_release';
-  message: string;
+  // `message` is kept for backwards compatibility but is no longer
+  // shown in the UI. It is optional so callers can omit it.
+  message?: string;
   time: string;
   isRead: boolean;
   sender?: {
@@ -255,9 +257,10 @@ export const NotificationCenter = ({
                           {n.time}
                         </span>
                       </div>
-                      <p className="text-sm text-foreground/90 leading-snug">
+                      {/* The message field is intentionally not displayed anymore */}
+                      {/* <p className="text-sm text-foreground/90 leading-snug">
                         {n.message}
-                      </p>
+                      </p> */}
                     </div>
 
                     {/* Unread dot */}

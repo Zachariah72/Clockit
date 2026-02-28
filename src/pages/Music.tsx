@@ -106,7 +106,6 @@ const Music = () => {
     { 
       id: "1", 
       type: "new_release", 
-      message: "New album \"Midnight Waves\" by Synthwave is now available!", 
       isRead: false, 
       time: "2m ago",
       sender: { name: "Synthwave", avatar: album1 },
@@ -115,7 +114,6 @@ const Music = () => {
     { 
       id: "2", 
       type: "follow", 
-      message: "DJ Beats started following you", 
       isRead: false, 
       time: "15m ago",
       sender: { name: "DJ Beats", avatar: avatar1 },
@@ -124,7 +122,6 @@ const Music = () => {
     { 
       id: "3", 
       type: "like", 
-      message: "Someone liked your playlist \"Chill Mix\"", 
       isRead: true, 
       time: "1h ago",
       sender: { name: "Sarah J", avatar: avatar2 },
@@ -133,7 +130,6 @@ const Music = () => {
     { 
       id: "4", 
       type: "mention", 
-      message: "MusicLover mentioned you in a comment", 
       isRead: false, 
       time: "2h ago",
       sender: { name: "MusicLover", avatar: avatar3 },

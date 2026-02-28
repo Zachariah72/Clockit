@@ -55,10 +55,10 @@ const Index = () => {
 
 
   const [notifications, setNotifications] = useState([
-    { id: 1, type: 'new_release', message: 'New album "Midnight Waves" by Synthwave is now available!', isRead: false, time: '2m ago' },
-    { id: 2, type: 'follow', message: 'DJ Beats started following you', isRead: false, time: '15m ago' },
-    { id: 3, type: 'like', message: 'Someone liked your playlist "Chill Mix"', isRead: true, time: '1h ago' },
-    { id: 4, type: 'message', message: 'New message from MusicLover', isRead: false, time: '2h ago' },
+    { id: 1, type: 'new_release', isRead: false, time: '2m ago' },
+    { id: 2, type: 'follow', isRead: false, time: '15m ago' },
+    { id: 3, type: 'like', isRead: true, time: '1h ago' },
+    { id: 4, type: 'message', isRead: false, time: '2h ago' },
   ]);
   const [stories, setStories] = useState([
     { id: "1", username: "Sarah", image: avatar1, hasUnseenStory: true },
@@ -401,7 +401,7 @@ const Index = () => {
                             }`}
                             onClick={() => markAsRead(notification.id)}
                           >
-                            <p className="text-sm">{notification.message}</p>
+                            {/* notification.message is no longer shown */}
                             <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                             {!notification.isRead && (
                               <div className="w-2 h-2 bg-primary rounded-full mt-2" />
