@@ -80,11 +80,11 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
       
       const apiUrl = getApiUrl();
       const [statsRes, contentRes, audienceRes, activityRes, musicRes] = await Promise.all([
-        fetch(`${apiUrl}/api/analytics/stats/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${apiUrl}/api/analytics/content/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${apiUrl}/api/analytics/audience/${effectiveUserId}`, { headers }),
-        fetch(`${apiUrl}/api/analytics/activity/${effectiveUserId}?period=${period}`, { headers }),
-        fetch(`${apiUrl}/api/analytics/music/${effectiveUserId}?period=${period}`, { headers })
+        fetch(`${apiUrl}/analytics/stats/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/analytics/content/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/analytics/audience/${effectiveUserId}`, { headers }),
+        fetch(`${apiUrl}/analytics/activity/${effectiveUserId}?period=${period}`, { headers }),
+        fetch(`${apiUrl}/analytics/music/${effectiveUserId}?period=${period}`, { headers })
       ]);
 
       // Check for errors but don't fail if some endpoints return 401
@@ -96,7 +96,10 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
         musicRes.json()
       ]);
 
-      // Debug: Log response status
+      // Handle PromiseSettledResult
+      const getValue = (result: PromiseSettledResult<any>) => 
+        result.status === 'fulfilled' ? result.value : null;
+
       console.log('Analytics API responses:', {
         stats: statsRes.status,
         content: contentRes.status,
@@ -106,8 +109,9 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
       });
 
       if (statsRes.ok) {
-        console.log('Stats data:', statsData.value);
-        setStats(statsData.value);
+        const data = getValue(statsData);
+        console.log('Stats data:', data);
+        setStats(data);
       } else {
         // Provide fallback data when API fails
         console.error('Stats API error, using fallback data');
@@ -126,9 +130,6 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
       }
 
       // Handle other endpoints
-      const getValue = (result: PromiseSettledResult<any>) => 
-        result.status === 'fulfilled' ? result.value : null;
-
       if (contentRes.ok) setContentAnalytics(getValue(contentData));
       if (audienceRes.ok) setAudienceInsights(getValue(audienceData));
       if (activityRes.ok) setActivitySummary(getValue(activityData));
