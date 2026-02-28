@@ -26,6 +26,9 @@ interface AuthContextType {
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: 'google' | 'apple' | 'facebook' | 'spotify') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  spotifyTokens: { accessToken: string; refreshToken: string; expiresAt: number } | null;
+  setSpotifyTokens: React.Dispatch<React.SetStateAction<{ accessToken: string; refreshToken: string; expiresAt: number } | null>>;
+  signInWithSpotify: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [spotifyTokens, setSpotifyTokens] = useState<{ accessToken: string; refreshToken: string; expiresAt: number } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -54,6 +58,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }).finally(() => setLoading(false));
     } else {
       setLoading(false);
+    }
+
+    const storedSpotifyTokens = localStorage.getItem('spotify_tokens');
+    if (storedSpotifyTokens) {
+      try {
+        setSpotifyTokens(JSON.parse(storedSpotifyTokens));
+      } catch (e) {
+        console.error('Error parsing spotify tokens', e);
+      }
     }
   }, []);
 
@@ -232,18 +245,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   }, []);
 
+  const signInWithSpotify = useCallback(async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/spotify/auth-url`);
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (err) {
+      console.error('Failed to get Spotify auth URL', err);
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('auth_token'); // Also clear backend token
+    localStorage.removeItem('spotify_tokens');
     setUser(null);
     setSession(null);
     setProfile(null);
+    setSpotifyTokens(null);
   }, []);
 
   const value = useMemo(() => ({
-    user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut
-  }), [user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut]);
+    user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut,
+    spotifyTokens, setSpotifyTokens, signInWithSpotify
+  }), [user, session, profile, loading, signUp, signIn, signInWithOAuth, signOut, spotifyTokens, setSpotifyTokens, signInWithSpotify]);
 
   return (
     <AuthContext.Provider value={value}>
