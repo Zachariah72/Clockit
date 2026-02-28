@@ -31,8 +31,20 @@ const userSettingsSchema = new mongoose.Schema({
   privacy: {
     accountVisibility: {
       type: String,
-      enum: ['public', 'private'],
+      enum: ['public', 'followers', 'private'],
       default: 'public'
+    },
+    showActivityStatus: {
+      type: Boolean,
+      default: true
+    },
+    readReceipts: {
+      type: Boolean,
+      default: true
+    },
+    showLastSeen: {
+      type: Boolean,
+      default: true
     },
     allowMessages: {
       type: String,
