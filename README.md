@@ -1,20 +1,85 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ClockItApp
 
-# Run and deploy your AI Studio app
+ClockItApp is a modern web application designed for music discovery, playlist curation, and community engagement. Built with React, TypeScript, and Vite, it offers a fast, interactive, and visually appealing user experience.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/0c3997e6-73dc-4d2a-9280-c435f27a2293
+- **Home Feed:** Discover trending music, featured playlists, and community posts.
+- **Genre & Community Sections:** Explore music by genre and connect with other users.
+- **Reels & Snappy Sections:** Enjoy short-form music content and highlights.
+- **Full & Mini Player:** Listen to music with a full-featured player or a compact mini player.
+- **Sidebar & Navigation:** Easy navigation with a sidebar, bottom navigation, and right panel.
 
-## Run Locally
+## Project Structure
 
-**Prerequisites:**  Node.js
+```
+clockitapp/
+├── index.html
+├── metadata.json
+├── package.json
+├── README.md
+├── tsconfig.json
+├── vite.config.ts
+├── src/
+│   ├── App.tsx
+│   ├── index.css
+│   ├── main.tsx
+│   ├── components/
+│   │   ├── home/
+│   │   ├── layout/
+│   │   └── music/
+│   └── lib/
+│       └── utils.ts
+```
 
+## Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+- Node.js (v16 or higher recommended)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/yourusername/clockitapp.git
+   cd clockitapp
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   # or
+   yarn install
+   ```
+
+### Running the App
+
+Start the development server:
+```sh
+npm run dev
+# or
+yarn dev
+```
+
+Open your browser and navigate to `http://localhost:5173` (or the port shown in your terminal).
+
+### Building for Production
+
+To build the app for production:
+```sh
+npm run build
+# or
+yarn build
+```
+
+## Configuration
+
+- Copy `.env.example` to `.env` and update environment variables as needed.
+
+## Contributing
+
+Contributions are welcome! Please open issues or submit pull requests for improvements and bug fixes.
+
+## License
+
+This project is licensed under the MIT License.
