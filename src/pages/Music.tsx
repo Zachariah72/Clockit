@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video
+  Check, X, Hash, Film, Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
-import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getApiUrl } from "@/utils/api";
@@ -94,71 +93,9 @@ const Music = () => {
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isFabOpen, setIsFabOpen] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
-
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { 
-      id: "1", 
-      type: "new_release", 
-      message: "New album \"Midnight Waves\" by Synthwave is now available!", 
-      isRead: false, 
-      time: "2m ago",
-      sender: { name: "Synthwave", avatar: album1 },
-      targetUrl: "/music"
-    },
-    { 
-      id: "2", 
-      type: "follow", 
-      message: "DJ Beats started following you", 
-      isRead: false, 
-      time: "15m ago",
-      sender: { name: "DJ Beats", avatar: avatar1 },
-      targetUrl: "/profile/dj-beats"
-    },
-    { 
-      id: "3", 
-      type: "like", 
-      message: "Someone liked your playlist \"Chill Mix\"", 
-      isRead: true, 
-      time: "1h ago",
-      sender: { name: "Sarah J", avatar: avatar2 },
-      targetUrl: "/music"
-    },
-    { 
-      id: "4", 
-      type: "mention", 
-      message: "MusicLover mentioned you in a comment", 
-      isRead: false, 
-      time: "2h ago",
-      sender: { name: "MusicLover", avatar: avatar3 },
-      targetUrl: "/chat"
-    },
-  ]);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  // ── Notification Actions ──────────────────────────────────────────────────
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
-
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const handleDeleteAll = () => {
-    setNotifications([]);
-  };
 
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
@@ -248,28 +185,6 @@ const Music = () => {
 
   useEffect(() => { resetHideTimer(); }, [selectedPlaylist]);
 
-  // ── Notification click-outside ────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
-        setIsNotificationsOpen(false);
-      }
-    };
-    if (isNotificationsOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [isNotificationsOpen]);
-
-  // ── FAB click-outside ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Element;
-      if (isFabOpen && !target.closest("[data-fab]")) setIsFabOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [isFabOpen]);
-
-
   // ── Fetch tracks from SoundCloud ──────────────────────────────────────────
   useEffect(() => {
     const fetchTracks = async () => {
@@ -335,9 +250,6 @@ const Music = () => {
     }
   }, [location.state, playlists]);
 
-
-  // ── Notification handlers ─────────────────────────────────────────────────
-  // Handlers moved to NotificationCenter integration area
 
   // ── Playlist handlers ─────────────────────────────────────────────────────
   const handlePlaylistClick = (playlist: any) => setSelectedPlaylist(playlist);
@@ -436,19 +348,6 @@ const Music = () => {
                     onClick={() => setActiveMode("discover")}>
                     <Search className="w-5 h-5" />
                   </Button>
-
-                  {/* Bell + Notifications Toggle */}
-                  <div className="relative">
-                    <Button variant="ghost" size="icon" className="relative touch-manipulation"
-                      onClick={() => setIsNotificationsOpen(true)}>
-                      <Bell className="w-5 h-5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-secondary text-[10px] font-bold text-secondary-foreground rounded-full flex items-center justify-center border-2 border-background shadow-sm">
-                          {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </div>
                 </div>
               </div>
 
@@ -970,59 +869,6 @@ const Music = () => {
             )}
           </AnimatePresence>
 
-          {/* ══════════════ FLOATING FAB (bottom-right) ══════════════ */}
-          <div className="fixed bottom-24 right-4 z-40" data-fab>
-            <AnimatePresence>
-              {isFabOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.85, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.85, y: 10 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute bottom-16 right-0 w-52 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-xl overflow-hidden"
-                  data-fab
-                >
-                  <div className="p-2 space-y-0.5">
-                    <p className="text-xs font-semibold text-muted-foreground px-3 py-1.5 uppercase tracking-wide">Create</p>
-                    {[
-                      { label: "Reel", desc: "Create a new reel", icon: Video, color: "from-purple-500/20 to-pink-500/20", iconColor: "text-purple-500", action: () => navigate("/reels") },
-                      { label: "Group", desc: "Start a listening group", icon: Users, color: "from-blue-500/20 to-indigo-500/20", iconColor: "text-blue-500", action: () => navigate("/groups") },
-                      { label: "Go Live", desc: "Start live stream", icon: Radio, color: "from-red-500/20 to-rose-500/20", iconColor: "text-red-500", action: () => navigate("/live") },
-                    ].map(item => (
-                      <button
-                        key={item.label}
-                        data-fab
-                        onClick={() => { setIsFabOpen(false); item.action(); }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center`}>
-                          <item.icon className={`w-4 h-4 ${item.iconColor}`} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm text-foreground">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* FAB Button */}
-            <motion.button
-              data-fab
-              onClick={() => setIsFabOpen(v => !v)}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/40 flex items-center justify-center text-primary-foreground"
-            >
-              <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
-                <Plus className="w-6 h-6" />
-              </motion.div>
-            </motion.button>
-          </div>
-
           {/* ══════════════ FIXED BOTTOM MEDIA CONTROLS ══════════════ */}
           <motion.div
             initial={{ opacity: 0, y: 100 }}
@@ -1045,16 +891,6 @@ const Music = () => {
               </div>
             </motion.div>
           )}
-
-          <NotificationCenter
-            isOpen={isNotificationsOpen}
-            onClose={() => setIsNotificationsOpen(false)}
-            notifications={notifications}
-            onMarkAsRead={handleMarkAsRead}
-            onDelete={handleDeleteNotification}
-            onMarkAllAsRead={handleMarkAllRead}
-            onDeleteAll={handleDeleteAll}
-          />
 
           <div className="pb-36" />
         </div>
