@@ -96,11 +96,43 @@ export const Insights = ({ userId: propUserId }: InsightsProps) => {
         musicRes.json()
       ]);
 
-      if (statsRes.ok) setStats(statsData.value);
-      if (contentRes.ok) setContentAnalytics(contentData.value);
-      if (audienceRes.ok) setAudienceInsights(audienceData.value);
-      if (activityRes.ok) setActivitySummary(activityData.value);
-      if (musicRes.ok) setMusicInsights(musicData.value);
+      // Debug: Log response status
+      console.log('Analytics API responses:', {
+        stats: statsRes.status,
+        content: contentRes.status,
+        audience: audienceRes.status,
+        activity: activityRes.status,
+        music: musicRes.status
+      });
+
+      if (statsRes.ok) {
+        console.log('Stats data:', statsData.value);
+        setStats(statsData.value);
+      } else {
+        // Provide fallback data when API fails
+        console.error('Stats API error, using fallback data');
+        setStats({
+          followers: 0,
+          following: 0,
+          stories: 0,
+          posts: 0,
+          periodData: {
+            profileViews: 0,
+            followers: 0,
+            postReach: 0,
+            likes: 0
+          }
+        });
+      }
+
+      // Handle other endpoints
+      const getValue = (result: PromiseSettledResult<any>) => 
+        result.status === 'fulfilled' ? result.value : null;
+
+      if (contentRes.ok) setContentAnalytics(getValue(contentData));
+      if (audienceRes.ok) setAudienceInsights(getValue(audienceData));
+      if (activityRes.ok) setActivitySummary(getValue(activityData));
+      if (musicRes.ok) setMusicInsights(getValue(musicData));
     } catch (error) {
       console.error('Error fetching analytics:', error);
       setError('Failed to load analytics');
