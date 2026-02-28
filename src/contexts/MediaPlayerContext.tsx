@@ -1,0 +1,695 @@
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { useMediaSession } from '@/hooks/useMediaSession';
+import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  toggleMusicLike, 
+  recordListeningHistory, 
+  getListeningHistory,
+  getFollowedArtists 
+} from '@/services/api';
+
+interface BluetoothDevice {
+  name?: string;
+  gatt?: {
+    disconnect: () => void;
+  };
+}
+
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  duration: number;
+  url: string;
+  artwork?: string;
+  spotifyUri?: string;
+  previewUrl?: string;
+  source?: 'local' | 'spotify';
+}
+
+interface MediaPlayerState {
+  currentTrack: Track | null;
+  isPlaying: boolean;
+  currentTime: number;
+  volume: number;
+  isMuted: boolean;
+  playlist: Track[];
+  currentIndex: number;
+  isShuffled: boolean;
+  repeatMode: 'off' | 'one' | 'all';
+  deviceConnected: boolean;
+  deviceName: string | null;
+  offlineMode: boolean;
+  playbackSource: 'local' | 'spotify';
+  spotifyPlayerReady: boolean;
+  likedTrackIDs: string[];
+  recentlyPlayed: Track[];
+  cachedTracks: Set<string>;
+}
+
+interface MediaPlayerContextType extends MediaPlayerState {
+  play: () => void;
+  pause: () => void;
+  stop: () => void;
+  next: () => void;
+  previous: () => void;
+  seekTo: (time: number) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+  playTrack: (track: Track, playlist?: Track[], index?: number) => void;
+  addToQueue: (track: Track) => void;
+  removeFromQueue: (index: number) => void;
+  toggleShuffle: () => void;
+  setRepeatMode: (mode: 'off' | 'one' | 'all') => void;
+  connectBluetoothDevice: () => Promise<void>;
+  disconnectDevice: () => void;
+  toggleOfflineMode: () => void;
+  cacheTrack: (trackId: string) => void;
+  isTrackCached: (trackId: string) => boolean;
+  toggleLike: (trackId: string) => void;
+  isLiked: (trackId: string) => boolean;
+  clearHistory: () => void;
+}
+
+const MediaPlayerContext = createContext<MediaPlayerContextType | undefined>(undefined);
+
+export const useMediaPlayer = () => {
+  const context = useContext(MediaPlayerContext);
+  if (!context) {
+    throw new Error('useMediaPlayer must be used within a MediaPlayerProvider');
+  }
+  return context;
+};
+
+interface MediaPlayerProviderProps {
+  children: ReactNode;
+}
+
+export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ children }) => {
+  const auth = useAuth();
+  const spotifyTokens = (auth as any).spotifyTokens;
+  const [state, setState] = useState<MediaPlayerState>({
+    currentTrack: null,
+    isPlaying: false,
+    currentTime: 0,
+    volume: 1,
+    isMuted: false,
+    playlist: [],
+    currentIndex: -1,
+    isShuffled: false,
+    repeatMode: 'all', // Default to auto-play next songs
+    deviceConnected: false,
+    deviceName: null,
+    offlineMode: false,
+    playbackSource: 'local',
+    spotifyPlayerReady: false,
+    likedTrackIDs: JSON.parse(localStorage.getItem('likedTrackIDs') || '[]'),
+    recentlyPlayed: JSON.parse(localStorage.getItem('recentlyPlayed') || '[]'),
+    cachedTracks: new Set<string>(),
+  });
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
+
+  // Use refs to access current state inside event listeners
+  const stateRef = useRef(state);
+
+  // Keep stateRef in sync with state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Persist likes and history
+  useEffect(() => {
+    localStorage.setItem('likedTrackIDs', JSON.stringify(state.likedTrackIDs));
+  }, [state.likedTrackIDs]);
+
+  useEffect(() => {
+    localStorage.setItem('recentlyPlayed', JSON.stringify(state.recentlyPlayed));
+  }, [state.recentlyPlayed]);
+
+  // Sync with Backend on Mount
+  useEffect(() => {
+    const syncWithBackend = async () => {
+      if (!auth.user) return;
+
+      try {
+        // Fetch History
+        const backendHistory = await getListeningHistory();
+        if (backendHistory && backendHistory.length > 0) {
+          // Merge or replace local history with backend
+          // For now, let's prefer backend as source of truth
+          const formattedHistory = backendHistory.map((item: any) => ({
+            id: item.trackId,
+            title: item.metadata.title,
+            artist: item.metadata.artist,
+            artwork: item.metadata.artwork,
+            duration: item.metadata.duration,
+            url: item.metadata.url,
+            source: item.source
+          }));
+          
+          setState(prev => ({ 
+            ...prev, 
+            recentlyPlayed: formattedHistory 
+          }));
+        }
+
+        // Fetch Likes (Optional: If we have a GET /likes/music)
+        // For now, toggleLike handles persistence.
+      } catch (err) {
+        console.error('Failed to sync with backend:', err);
+      }
+    };
+
+    syncWithBackend();
+  }, [auth.user]);
+
+  // Record History on Track Change
+  useEffect(() => {
+    if (state.currentTrack && state.isPlaying) {
+      const record = async () => {
+        try {
+          await recordListeningHistory(
+            state.currentTrack!.id,
+            state.currentTrack!.source || 'local',
+            {
+              title: state.currentTrack!.title,
+              artist: state.currentTrack!.artist,
+              artwork: state.currentTrack!.artwork,
+              duration: state.currentTrack!.duration,
+              url: state.currentTrack!.url
+            }
+          );
+        } catch (err) {
+          console.error('Failed to record history to backend:', err);
+        }
+      };
+      
+      record();
+    }
+  }, [state.currentTrack?.id, state.isPlaying]);
+
+  // Spotify player integration
+  const spotifyPlayer = useSpotifyPlayer();
+
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = state.volume;
+
+      // Audio event listeners
+      audioRef.current.addEventListener('timeupdate', () => {
+        setState(prev => ({ ...prev, currentTime: audioRef.current?.currentTime || 0 }));
+      });
+
+      audioRef.current.addEventListener('ended', () => {
+        console.log('Audio track ended, playbackSource:', stateRef.current.playbackSource, 'calling handleTrackEnd');
+        handleTrackEndWithRef();
+      });
+
+      audioRef.current.addEventListener('loadedmetadata', () => {
+        if (audioRef.current) {
+          setState(prev => ({
+            ...prev,
+            currentTrack: prev.currentTrack ? {
+              ...prev.currentTrack,
+              duration: audioRef.current!.duration
+            } : null
+          }));
+        }
+      });
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update audio volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = state.isMuted ? 0 : state.volume;
+    }
+  }, [state.volume, state.isMuted]);
+
+  // Sync Spotify player state
+  useEffect(() => {
+    console.log('Syncing Spotify player state, playbackSource:', state.playbackSource, 'spotifyPlayer.isReady:', spotifyPlayer.isReady);
+    if (spotifyPlayer.isReady !== state.spotifyPlayerReady) {
+      setState(prev => ({ ...prev, spotifyPlayerReady: spotifyPlayer.isReady }));
+    }
+
+    if (state.playbackSource === 'spotify' && spotifyPlayer.currentTrack) {
+      console.log('Updating state from Spotify player');
+      setState(prev => ({
+        ...prev,
+        currentTrack: {
+          id: spotifyPlayer.currentTrack.id,
+          title: spotifyPlayer.currentTrack.name,
+          artist: spotifyPlayer.currentTrack.artists.map((a: { name: string }) => a.name).join(', '),
+          album: spotifyPlayer.currentTrack.album.name,
+          duration: spotifyPlayer.currentTrack.duration_ms / 1000,
+          artwork: spotifyPlayer.currentTrack.album.images[0]?.url,
+          url: '',
+          spotifyUri: spotifyPlayer.currentTrack.uri,
+          source: 'spotify',
+        },
+        isPlaying: spotifyPlayer.isPlaying,
+        currentTime: spotifyPlayer.position / 1000,
+        duration: spotifyPlayer.duration / 1000,
+      }));
+    }
+  }, [spotifyPlayer.isReady, spotifyPlayer.currentTrack, spotifyPlayer.isPlaying, spotifyPlayer.position, spotifyPlayer.duration, state.playbackSource]);
+
+  const handleTrackEnd = () => {
+    console.log('handleTrackEnd called, repeatMode:', state.repeatMode, 'currentIndex:', state.currentIndex, 'playlistLength:', state.playlist.length);
+
+    // If no playlist, stop playback
+    if (state.playlist.length === 0) {
+      console.log('No playlist, stopping playback');
+      setState(prev => ({ ...prev, isPlaying: false }));
+      return;
+    }
+
+    // Ensure currentIndex is valid
+    let validIndex = state.currentIndex;
+    if (validIndex < 0 || validIndex >= state.playlist.length) {
+      console.warn('Invalid currentIndex, resetting to 0');
+      validIndex = 0;
+      setState(prev => ({ ...prev, currentIndex: validIndex }));
+    }
+
+    if (state.repeatMode === 'one') {
+      console.log('Repeating current track');
+      // Replay current track
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else if (state.repeatMode === 'all') {
+      console.log('Repeat all mode, playing next');
+      // Always play next in repeat all mode
+      next();
+    } else if (validIndex < state.playlist.length - 1) {
+      console.log('Playing next track');
+      // Play next track if available
+      next();
+    } else {
+      console.log('End of playlist, stopping playback');
+      // End of playlist - stop playback cleanly
+      setState(prev => ({ ...prev, isPlaying: false }));
+    }
+  };
+
+  // Updated handleTrackEnd that uses refs for event listeners
+  const handleTrackEndWithRef = () => {
+    const currentState = stateRef.current;
+    console.log('handleTrackEndWithRef called, repeatMode:', currentState.repeatMode, 'currentIndex:', currentState.currentIndex, 'playlistLength:', currentState.playlist.length);
+
+    // If no playlist, stop playback
+    if (currentState.playlist.length === 0) {
+      console.log('No playlist, stopping playback');
+      setState(prev => ({ ...prev, isPlaying: false }));
+      return;
+    }
+
+    // Ensure currentIndex is valid
+    let validIndex = currentState.currentIndex;
+    if (validIndex < 0 || validIndex >= currentState.playlist.length) {
+      console.warn('Invalid currentIndex, resetting to 0');
+      validIndex = 0;
+    }
+
+    if (currentState.repeatMode === 'one') {
+      console.log('Repeating current track');
+      // Replay current track
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else if (currentState.repeatMode === 'all') {
+      console.log('Repeat all mode, playing next');
+      // Calculate next index and play next track
+      let nextIndex = currentState.currentIndex + 1;
+      if (nextIndex >= currentState.playlist.length) {
+        nextIndex = 0; // Loop back to start
+      }
+      const nextTrack = currentState.playlist[nextIndex];
+      playTrack(nextTrack, currentState.playlist, nextIndex);
+    } else if (validIndex < currentState.playlist.length - 1) {
+      console.log('Playing next track');
+      // Play next track if available
+      let nextIndex = currentState.currentIndex + 1;
+      const nextTrack = currentState.playlist[nextIndex];
+      playTrack(nextTrack, currentState.playlist, nextIndex);
+    } else {
+      console.log('End of playlist, stopping playback');
+      // End of playlist - stop playback cleanly
+      setState(prev => ({ ...prev, isPlaying: false }));
+    }
+  };
+
+  const play = () => {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.play();
+    } else if (audioRef.current && state.currentTrack) {
+      audioRef.current.play();
+      setState(prev => ({ ...prev, isPlaying: true }));
+    }
+  };
+
+  const pause = () => {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.pause();
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      setState(prev => ({ ...prev, isPlaying: false }));
+    }
+  };
+
+  const stop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setState(prev => ({ ...prev, isPlaying: false, currentTime: 0 }));
+    }
+  };
+
+  const next = () => {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.next();
+    } else {
+      if (state.playlist.length === 0) return;
+
+      let nextIndex = state.currentIndex + 1;
+      if (nextIndex >= state.playlist.length) {
+        if (state.repeatMode === 'all') {
+          nextIndex = 0;
+        } else {
+          // End of playlist - stop playback without navigation
+          setState(prev => ({ ...prev, isPlaying: false }));
+          return;
+        }
+      }
+
+      const nextTrack = state.playlist[nextIndex];
+      playTrack(nextTrack, state.playlist, nextIndex);
+    }
+  };
+
+  const previous = () => {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.previous();
+    } else {
+      if (state.playlist.length === 0) return;
+
+      let prevIndex = state.currentIndex - 1;
+      if (prevIndex < 0) {
+        if (state.repeatMode === 'all') {
+          prevIndex = state.playlist.length - 1;
+        } else {
+          prevIndex = 0;
+        }
+      }
+
+      const prevTrack = state.playlist[prevIndex];
+      playTrack(prevTrack, state.playlist, prevIndex);
+    }
+  };
+
+  const seekTo = (time: number) => {
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.seekTo(time);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setState(prev => ({ ...prev, currentTime: time }));
+    }
+  };
+
+  const setVolume = (volume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    if (state.playbackSource === 'spotify' && spotifyPlayer.isReady) {
+      spotifyPlayer.setVolume(clampedVolume);
+    }
+    setState(prev => ({ ...prev, volume: clampedVolume }));
+  };
+
+  const toggleMute = () => {
+    setState(prev => ({ ...prev, isMuted: !prev.isMuted }));
+  };
+
+  const playTrack = (track: Track, playlist: Track[] = [], index: number = 0) => {
+    const finalPlaylist = playlist.length > 0 ? playlist : [track];
+    const playbackSource = track.source === 'spotify' && spotifyTokens ? 'spotify' : 'local';
+
+    setState(prev => {
+      const exists = prev.recentlyPlayed.find(t => t.id === track.id);
+      const newHistory = exists
+        ? [track, ...prev.recentlyPlayed.filter(t => t.id !== track.id)]
+        : [track, ...prev.recentlyPlayed];
+
+      return {
+        ...prev,
+        currentTrack: track,
+        playlist: finalPlaylist,
+        currentIndex: playlist.length > 0 ? index : 0,
+        currentTime: 0,
+        playbackSource,
+        recentlyPlayed: newHistory.slice(0, 50), // Keep last 50
+      };
+    });
+
+    if (playbackSource === 'spotify' && spotifyPlayer.isReady && track.spotifyUri) {
+      // Play Spotify track
+      spotifyPlayer.play([track.spotifyUri]);
+    } else if (audioRef.current) {
+      // Play local track
+      audioRef.current.src = track.url;
+      audioRef.current.load();
+
+      // Auto-play after loading
+      audioRef.current.addEventListener('canplay', () => {
+        if (audioRef.current) {
+          audioRef.current.play();
+          setState(prev => ({ ...prev, isPlaying: true }));
+        }
+      }, { once: true });
+    }
+  };
+
+  const addToQueue = (track: Track) => {
+    setState(prev => ({
+      ...prev,
+      playlist: [...prev.playlist, track]
+    }));
+  };
+
+  const removeFromQueue = (index: number) => {
+    setState(prev => ({
+      ...prev,
+      playlist: prev.playlist.filter((_, i) => i !== index),
+      currentIndex: prev.currentIndex > index ? prev.currentIndex - 1 : prev.currentIndex
+    }));
+  };
+
+  const toggleShuffle = () => {
+    setState(prev => ({ ...prev, isShuffled: !prev.isShuffled }));
+  };
+
+  const setRepeatMode = (mode: 'off' | 'one' | 'all') => {
+    setState(prev => ({ ...prev, repeatMode: mode }));
+  };
+
+  const connectBluetoothDevice = async () => {
+    try {
+      if (!('bluetooth' in navigator)) {
+        throw new Error('Bluetooth not supported');
+      }
+
+      const device = await (navigator as { bluetooth: { requestDevice: (options: { acceptAllDevices: boolean; optionalServices: string[] }) => Promise<BluetoothDevice> } }).bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['battery_service', 'audio_sink'],
+      });
+
+      bluetoothDeviceRef.current = device;
+      setState(prev => ({
+        ...prev,
+        deviceConnected: true,
+        deviceName: device.name || 'Unknown Device'
+      }));
+
+      console.log('Connected to Bluetooth device:', device.name);
+    } catch (error) {
+      console.error('Bluetooth connection failed:', error);
+      throw error;
+    }
+  };
+
+  const disconnectDevice = () => {
+    if (bluetoothDeviceRef.current) {
+      bluetoothDeviceRef.current.gatt?.disconnect();
+      bluetoothDeviceRef.current = null;
+    }
+    setState(prev => ({
+      ...prev,
+      deviceConnected: false,
+      deviceName: null
+    }));
+  };
+
+  const toggleOfflineMode = () => {
+    setState(prev => ({ ...prev, offlineMode: !prev.offlineMode }));
+  };
+
+  const cacheTrack = (trackId: string) => {
+    setState(prev => ({
+      ...prev,
+      cachedTracks: new Set([...prev.cachedTracks, trackId])
+    }));
+  };
+
+  const isTrackCached = (trackId: string) => {
+    return state.cachedTracks?.has(trackId) || false;
+  };
+
+  const toggleLike = async (trackId: string) => {
+    // 1. Optimistic Update
+    const isCurrentlyLiked = state.likedTrackIDs.includes(trackId);
+    setState(prev => ({
+      ...prev,
+      likedTrackIDs: isCurrentlyLiked
+        ? prev.likedTrackIDs.filter(id => id !== trackId)
+        : [...prev.likedTrackIDs, trackId]
+    }));
+
+    // 2. Backend Sync
+    if (auth.user) {
+      try {
+        const track = state.currentTrack?.id === trackId 
+          ? state.currentTrack 
+          : state.playlist.find(t => t.id === trackId);
+        
+        await toggleMusicLike(trackId, track ? {
+          title: track.title,
+          artist: track.artist,
+          artwork: track.artwork
+        } : {});
+      } catch (err) {
+        console.error('Failed to sync like to backend:', err);
+        // Rollback on failure (optional, user experience decision)
+      }
+    }
+  };
+
+  const isLiked = (trackId: string) => {
+    return state.likedTrackIDs.includes(trackId);
+  };
+
+  const clearHistory = () => {
+    setState(prev => ({ ...prev, recentlyPlayed: [] }));
+  };
+
+// Media Session integration for mobile media controls
+useEffect(() => {
+  if ('mediaSession' in navigator && state.currentTrack) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: state.currentTrack.title,
+      artist: state.currentTrack.artist,
+      album: state.currentTrack.album || 'Clockit',
+      artwork: state.currentTrack.artwork ? [
+        { src: state.currentTrack.artwork, sizes: '512x512', type: 'image/png' }
+      ] : []
+    });
+
+    // Set up action handlers
+    navigator.mediaSession.setActionHandler('play', play);
+    navigator.mediaSession.setActionHandler('pause', pause);
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      // Only call next if there are actually more tracks to play
+      if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
+        next();
+      }
+      // If no more tracks, do nothing to prevent navigation
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', previous);
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime) {
+        seekTo(details.seekTime);
+      }
+    });
+
+    // Update playback state
+    navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+
+    // Set position state if duration is available
+    if (state.currentTrack.duration && state.currentTrack.duration > 0) {
+      try {
+        const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
+        navigator.mediaSession.setPositionState({
+          duration: state.currentTrack.duration,
+          playbackRate: 1,
+          position: clampedPosition
+        });
+      } catch (error) {
+        console.warn('Failed to set media session position state:', error);
+      }
+    }
+  }
+}, [state.currentTrack, state.isPlaying, state.currentTime]);
+
+// Legacy media session hook for additional features
+useMediaSession({
+  mediaData: state.currentTrack ? {
+    title: state.currentTrack.title,
+    artist: state.currentTrack.artist,
+    album: state.currentTrack.album,
+    artwork: state.currentTrack.artwork,
+    duration: state.currentTrack.duration,
+    currentTime: state.currentTime,
+    isPlaying: state.isPlaying,
+  } : null,
+  onPlay: play,
+  onPause: pause,
+  onNext: next,
+  onPrevious: previous,
+  onSeek: seekTo,
+});
+
+const contextValue: MediaPlayerContextType = {
+  ...state,
+  play,
+  pause,
+  stop,
+  next,
+  previous,
+  seekTo,
+  setVolume,
+  toggleMute,
+  playTrack,
+  addToQueue,
+  removeFromQueue,
+  toggleShuffle,
+  setRepeatMode,
+  connectBluetoothDevice,
+  disconnectDevice,
+  toggleOfflineMode,
+  cacheTrack,
+  isTrackCached,
+  toggleLike,
+  isLiked,
+  clearHistory,
+};
+
+return (
+  <MediaPlayerContext.Provider value={contextValue}>
+    {children}
+  </MediaPlayerContext.Provider>
+);
+};

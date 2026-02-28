@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "name": "clockit",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://clockit-gvm2.onrender.com/api/$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/favicon.ico"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -17,21 +17,321 @@
 }
 
 @layer base {
+  :root {
+    /* Clockit Design System - Dark Mode Primary */
+    --background: 225 25% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 225 25% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 25% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary - Vibrant Cyan */
+    --primary: 187 100% 50%;
+    --primary-foreground: 225 25% 6%;
+
+    /* Secondary - Hot Pink/Magenta */
+    --secondary: 333 100% 50%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 225 20% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent - Purple blend */
+    --accent: 270 80% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 20% 18%;
+    --input: 225 20% 15%;
+    --ring: 187 100% 50%;
+
+    --radius: 1rem;
+
+    /* Custom Clockit colors */
+    --cyan: 187 100% 50%;
+    --cyan-glow: 187 100% 70%;
+    --magenta: 333 100% 50%;
+    --magenta-glow: 333 100% 70%;
+    --purple: 270 80% 60%;
+    --purple-glow: 270 80% 75%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--cyan)), hsl(var(--purple)), hsl(var(--magenta)));
+    --gradient-story: linear-gradient(135deg, hsl(var(--magenta)), hsl(var(--purple)), hsl(var(--cyan)));
+    --gradient-card: linear-gradient(145deg, hsl(225 25% 12%), hsl(225 25% 8%));
+    --gradient-glass: linear-gradient(135deg, hsla(225, 25%, 15%, 0.6), hsla(225, 25%, 10%, 0.4));
+    
+    /* Shadows */
+    --shadow-glow-cyan: 0 0 30px hsla(187, 100%, 50%, 0.3);
+    --shadow-glow-magenta: 0 0 30px hsla(333, 100%, 50%, 0.3);
+    --shadow-glow-purple: 0 0 30px hsla(270, 80%, 60%, 0.3);
+    --shadow-card: 0 8px 32px hsla(0, 0%, 0%, 0.4);
+
+    /* Sidebar */
+    --sidebar-background: 225 25% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 225 25% 6%;
+    --sidebar-accent: 225 20% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 225 20% 18%;
+    --sidebar-ring: 187 100% 50%;
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 225 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 25% 10%;
+
+    --primary: 187 100% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 333 90% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 40%;
+
+    --accent: 270 70% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 92%;
+    --ring: 187 100% 42%;
+
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 15% 96%));
+    --gradient-glass: linear-gradient(135deg, hsla(0, 0%, 100%, 0.8), hsla(220, 15%, 96%, 0.6));
+    --shadow-card: 0 8px 32px hsla(220, 20%, 50%, 0.15);
+  }
+
   body {
     @apply bg-cocoa-950 text-cream-50 font-sans antialiased;
     background-image: 
       radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.08) 0%, transparent 40%),
       radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.08) 0%, transparent 40%);
   }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "Outfit", system-ui, sans-serif;
+  }
 }
 
-/* Custom Scrollbar for horizontal scrolling */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply backdrop-blur-xl border border-border/50 rounded-2xl;
+    background: var(--gradient-glass);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Modern glass card with enhanced effects */
+  .glass-card-modern {
+    @apply backdrop-blur-2xl border border-white/10 rounded-2xl;
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.05),
+      rgba(0, 0, 0, 0.1)
+    );
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+      0 0 40px rgba(147, 51, 234, 0.1);
+  }
+
+  /* Story ring gradient */
+  .story-ring {
+    background: var(--gradient-primary);
+    padding: 3px;
+    border-radius: 50%;
+  }
+
+  .story-ring-unseen {
+    background: var(--gradient-story);
+    padding: 3px;
+    border-radius: 50%;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .story-ring-seen {
+    background: transparent;
+    padding: 2px;
+    border-radius: 50%;
+  }
+
+  /* Neon glow effects */
+  .glow-cyan {
+    box-shadow: var(--shadow-glow-cyan);
+  }
+
+  .glow-magenta {
+    box-shadow: var(--shadow-glow-magenta);
+  }
+
+  .glow-purple {
+    box-shadow: var(--shadow-glow-purple);
+  }
+
+  /* Text gradients */
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Bottom nav active indicator */
+  .nav-active {
+    @apply text-primary relative;
+  }
+
+  .nav-active::after {
+    content: "";
+    @apply absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary;
+    box-shadow: 0 0 8px hsl(var(--primary));
+  }
+
+  /* Music player progress */
+  .progress-track {
+    @apply h-1 bg-muted rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full;
+    background: var(--gradient-primary);
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center;
+    background: var(--gradient-primary);
+    box-shadow: 0 4px 20px hsla(187, 100%, 50%, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px hsla(187, 100%, 50%, 0.5);
+  }
+
+  /* Custom Scrollbar for horizontal scrolling */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+/* Top progress bar styling */
+::-webkit-progress-bar {
+  background-color: #000000;
+}
+
+::-webkit-progress-value {
+  background-color: #000000;
+}
+
+::-moz-progress-bar {
+  background-color: #000000;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes progress-bar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 @keyframes music-bar {

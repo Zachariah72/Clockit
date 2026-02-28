@@ -1,9 +1,40 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";
+import { MediaPlayerProvider } from "@/contexts/MediaPlayerContext";
+import { MediaNotification } from "@/components/media/MediaNotification";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { FullPlayer } from '@/components/music/FullPlayer';
+import { useState } from 'react';
 
-import React, { useState } from 'react';
+// Import pages from Zach's version
+import Index from "./pages/Index";
+import Stories from "./pages/Stories";
+import Music from "./pages/Music";
+import Groups from "./pages/Groups";
+import Profile from "./pages/Profile";
+import Reels from "./pages/Reels";
+import { Live } from "./pages/Live";
+import Chat from "./pages/Chat";
+import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
+import Settings from "./pages/Settings";
+import DownloadedMusic from "./pages/DownloadedMusic";
+import Podcasts from "./pages/Podcasts";
+import OfflineReels from "./pages/OfflineReels";
+import Appearance from "./pages/Appearance";
+import Search from "./pages/Search";
+import CameraTest from "./pages/CameraTest";
+import Snap from "./pages/Snap";
+import NotFound from "./pages/NotFound";
+
+// Import your homepage components
 import { Hero } from '@/components/home/Hero';
 import { FeaturedPlaylists } from '@/components/home/FeaturedPlaylists';
 import { CommunitySection } from '@/components/home/CommunitySection';
@@ -12,50 +43,52 @@ import { ReelsSection } from '@/components/home/ReelsSection';
 import { GenreSection } from '@/components/home/GenreSection';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { MiniPlayer } from '@/components/layout/MiniPlayer';
-import { FullPlayer } from '@/components/music/FullPlayer';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { FeedPost } from '@/components/home/FeedPost';
 import { Plus } from 'lucide-react';
 
-const FEED_POSTS = [
-  {
-    id: 1,
-    username: 'wizkidayo',
-    userImage: 'https://picsum.photos/seed/wizkid/100/100',
-    location: 'Lagos, Nigeria',
-    image: 'https://picsum.photos/seed/concert/600/600',
-    likes: 45230,
-    caption: 'Made in Lagos. The energy was unmatched last night! 🦅🇳🇬 #Starboy',
-    comments: 1240,
-    timeAgo: '2h'
-  },
-  {
-    id: 2,
-    username: 'tyla',
-    userImage: 'https://picsum.photos/seed/tyla/100/100',
-    location: 'Johannesburg, SA',
-    image: 'https://picsum.photos/seed/dance/600/600',
-    likes: 89400,
-    caption: 'Water remix dropping soon... 💦🇿🇦',
-    comments: 3500,
-    timeAgo: '5h'
-  },
-  {
-    id: 3,
-    username: 'blackcoffee',
-    userImage: 'https://picsum.photos/seed/coffee/100/100',
-    location: 'Ibiza',
-    image: 'https://picsum.photos/seed/dj/600/600',
-    likes: 22100,
-    caption: 'House music is a spiritual thing. see you next week.',
-    comments: 890,
-    timeAgo: '1d'
-  }
-];
+const queryClient = new QueryClient();
 
-export default function App() {
+// Your homepage component
+const HomePage = () => {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+
+  const FEED_POSTS = [
+    {
+      id: 1,
+      username: 'wizkidayo',
+      userImage: 'https://picsum.photos/seed/wizkid/100/100',
+      location: 'Lagos, Nigeria',
+      image: 'https://picsum.photos/seed/concert/600/600',
+      likes: 45230,
+      caption: 'Made in Lagos. The energy was unmatched last night! 🦅🇳🇬 #Starboy',
+      comments: 1240,
+      timeAgo: '2h'
+    },
+    {
+      id: 2,
+      username: 'tyla',
+      userImage: 'https://picsum.photos/seed/tyla/100/100',
+      location: 'Johannesburg, SA',
+      image: 'https://picsum.photos/seed/dance/600/600',
+      likes: 89400,
+      caption: 'Water remix dropping soon... 💦🇿🇦',
+      comments: 3500,
+      timeAgo: '5h'
+    },
+    {
+      id: 3,
+      username: 'blackcoffee',
+      userImage: 'https://picsum.photos/seed/coffee/100/100',
+      location: 'Ibiza',
+      image: 'https://picsum.photos/seed/dj/600/600',
+      likes: 22100,
+      caption: 'House music is a spiritual thing. see you next week.',
+      comments: 890,
+      timeAgo: '1d'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-cocoa-950 text-cream-50">
@@ -160,4 +193,49 @@ export default function App() {
       </div>
     </div>
   );
-}
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <MediaPlayerProvider>
+              <MediaNotification />
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/stories" element={<Stories />} />
+                  <Route path="/music" element={<Music />} />
+                  <Route path="/groups" element={<Groups />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/reels" element={<Reels />} />
+                  <Route path="/live" element={<Live />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings/appearance" element={<Appearance />} />
+                  <Route path="/downloads" element={<DownloadedMusic />} />
+                  <Route path="/podcasts" element={<Podcasts />} />
+                  <Route path="/offline-reels" element={<OfflineReels />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/camera-test" element={<CameraTest />} />
+                  <Route path="/snap" element={<Snap />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </MediaPlayerProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
+);
+
+export default App;
