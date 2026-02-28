@@ -1,26 +1,26 @@
-import { Home, Music, Users, MessageCircle, Film, Camera } from "lucide-react";
+import { Home, Music, Users, MessageCircle, Film, Camera, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: Camera, label: "Snaply", path: "/stories" },
+  { icon: Camera, label: "Snappy", path: "/stories" },
   { icon: Music, label: "Music", path: "/music" },
   { icon: Film, label: "Reels", path: "/reels" },
   { icon: MessageCircle, label: "Chat", path: "/chat" },
+  { icon: User, label: "Profile", path: "/profile" },
 ];
 
 export const BottomNav = () => {
   const location = useLocation();
 
   return (
-    <motion.nav
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-40 glass-card rounded-t-3xl border-t border-border/50 pb-safe"
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-cocoa-950/90 backdrop-blur-lg border-t border-white/5 px-6 py-4"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-center justify-around px-2 py-3">
+      <div className="flex items-center justify-between max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -29,42 +29,42 @@ export const BottomNav = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              className="flex flex-col items-center gap-1 relative group"
             >
-              <div className="relative">
-                <Icon
+              <div className={cn(
+                "p-2 rounded-full transition-all duration-300",
+                isActive 
+                  ? "bg-white/10 text-clay-400" 
+                  : "text-cream-100/40 group-hover:text-cream-100/80"
+              )}>
+                <Icon 
+                  size={24} 
+                  strokeWidth={isActive ? 2.5 : 2}
                   className={cn(
-                    "w-6 h-6 transition-all duration-200",
                     isActive && "scale-110"
                   )}
                 />
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
-                    style={{
-                      boxShadow: "0 0 10px hsl(var(--primary))",
-                    }}
-                  />
-                )}
               </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium transition-all duration-200",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
+              <span className={cn(
+                "text-[10px] font-medium transition-colors",
+                isActive ? "text-clay-400" : "text-transparent group-hover:text-cream-100/60"
+              )}>
                 {item.label}
               </span>
+              
+              {isActive && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute -bottom-2 w-1.5 h-1.5 bg-clay-400 rounded-full"
+                  style={{
+                    boxShadow: "0 0 10px #ff00d4",
+                  }}
+                />
+              )}
             </Link>
           );
         })}
       </div>
-    </motion.nav>
+    </nav>
   );
 };

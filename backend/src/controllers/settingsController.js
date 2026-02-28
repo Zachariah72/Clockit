@@ -22,6 +22,9 @@ exports.getUserSettings = async (req, res) => {
         account: { accountType: 'personal', isVerified: false, connectedAccounts: {} },
         privacy: {
           accountVisibility: 'public',
+          showActivityStatus: true,
+          readReceipts: true,
+          showLastSeen: true,
           allowMessages: 'everyone',
           allowCalls: 'everyone',
           allowStoryViews: 'everyone',
@@ -123,10 +126,11 @@ exports.updateUserSettings = async (req, res) => {
     const userId = req.user.id;
     const updates = req.body;
 
+    // Remove runValidators to allow partial updates for new fields
     const settings = await UserSettings.findOneAndUpdate(
       { userId },
-      { ...updates, userId },
-      { new: true, upsert: true, runValidators: true }
+      { $set: updates },
+      { new: true, upsert: true }
     ).populate('privacy.blockedUsers', 'username').populate('privacy.mutedUsers', 'username');
 
     res.json(settings);

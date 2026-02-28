@@ -1,6 +1,5 @@
 import { Music, Headphones, Users, Home, CloudOff } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const musicNavItems = [
@@ -15,10 +14,9 @@ export const MusicBottomNav = () => {
   const location = useLocation();
 
   return (
-    <motion.nav
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-40 glass-card rounded-t-3xl border-t border-border/50 pb-safe"
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-md border-t border-border"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around px-2 py-3">
         {musicNavItems.map((item) => {
@@ -30,16 +28,16 @@ export const MusicBottomNav = () => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200",
+                "flex flex-col items-center gap-1 px-4 py-2 rounded-xl",
                 isActive
                   ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground"
               )}
             >
               <div className="relative">
                 <Icon
                   className={cn(
-                    "w-6 h-6 transition-all duration-200",
+                    "w-6 h-6",
                     isActive && "scale-110",
                     item.isOffline && "drop-shadow-[0_0_8px_hsl(var(--primary))]"
                   )}
@@ -48,8 +46,7 @@ export const MusicBottomNav = () => {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-sm opacity-50" />
                 )}
                 {isActive && (
-                  <motion.div
-                    layoutId="music-nav-indicator"
+                  <div
                     className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
                     style={{
                       boxShadow: "0 0 10px hsl(var(--primary))",
@@ -59,7 +56,7 @@ export const MusicBottomNav = () => {
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-medium transition-all duration-200",
+                  "text-[10px] font-medium",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -69,6 +66,6 @@ export const MusicBottomNav = () => {
           );
         })}
       </div>
-    </motion.nav>
+    </nav>
   );
 };

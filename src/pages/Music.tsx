@@ -25,12 +25,15 @@ import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
 import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   getListeningHistory,
   getUserPlaylists,
   getJoinedGroups,
   searchMusic,
-  createPlaylist
+  createPlaylist,
+  joinListeningGroup,
+  discoverPublicGroups
 } from "@/services/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
@@ -99,9 +102,6 @@ const Music = () => {
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isFabOpen, setIsFabOpen] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -175,7 +175,6 @@ const Music = () => {
   const handleDeleteAll = () => {
     setNotifications([]);
   };
-
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const heroBanners = [
@@ -422,9 +421,6 @@ const Music = () => {
   }, [location.state, playlists]);
 
 
-  // ── Notification handlers ─────────────────────────────────────────────────
-  // Handlers moved to NotificationCenter integration area
-
   // ── Playlist handlers ─────────────────────────────────────────────────────
   const handlePlaylistClick = (playlist: any) => setSelectedPlaylist(playlist);
   const handleFeaturedPlaylistClick = (featuredId: string) => {
@@ -522,19 +518,6 @@ const Music = () => {
                     onClick={() => setActiveMode("discover")}>
                     <Search className="w-5 h-5" />
                   </Button>
-
-                  {/* Bell + Notifications Toggle */}
-                  <div className="relative">
-                    <Button variant="ghost" size="icon" className="relative touch-manipulation"
-                      onClick={() => setIsNotificationsOpen(true)}>
-                      <Bell className="w-5 h-5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-secondary text-[10px] font-bold text-secondary-foreground rounded-full flex items-center justify-center border-2 border-background shadow-sm">
-                          {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </div>
                 </div>
               </div>
 
@@ -1056,59 +1039,6 @@ const Music = () => {
             )}
           </AnimatePresence>
 
-          {/* ══════════════ FLOATING FAB (bottom-right) ══════════════ */}
-          <div className="fixed bottom-24 right-4 z-40" data-fab>
-            <AnimatePresence>
-              {isFabOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.85, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.85, y: 10 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute bottom-16 right-0 w-52 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-xl overflow-hidden"
-                  data-fab
-                >
-                  <div className="p-2 space-y-0.5">
-                    <p className="text-xs font-semibold text-muted-foreground px-3 py-1.5 uppercase tracking-wide">Create</p>
-                    {[
-                      { label: "Reel", desc: "Create a new reel", icon: Video, color: "from-purple-500/20 to-pink-500/20", iconColor: "text-purple-500", action: () => navigate("/reels") },
-                      { label: "Group", desc: "Start a listening group", icon: Users, color: "from-blue-500/20 to-indigo-500/20", iconColor: "text-blue-500", action: () => navigate("/groups") },
-                      { label: "Go Live", desc: "Start live stream", icon: Radio, color: "from-red-500/20 to-rose-500/20", iconColor: "text-red-500", action: () => navigate("/live") },
-                    ].map(item => (
-                      <button
-                        key={item.label}
-                        data-fab
-                        onClick={() => { setIsFabOpen(false); item.action(); }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center`}>
-                          <item.icon className={`w-4 h-4 ${item.iconColor}`} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm text-foreground">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* FAB Button */}
-            <motion.button
-              data-fab
-              onClick={() => setIsFabOpen(v => !v)}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/40 flex items-center justify-center text-primary-foreground"
-            >
-              <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
-                <Plus className="w-6 h-6" />
-              </motion.div>
-            </motion.button>
-          </div>
-
           {/* ══════════════ FIXED BOTTOM MEDIA CONTROLS ══════════════ */}
           <motion.div
             initial={{ opacity: 0, y: 100 }}
@@ -1131,16 +1061,6 @@ const Music = () => {
               </div>
             </motion.div>
           )}
-
-          <NotificationCenter
-            isOpen={isNotificationsOpen}
-            onClose={() => setIsNotificationsOpen(false)}
-            notifications={notifications}
-            onMarkAsRead={handleMarkAsRead}
-            onDelete={handleDeleteNotification}
-            onMarkAllAsRead={handleMarkAllRead}
-            onDeleteAll={handleDeleteAll}
-          />
 
           <div className="pb-36" />
         </div>

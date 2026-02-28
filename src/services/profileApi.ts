@@ -85,10 +85,10 @@ export const profileApi = {
 
   // Social features
   getFollowers: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ followers: User[]; pagination: any }>(userId ? `/profile/${userId}/followers?page=${page}&limit=${limit}` : `/profile/followers?page=${page}&limit=${limit}`),
+    api.get<{ followers: User[]; pagination: any }>(userId ? `/profile/${userId}/followers?page=${page}&limit=${limit}` : `/profile/followers?page=${page}&limit=${limit}`),
 
   getFollowing: (userId?: string, page = 1, limit = 20) =>
-    api.getPublic<{ following: User[]; pagination: any }>(userId ? `/profile/${userId}/following?page=${page}&limit=${limit}` : `/profile/following?page=${page}&limit=${limit}`),
+    api.get<{ following: User[]; pagination: any }>(userId ? `/profile/${userId}/following?page=${page}&limit=${limit}` : `/profile/following?page=${page}&limit=${limit}`),
 
   toggleFollow: (userId: string) =>
     api.post<{ action: 'followed' | 'unfollowed' }>(`/profile/${userId}/follow`),
@@ -126,4 +126,21 @@ export const profileApi = {
     recipientUsers?: string[];
   }) =>
     api.post<{ message: string; share: any }>(`/profile/share-music`, data),
+
+  // Phone verification for 2FA
+  sendVerificationCode: (phone: string) =>
+    api.post<{ message: string; code?: string }>(`/verification/send`, { phone }),
+
+  verifyPhoneCode: (phone: string, code: string) =>
+    api.post<{ message: string }>(`/verification/verify`, { phone, code }),
+
+  // User settings
+  getSettings: () =>
+    api.get<any>(`/settings`),
+
+  updateSettings: (settings: any) =>
+    api.put<any>(`/settings`, settings),
+
+  updateNotificationPreferences: (preferences: any) =>
+    api.put<any>(`/settings/notifications`, preferences),
 };

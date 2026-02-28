@@ -1,11 +1,20 @@
-@import "@fontsource/outfit/400.css";
-@import "@fontsource/outfit/500.css";
-@import "@fontsource/outfit/600.css";
-@import "@fontsource/outfit/700.css";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  
+  --color-cocoa-950: #05020a;
+  --color-cocoa-900: #0f0518;
+  --color-cocoa-800: #1a0b2e;
+  --color-clay-500: #ff00d4;
+  --color-clay-400: #9500ff;
+  --color-sage-900: #000000;
+  --color-sage-800: #0a0a0a;
+  --color-cream-50: #ffffff;
+  --color-cream-100: #e0e0e0;
+}
 
 @layer base {
   :root {
@@ -107,20 +116,20 @@
     --gradient-glass: linear-gradient(135deg, hsla(0, 0%, 100%, 0.8), hsla(220, 15%, 96%, 0.6));
     --shadow-card: 0 8px 32px hsla(220, 20%, 50%, 0.15);
   }
-}
 
-@layer base {
+  body {
+    @apply bg-cocoa-950 text-cream-50 font-sans antialiased;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.08) 0%, transparent 40%);
+  }
+
   * {
     @apply border-border;
   }
 
   html {
     font-family: "Outfit", system-ui, sans-serif;
-  }
-
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
@@ -221,35 +230,14 @@
     box-shadow: 0 6px 30px hsla(187, 100%, 50%, 0.5);
   }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* Custom Scrollbar for horizontal scrolling */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
-  }
-
-  /* Top progress bar styling */
-  ::-webkit-progress-bar {
-    background-color: #000000;
-  }
-
-  ::-webkit-progress-value {
-    background-color: #000000;
-  }
-
-  ::-moz-progress-bar {
-    background-color: #000000;
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
@@ -263,6 +251,37 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+/* Top progress bar styling */
+::-webkit-progress-bar {
+  background-color: #000000;
+}
+
+::-webkit-progress-value {
+  background-color: #000000;
+}
+
+::-moz-progress-bar {
+  background-color: #000000;
 }
 
 /* Animations */
@@ -313,4 +332,9 @@
   to {
     width: 100%;
   }
+}
+
+@keyframes music-bar {
+  0%, 100% { height: 20%; }
+  50% { height: 100%; }
 }
