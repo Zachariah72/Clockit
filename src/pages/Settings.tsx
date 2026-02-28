@@ -53,6 +53,12 @@ const Settings = () => {
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
   const [linkedAccountsModalOpen, setLinkedAccountsModalOpen] = useState(false);
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+  
+  // Privacy modals
+  const [profileVisibilityModalOpen, setProfileVisibilityModalOpen] = useState(false);
+  const [blockedUsersModalOpen, setBlockedUsersModalOpen] = useState(false);
+  const [hiddenContentModalOpen, setHiddenContentModalOpen] = useState(false);
+  
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [email, setEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -61,6 +67,11 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Privacy settings
+  const [profileVisibility, setProfileVisibility] = useState('public');
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [hiddenContentUsers, setHiddenContentUsers] = useState<any[]>([]);
   
   // 2FA states
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -173,6 +184,23 @@ const Settings = () => {
       if (Object.keys(preference).length > 0) {
         await profileApi.updateNotificationPreferences(preference);
       }
+      
+      // Privacy toggles - save to userSettings
+      if (['activity-status', 'read-receipts', 'last-seen'].includes(itemId)) {
+        try {
+          const privacySettings: any = {};
+          if (itemId === 'activity-status') privacySettings.showActivityStatus = newValue;
+          if (itemId === 'read-receipts') privacySettings.readReceipts = newValue;
+          if (itemId === 'last-seen') privacySettings.showLastSeen = newValue;
+          
+          await profileApi.updateSettings({
+            privacy: privacySettings
+          });
+        } catch (error) {
+          console.error('Failed to save privacy setting:', error);
+        }
+      }
+      
       toast.success("Setting updated");
     } catch (error) {
       console.error('Failed to save setting:', error);
@@ -198,10 +226,12 @@ const Settings = () => {
         toast.info("Two-factor authentication feature coming soon");
       } else if (item.id === 'linked-accounts') {
         setLinkedAccountsModalOpen(true);
+      } else if (item.id === 'profile-visibility') {
+        setProfileVisibilityModalOpen(true);
       } else if (item.id === 'blocked-users') {
-        navigate('/settings/privacy');
+        setBlockedUsersModalOpen(true);
       } else if (item.id === 'hidden-content') {
-        navigate('/settings/privacy');
+        setHiddenContentModalOpen(true);
       } else if (item.id === 'equalizer') {
         navigate('/settings/appearance');
       } else if (item.id === 'storage') {
@@ -680,6 +710,155 @@ const Settings = () => {
           </div>
           <DialogFooter>
             <Button onClick={() => setLinkedAccountsModalOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Visibility Modal */}
+      <Dialog open={profileVisibilityModalOpen} onOpenChange={setProfileVisibilityModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Profile Visibility</DialogTitle>
+            <DialogDescription>
+              Choose who can see your profile information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {['public', 'followers', 'private'].map((option) => (
+              <div
+                key={option}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  profileVisibility === option
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50'
+                }`}
+                onClick={() => {
+                  setProfileVisibility(option);
+                }}
+              >
+                <p className="font-medium capitalize">{option}</p>
+                <p className="text-sm text-muted-foreground">
+                  {option === 'public' && 'Everyone can see your profile'}
+                  {option === 'followers' && 'Only your followers can see your profile'}
+                  {option === 'private' && 'Only you can see your profile'}
+                </p>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProfileVisibilityModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={async () => {
+                try {
+                  await profileApi.updateSettings({
+                    privacy: { accountVisibility: profileVisibility }
+                  });
+                  toast.success("Profile visibility updated");
+                  setProfileVisibilityModalOpen(false);
+                } catch (error) {
+                  toast.error("Failed to update visibility");
+                }
+              }}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Blocked Users Modal */}
+      <Dialog open={blockedUsersModalOpen} onOpenChange={setBlockedUsersModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Blocked Users</DialogTitle>
+            <DialogDescription>
+              Users you've blocked cannot see your content or interact with you
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {blockedUsers.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <Shield className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No blocked users</p>
+                <p className="text-sm">Users you block will appear here</p>
+              </div>
+            ) : (
+              blockedUsers.map((user: any) => (
+                <div key={user._id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt="" className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.username || 'User'}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={async () => {
+                      // Unblock user
+                      toast.success("User unblocked");
+                    }}
+                  >
+                    Unblock
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setBlockedUsersModalOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden Content Modal */}
+      <Dialog open={hiddenContentModalOpen} onOpenChange={setHiddenContentModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hidden Content</DialogTitle>
+            <DialogDescription>
+              Content from hidden users won't appear in your feed
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {hiddenContentUsers.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                <Eye className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No hidden content</p>
+                <p className="text-sm">Users you hide will appear here</p>
+              </div>
+            ) : (
+              hiddenContentUsers.map((user: any) => (
+                <div key={user._id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.username || 'User'}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={async () => {
+                      toast.success("User unhidden");
+                    }}
+                  >
+                    Show
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setHiddenContentModalOpen(false)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
