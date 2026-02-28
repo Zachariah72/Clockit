@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video
+  Check, X, Hash, Film, Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
-import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getApiUrl } from "@/utils/api";
@@ -94,67 +93,10 @@ const Music = () => {
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
-
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { 
-      id: "1", 
-      type: "new_release", 
-      isRead: false, 
-      time: "2m ago",
-      sender: { name: "Synthwave", avatar: album1 },
-      targetUrl: "/music"
-    },
-    { 
-      id: "2", 
-      type: "follow", 
-      isRead: false, 
-      time: "15m ago",
-      sender: { name: "DJ Beats", avatar: avatar1 },
-      targetUrl: "/profile/dj-beats"
-    },
-    { 
-      id: "3", 
-      type: "like", 
-      isRead: true, 
-      time: "1h ago",
-      sender: { name: "Sarah J", avatar: avatar2 },
-      targetUrl: "/music"
-    },
-    { 
-      id: "4", 
-      type: "mention", 
-      isRead: false, 
-      time: "2h ago",
-      sender: { name: "MusicLover", avatar: avatar3 },
-      targetUrl: "/chat"
-    },
-  ]);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  // ── Notification Actions ──────────────────────────────────────────────────
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
-
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const handleDeleteAll = () => {
-    setNotifications([]);
-  };
 
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
@@ -244,17 +186,6 @@ const Music = () => {
 
   useEffect(() => { resetHideTimer(); }, [selectedPlaylist]);
 
-  // ── Notification click-outside ────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
-        setIsNotificationsOpen(false);
-      }
-    };
-    if (isNotificationsOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [isNotificationsOpen]);
-
   // ── FAB click-outside ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -331,9 +262,6 @@ const Music = () => {
     }
   }, [location.state, playlists]);
 
-
-  // ── Notification handlers ─────────────────────────────────────────────────
-  // Handlers moved to NotificationCenter integration area
 
   // ── Playlist handlers ─────────────────────────────────────────────────────
   const handlePlaylistClick = (playlist: any) => setSelectedPlaylist(playlist);
@@ -432,19 +360,6 @@ const Music = () => {
                     onClick={() => setActiveMode("discover")}>
                     <Search className="w-5 h-5" />
                   </Button>
-
-                  {/* Bell + Notifications Toggle */}
-                  <div className="relative">
-                    <Button variant="ghost" size="icon" className="relative touch-manipulation"
-                      onClick={() => setIsNotificationsOpen(true)}>
-                      <Bell className="w-5 h-5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-secondary text-[10px] font-bold text-secondary-foreground rounded-full flex items-center justify-center border-2 border-background shadow-sm">
-                          {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </div>
                 </div>
               </div>
 
@@ -1041,16 +956,6 @@ const Music = () => {
               </div>
             </motion.div>
           )}
-
-          <NotificationCenter
-            isOpen={isNotificationsOpen}
-            onClose={() => setIsNotificationsOpen(false)}
-            notifications={notifications}
-            onMarkAsRead={handleMarkAsRead}
-            onDelete={handleDeleteNotification}
-            onMarkAllAsRead={handleMarkAllRead}
-            onDeleteAll={handleDeleteAll}
-          />
 
           <div className="pb-36" />
         </div>
