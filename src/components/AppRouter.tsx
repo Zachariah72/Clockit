@@ -5,6 +5,7 @@ import Index from '@/pages/Index';
 import Stories from '@/pages/Stories';
 import Music from '@/pages/Music';
 import Groups from '@/pages/Groups';
+import GroupDetail from '@/pages/GroupDetail';
 import Profile from '@/pages/Profile';
 import Reels from '@/pages/Reels';
 import { Live } from '@/pages/Live';
@@ -78,6 +79,7 @@ const AppRouter: React.FC = () => {
           <Route path="/stories" element={<Stories />} />
           <Route path="/music" element={<Music />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/:id" element={<GroupDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/reels" element={<Reels />} />

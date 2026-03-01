@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Plus, Lock, Globe, MessageCircle, Music, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ const suggestedGroups = [
 
 const Groups = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [joinedGroups, setJoinedGroups] = useState<Set<string>>(new Set());
   const [joiningGroup, setJoiningGroup] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -268,6 +270,7 @@ const Groups = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                   className="glass-card p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => navigate(`/groups/${group._id}`)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="relative">

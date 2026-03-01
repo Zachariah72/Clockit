@@ -22,18 +22,18 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
-      "https://clockit-sage.vercel.app", 
-      "https://clockit-gvm2.onrender.com", 
-      "http://localhost:3000", 
-      "http://localhost:5173", 
+      "https://clockit-sage.vercel.app",
+      "https://clockit-gvm2.onrender.com",
+      "http://localhost:3000",
+      "http://localhost:5173",
       "http://localhost:8080"
     ];
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -84,12 +84,12 @@ app.get('/api/placeholder/:width/:height', (req, res) => {
   // Sanitize width and height to prevent XSS
   const width = parseInt(req.params.width, 10) || 56;
   const height = parseInt(req.params.height, 10) || 56;
-  
+
   // Limit size to prevent abuse
   const safeWidth = Math.min(Math.max(1, width), 500);
   const safeHeight = Math.min(Math.max(1, height), 500);
-  
-  const svg = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#374151"/><text x="50%" y="50%" font-family="Arial" font-size="${Math.min(14, safeWidth/4)}" fill="#9CA3AF" text-anchor="middle" dy=".3em">${safeWidth}x${safeHeight}</text></svg>`;
+
+  const svg = `<svg width="${safeWidth}" height="${safeHeight}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#374151"/><text x="50%" y="50%" font-family="Arial" font-size="${Math.min(14, safeWidth / 4)}" fill="#9CA3AF" text-anchor="middle" dy=".3em">${safeWidth}x${safeHeight}</text></svg>`;
   res.set('Content-Type', 'image/svg+xml');
   res.send(svg);
 });
@@ -128,7 +128,7 @@ app.use('/api/verification', require('./routes/verification'));
 // Socket.IO authentication middleware - use JWT token like REST API
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  
+
   if (!token) {
     // Try to get token from query params as fallback
     const queryToken = socket.handshake.query.token;
@@ -137,7 +137,7 @@ io.use((socket, next) => {
       socket.userId = null;
       return next();
     }
-    
+
     try {
       const decoded = jwt.verify(queryToken, process.env.JWT_SECRET);
       socket.userId = decoded.id;
@@ -148,7 +148,7 @@ io.use((socket, next) => {
     }
     return;
   }
-  
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.userId = decoded.id;
@@ -191,7 +191,7 @@ io.on('connection', async (socket) => {
   socket.on('send_message', async (data) => {
     try {
       const { conversationId, content, type = 'text' } = data;
-      
+
       if (!conversationId || !socket.userId) {
         console.error('Missing conversationId or userId in send_message');
         return;
@@ -485,6 +485,52 @@ io.on('connection', async (socket) => {
   socket.on('live_reaction', (data) => {
     const { streamId, reaction } = data;
     socket.to(`live_${streamId}`).emit('live_reaction_received', { from: socket.userId, reaction });
+  });
+
+  // --- Listening Group Events ---
+
+  socket.on('join_listening_group', (groupId) => {
+    socket.join(`listening_group_${groupId}`);
+    console.log(`User ${socket.userId} joined listening group ${groupId}`);
+
+    // Notify others that someone joined
+    socket.to(`listening_group_${groupId}`).emit('member_joined', { userId: socket.userId });
+  });
+
+  socket.on('leave_listening_group', (groupId) => {
+    socket.leave(`listening_group_${groupId}`);
+    socket.to(`listening_group_${groupId}`).emit('member_left', { userId: socket.userId });
+  });
+
+  socket.on('update_sync_state', (data) => {
+    const { groupId, currentTrack, isPlaying, currentTime, lastSyncAt } = data;
+
+    // Broadcast to everyone in the room except sender
+    socket.to(`listening_group_${groupId}`).emit('sync_state_updated', {
+      currentTrack,
+      isPlaying,
+      currentTime,
+      lastSyncAt: lastSyncAt || Date.now(),
+      updatedBy: socket.userId
+    });
+
+    // Optional: Persist to DB (using the controller logic)
+    // We could call listeningGroupController.updatePlayback internal logic here if wanted.
+  });
+
+  socket.on('request_group_sync', (groupId) => {
+    // A new member is asking for the current state
+    // We notify the room (or specific creator) to send their current state
+    socket.to(`listening_group_${groupId}`).emit('sync_requested', { requesterId: socket.userId });
+  });
+
+  socket.on('group_chat_message', (data) => {
+    const { groupId, message } = data;
+    io.to(`listening_group_${groupId}`).emit('new_group_chat_message', {
+      senderId: socket.userId,
+      message,
+      timestamp: Date.now()
+    });
   });
 });
 

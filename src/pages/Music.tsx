@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Check, X, Hash, Film, Video
+  Bell, Check, X, Hash, Film, Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +23,18 @@ import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
+import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { useDebounce } from "@/hooks/useDebounce";
-import { getApiUrl } from "@/utils/api";
+import {
+  getListeningHistory,
+  getUserPlaylists,
+  getJoinedGroups,
+  searchMusic,
+  createPlaylist,
+  joinListeningGroup,
+  discoverPublicGroups
+} from "@/services/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
@@ -97,6 +106,75 @@ const Music = () => {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: "1",
+      type: "new_release",
+      message: "New album \"Midnight Waves\" by Synthwave is now available!",
+      isRead: false,
+      time: "2m ago",
+      sender: { name: "Synthwave", avatar: album1 },
+      targetUrl: "/music"
+    },
+    {
+      id: "2",
+      type: "follow",
+      message: "DJ Beats started following you",
+      isRead: false,
+      time: "15m ago",
+      sender: { name: "DJ Beats", avatar: avatar1 },
+      targetUrl: "/profile/dj-beats"
+    },
+    {
+      id: "3",
+      type: "like",
+      message: "Someone liked your playlist \"Chill Mix\"",
+      isRead: true,
+      time: "1h ago",
+      sender: { name: "Sarah J", avatar: avatar2 },
+      targetUrl: "/music"
+    },
+    {
+      id: "4",
+      type: "mention",
+      message: "MusicLover mentioned you in a comment",
+      isRead: false,
+      time: "2h ago",
+      sender: { name: "MusicLover", avatar: avatar3 },
+      targetUrl: "/chat"
+    },
+  ]);
+
+  const [activeGroups, setActiveGroups] = useState<any[]>([]);
+
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      await joinListeningGroup(groupId);
+      navigate(`/groups/${groupId}`);
+    } catch (err) {
+      console.error("Failed to join group:", err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // ── Notification Actions ──────────────────────────────────────────────────
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteAll = () => {
+    setNotifications([]);
+  };
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const heroBanners = [
@@ -139,16 +217,16 @@ const Music = () => {
   });
 
   const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
-  
-  const displayedRecentSongs = recentlyPlayed.length > 0 
+
+  const displayedRecentSongs = recentlyPlayed.length > 0
     ? recentlyPlayed.map(t => ({
-        id: t.id,
-        title: t.title,
-        artist: t.artist,
-        albumArt: t.artwork || album1,
-        duration: formatDuration(t.duration * 1000),
-        trackUrl: t.url
-      }))
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      albumArt: t.artwork || album1,
+      duration: formatDuration(t.duration * 1000),
+      trackUrl: t.url
+    }))
     : recentSongs;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -185,36 +263,128 @@ const Music = () => {
 
   useEffect(() => { resetHideTimer(); }, [selectedPlaylist]);
 
-  // ── Fetch tracks from SoundCloud ──────────────────────────────────────────
+  // ── Notification click-outside ────────────────────────────────────────────
   useEffect(() => {
-    const fetchTracks = async () => {
-      try {
-        const apiBase = getApiBaseUrl();
-        const res = await fetch(`${apiBase}/api/soundcloud/search?q=chill&limit=20`);
-        if (!res.ok) { setAllSongs([]); return; }
-        const tracks = await res.json();
-        if (!Array.isArray(tracks) || tracks.length === 0) { setAllSongs([]); return; }
-        setAllSongs(
-          tracks
-            .filter((t: any) => t && t.id && t.title && t.artist)
-            .map((t: any) => ({
-              id: t.id.toString(),
-              title: t.title,
-              artist: typeof t.artist === "string" ? t.artist : t.artist?.name || "Unknown Artist",
-              albumArt: t.albumArt || t.artwork_url || album1,
-              duration: t.duration ? formatDuration(t.duration) : "3:00",
-              genre: t.genre || "Chill",
-              mood: t.mood || "Chill",
-              trackUrl: t.stream_url ? `${apiBase}${t.stream_url}` : "",
-            }))
-        );
-      } catch (err) {
-        console.error("Error fetching tracks:", err);
-        setAllSongs([]);
+    const handler = (e: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
       }
     };
-    fetchTracks();
+    if (isNotificationsOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isNotificationsOpen]);
+
+  // ── FAB click-outside ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (isFabOpen && !target.closest("[data-fab]")) setIsFabOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isFabOpen]);
+
+
+  // ── Fetch real data from Backend ──────────────────────────────────────────
+  useEffect(() => {
+    const loadInitData = async () => {
+      try {
+        // Load initial "Discover" content (Trending/Chill)
+        const tracks = await searchMusic("trending chill");
+        if (Array.isArray(tracks)) {
+          setAllSongs(tracks.map((t: any) => ({
+            id: t.id.toString(),
+            title: t.title,
+            artist: t.artist?.name || t.artist || "Unknown",
+            albumArt: t.albumArt || t.artwork_url || album1,
+            duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+            genre: t.genre || "Chill",
+            mood: t.mood || "Chill",
+            trackUrl: t.trackUrl || t.stream_url || "",
+          })));
+        }
+
+        // Load user playlists
+        const up = await getUserPlaylists();
+        if (Array.isArray(up)) {
+          setPlaylists(up.map((p: any) => ({
+            id: p._id,
+            title: p.name,
+            description: p.description,
+            image: p.coverImage || album1,
+            songCount: p.tracks?.length || 0,
+            songs: p.tracks?.map((t: any) => ({
+              id: t.trackId,
+              title: t.metadata?.title || "Unknown",
+              artist: t.metadata?.artist || "Unknown",
+              albumArt: t.metadata?.artwork || album1,
+              trackUrl: t.metadata?.url || "",
+              source: t.source
+            })) || []
+          })));
+        }
+
+        // Load Joined Groups
+        const groups = await discoverPublicGroups();
+        if (Array.isArray(groups)) {
+          setActiveGroups(groups.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Error loading music data:", err);
+      }
+    };
+    loadInitData();
   }, []);
+
+  // ── Live Search effect ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) return;
+
+    const performSearch = async () => {
+      try {
+        const results = await searchMusic(debouncedSearchQuery);
+        if (Array.isArray(results)) {
+          setAllSongs(results.map((t: any) => ({
+            id: t.id.toString(),
+            title: t.title,
+            artist: t.artist?.name || t.artist || "Unknown",
+            albumArt: t.albumArt || t.artwork_url || album1,
+            duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+            genre: t.genre || "Pop",
+            mood: t.mood || "Party",
+            trackUrl: t.trackUrl || t.stream_url || "",
+          })));
+        }
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
+    };
+    performSearch();
+  }, [debouncedSearchQuery]);
+
+  // ── Handle Playlist Creation ──────────────────────────────────────────────
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim()) return;
+    try {
+      const p = await createPlaylist({
+        name: newPlaylistName,
+        description: newPlaylistDescription,
+      });
+      setPlaylists(prev => [...prev, {
+        id: p._id,
+        title: p.name,
+        description: p.description,
+        image: album1,
+        songCount: 0,
+        songs: []
+      }]);
+      setIsCreatePlaylistOpen(false);
+      setNewPlaylistName("");
+      setNewPlaylistDescription("");
+    } catch (err) {
+      console.error("Failed to create playlist:", err);
+    }
+  };
 
   // ── Derive playlists from allSongs ────────────────────────────────────────
   useEffect(() => {
@@ -493,21 +663,24 @@ const Music = () => {
                     </Button>
                   </div>
                   <div className="space-y-3">
-                    {[
-                      { name: "Chill Session", members: 3, status: "Now playing", color: "bg-primary/20", textColor: "text-primary" },
-                      { name: "Workout Mix", members: 5, status: "Paused", color: "bg-secondary/20", textColor: "text-secondary" },
-                    ].map(group => (
-                      <div key={group.name} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
-                        <div className={`w-10 h-10 ${group.color} rounded-full flex items-center justify-center`}>
-                          <Users className={`w-5 h-5 ${group.textColor}`} />
+                    {activeGroups.length > 0 ? (
+                      activeGroups.map(group => (
+                        <div key={group._id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
+                          <div className={`w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center`}>
+                            <Users className={`w-5 h-5 text-primary`} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground">{group.name}</p>
+                            <p className="text-sm text-muted-foreground">{group.members?.length || 0} members • {group.isPublic ? 'Public' : 'Private'}</p>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => handleJoinGroup(group._id)}>Join</Button>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{group.name}</p>
-                          <p className="text-sm text-muted-foreground">{group.members} members • {group.status}</p>
-                        </div>
-                        <Button variant="outline" size="sm">Join</Button>
+                      ))
+                    ) : (
+                      <div className="p-4 rounded-xl border border-dashed text-center">
+                        <p className="text-sm text-muted-foreground">No active groups found. Create one to start listening together!</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </motion.section>
 
@@ -730,10 +903,7 @@ const Music = () => {
                             </div>
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" onClick={() => setIsCreatePlaylistOpen(false)}>Cancel</Button>
-                              <Button onClick={() => {
-                                console.log("Create playlist:", newPlaylistName, newPlaylistDescription);
-                                setNewPlaylistName(""); setNewPlaylistDescription(""); setIsCreatePlaylistOpen(false);
-                              }}>Create</Button>
+                              <Button onClick={handleCreatePlaylist}>Create</Button>
                             </div>
                           </div>
                         </DialogContent>
