@@ -14,118 +14,82 @@
   --color-sage-800: #0a0a0a;
   --color-cream-50: #ffffff;
   --color-cream-100: #e0e0e0;
+  
+  /* CSS variables for dynamic colors */
+  --background: 225 25% 6%;
+  --foreground: 210 40% 98%;
+  --card: 225 25% 10%;
+  --card-foreground: 210 40% 98%;
+  --popover: 225 25% 8%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 187 100% 50%;
+  --primary-foreground: 225 25% 6%;
+  --secondary: 333 100% 50%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 225 20% 15%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 270 80% 60%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 225 20% 18%;
+  --input: 225 20% 15%;
+  --ring: 187 100% 50%;
+  --radius: 1rem;
+  --cyan: 187 100% 50%;
+  --cyan-glow: 187 100% 70%;
+  --magenta: 333 100% 50%;
+  --magenta-glow: 333 100% 70%;
+  --purple: 270 80% 60%;
+  --purple-glow: 270 80% 75%;
 }
 
 @layer base {
   :root {
-    /* Clockit Design System - Dark Mode Primary */
-    --background: 225 25% 6%;
-    --foreground: 210 40% 98%;
-
-    --card: 225 25% 10%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 225 25% 8%;
-    --popover-foreground: 210 40% 98%;
-
-    /* Primary - Vibrant Cyan */
-    --primary: 187 100% 50%;
-    --primary-foreground: 225 25% 6%;
-
-    /* Secondary - Hot Pink/Magenta */
-    --secondary: 333 100% 50%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 225 20% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    /* Accent - Purple blend */
-    --accent: 270 80% 60%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 225 20% 18%;
-    --input: 225 20% 15%;
-    --ring: 187 100% 50%;
-
-    --radius: 1rem;
-
-    /* Custom Clockit colors */
-    --cyan: 187 100% 50%;
-    --cyan-glow: 187 100% 70%;
-    --magenta: 333 100% 50%;
-    --magenta-glow: 333 100% 70%;
-    --purple: 270 80% 60%;
-    --purple-glow: 270 80% 75%;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--cyan)), hsl(var(--purple)), hsl(var(--magenta)));
-    --gradient-story: linear-gradient(135deg, hsl(var(--magenta)), hsl(var(--purple)), hsl(var(--cyan)));
-    --gradient-card: linear-gradient(145deg, hsl(225 25% 12%), hsl(225 25% 8%));
-    --gradient-glass: linear-gradient(135deg, hsla(225, 25%, 15%, 0.6), hsla(225, 25%, 10%, 0.4));
-    
-    /* Shadows */
-    --shadow-glow-cyan: 0 0 30px hsla(187, 100%, 50%, 0.3);
-    --shadow-glow-magenta: 0 0 30px hsla(333, 100%, 50%, 0.3);
-    --shadow-glow-purple: 0 0 30px hsla(270, 80%, 60%, 0.3);
-    --shadow-card: 0 8px 32px hsla(0, 0%, 0%, 0.4);
-
-    /* Sidebar */
-    --sidebar-background: 225 25% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 225 25% 6%;
-    --sidebar-accent: 225 20% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 225 20% 18%;
-    --sidebar-ring: 187 100% 50%;
+    color-scheme: dark;
   }
 
   .light {
+    color-scheme: light;
     --background: 0 0% 98%;
     --foreground: 225 25% 10%;
-
     --card: 0 0% 100%;
     --card-foreground: 225 25% 10%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 225 25% 10%;
-
     --primary: 187 100% 42%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 333 90% 55%;
     --secondary-foreground: 0 0% 100%;
-
     --muted: 220 15% 92%;
     --muted-foreground: 220 10% 40%;
-
     --accent: 270 70% 55%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 220 15% 88%;
     --input: 220 15% 92%;
     --ring: 187 100% 42%;
-
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 15% 96%));
-    --gradient-glass: linear-gradient(135deg, hsla(0, 0%, 100%, 0.8), hsla(220, 15%, 96%, 0.6));
-    --shadow-card: 0 8px 32px hsla(220, 20%, 50%, 0.15);
   }
 
   body {
-    @apply bg-cocoa-950 text-cream-50 font-sans antialiased;
+    background-color: var(--color-cocoa-950);
+    color: var(--color-cream-50);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     background-image: 
       radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.08) 0%, transparent 40%),
       radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.08) 0%, transparent 40%);
   }
 
+  .light body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   html {
@@ -136,14 +100,18 @@
 @layer components {
   /* Glassmorphism card */
   .glass-card {
-    @apply backdrop-blur-xl border border-border/50 rounded-2xl;
-    background: var(--gradient-glass);
-    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(var(--blur-xl, 24px));
+    border: 1px solid hsl(var(--border) / 0.5);
+    border-radius: var(--radius-2xl, 1rem);
+    background: var(--gradient-glass, linear-gradient(135deg, hsla(225, 25%, 15%, 0.6), hsla(225, 25%, 10%, 0.4)));
+    box-shadow: var(--shadow-card, 0 8px 32px rgba(0, 0, 0, 0.4));
   }
 
   /* Modern glass card with enhanced effects */
   .glass-card-modern {
-    @apply backdrop-blur-2xl border border-white/10 rounded-2xl;
+    backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
     background: linear-gradient(135deg,
       rgba(255, 255, 255, 0.1),
       rgba(255, 255, 255, 0.05),
@@ -157,13 +125,13 @@
 
   /* Story ring gradient */
   .story-ring {
-    background: var(--gradient-primary);
+    background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
     padding: 3px;
     border-radius: 50%;
   }
 
   .story-ring-unseen {
-    background: var(--gradient-story);
+    background: var(--gradient-story, linear-gradient(135deg, hsl(333 100% 50%), hsl(270 80% 60%), hsl(187 100% 50%)));
     padding: 3px;
     border-radius: 50%;
     animation: pulse-glow 2s ease-in-out infinite;
@@ -177,20 +145,20 @@
 
   /* Neon glow effects */
   .glow-cyan {
-    box-shadow: var(--shadow-glow-cyan);
+    box-shadow: 0 0 30px hsla(187, 100%, 50%, 0.3);
   }
 
   .glow-magenta {
-    box-shadow: var(--shadow-glow-magenta);
+    box-shadow: 0 0 30px hsla(333, 100%, 50%, 0.3);
   }
 
   .glow-purple {
-    box-shadow: var(--shadow-glow-purple);
+    box-shadow: 0 0 30px hsla(270, 80%, 60%, 0.3);
   }
 
   /* Text gradients */
   .text-gradient {
-    background: var(--gradient-primary);
+    background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -198,29 +166,50 @@
 
   /* Bottom nav active indicator */
   .nav-active {
-    @apply text-primary relative;
+    color: hsl(var(--primary));
+    position: relative;
   }
 
   .nav-active::after {
     content: "";
-    @apply absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary;
+    position: absolute;
+    bottom: -0.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 9999px;
+    background-color: hsl(var(--primary));
     box-shadow: 0 0 8px hsl(var(--primary));
   }
 
   /* Music player progress */
   .progress-track {
-    @apply h-1 bg-muted rounded-full overflow-hidden;
+    height: 0.25rem;
+    background-color: hsl(var(--muted));
+    border-radius: 9999px;
+    overflow: hidden;
   }
 
   .progress-fill {
-    @apply h-full rounded-full;
-    background: var(--gradient-primary);
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
   }
 
   /* Floating action button */
   .fab {
-    @apply fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center;
-    background: var(--gradient-primary);
+    position: fixed;
+    bottom: 6rem;
+    right: 1.5rem;
+    z-index: 50;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
     box-shadow: 0 4px 20px hsla(187, 100%, 50%, 0.4);
     transition: all 0.3s ease;
   }
@@ -260,15 +249,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted rounded-full;
+  background-color: hsl(var(--muted));
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  background-color: hsl(var(--muted-foreground) / 0.5);
 }
 
 /* Top progress bar styling */
