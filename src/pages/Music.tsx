@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video
+  Bell, Check, X, Hash, Film, Video, PlayCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +88,10 @@ const Music: React.FC = () => {
   const location = useLocation();
 
   // ── Active mode ───────────────────────────────────────────────────────────
-  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover">("foryou");
+  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover" | "learn">("foryou");
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   // ── Music/player state (from original Music.tsx) ─────────────────────────
   const [allSongs, setAllSongs] = useState<any[]>([]);
@@ -151,7 +153,61 @@ const Music: React.FC = () => {
     },
   ]);
 
+  const [disciplines] = useState([
+    { id: "languages", title: "Languages", icon: "🌍", color: "from-blue-500/20 to-blue-600/20", borderColor: "border-blue-500/30", iconColor: "text-blue-500" },
+    { id: "personal-dev", title: "Personal Development", icon: "🧠", color: "from-purple-500/20 to-purple-600/20", borderColor: "border-purple-500/30", iconColor: "text-purple-500" },
+    { id: "business", title: "Business & Finance", icon: "💰", color: "from-green-500/20 to-green-600/20", borderColor: "border-green-500/30", iconColor: "text-green-500" },
+    { id: "history", title: "History & Philosophy", icon: "📚", color: "from-amber-500/20 to-amber-600/20", borderColor: "border-amber-500/30", iconColor: "text-amber-500" },
+    { id: "career", title: "Career & Communication", icon: "🎤", color: "from-red-500/20 to-red-600/20", borderColor: "border-red-500/30", iconColor: "text-red-500" },
+    { id: "wellness", title: "Wellness & Mental Clarity", icon: "🧘", color: "from-teal-500/20 to-teal-600/20", borderColor: "border-teal-500/30", iconColor: "text-teal-500" },
+  ]);
+
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
+
+  const learningPaths = [
+    {
+      id: "french-basics",
+      disciplineId: "languages",
+      title: "French for Beginners",
+      subtitle: "Master essential conversation in 30 days",
+      image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+      level: "Beginner",
+      modules: [
+        { id: "fr-m1", title: "The Basics", lessons: ["fr-l1", "fr-l2"] },
+        { id: "fr-m2", title: "Daily Life", lessons: ["fr-l3"] }
+      ]
+    },
+    {
+      id: "stoic-resilience",
+      disciplineId: "history",
+      title: "Stoic Resilience",
+      subtitle: "Wisdom from Marcus Aurelius & Seneca",
+      image: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80",
+      level: "Intermediate",
+      modules: [
+        { id: "st-m1", title: "Core Principles", lessons: ["st-l1"] }
+      ]
+    },
+    {
+      id: "personal-finance",
+      disciplineId: "business",
+      title: "Wealth Mastery",
+      subtitle: "Thinking like a 1% investor",
+      image: "https://images.unsplash.com/photo-1565514020179-026b92b84bb6?w=800&q=80",
+      level: "Advanced",
+      modules: [
+        { id: "fn-m1", title: "Mindset", lessons: ["fn-l1"] }
+      ]
+    }
+  ];
+
+  const lessons = {
+    "fr-l1": { id: "fr-l1", title: "Pronunciation 101", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 320, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+    "fr-l2": { id: "fr-l2", title: "Greetings & Polite Phrases", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 450, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+    "fr-l3": { id: "fr-l3", title: "Ordering Coffee", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 380, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+    "st-l1": { id: "st-l1", title: "Control & Perspective", artist: "Clockit Learn", album: "Stoic Resilience", artwork: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=400&q=80", duration: 600, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+    "fn-l1": { id: "fn-l1", title: "Compound Interest", artist: "Clockit Learn", album: "Wealth Mastery", artwork: "https://images.unsplash.com/photo-1565514020179-026b92b84bb6?w=400&q=80", duration: 520, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  };
 
   const handleJoinGroup = async (groupId: string) => {
     try {
@@ -438,6 +494,197 @@ const Music: React.FC = () => {
   };
   const handleBackToMusic = () => setSelectedPlaylist(null);
 
+  // ── LearnView ─────────────────────────────────────────────────────────────
+  const LearnView = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="px-4 mt-6"
+    >
+      <div className="grid grid-cols-2 gap-4">
+        {disciplines.map((discipline, index) => (
+          <motion.button
+            key={discipline.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            onClick={() => setSelectedDiscipline(discipline.id)}
+            className={`relative flex flex-col items-center justify-center p-6 rounded-3xl bg-gradient-to-br ${discipline.color} border ${discipline.borderColor} backdrop-blur-sm group hover:scale-[1.02] transition-transform duration-300`}
+          >
+            <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">{discipline.icon}</span>
+            <span className="text-sm font-bold text-foreground text-center line-clamp-2">{discipline.title}</span>
+            <div className={`absolute bottom-3 right-3 w-2 h-2 rounded-full ${discipline.iconColor.replace('text', 'bg')} opacity-40`} />
+          </motion.button>
+        ))}
+      </div>
+
+      <div className="mt-8 p-6 rounded-3xl bg-muted/30 border border-border/50 text-center">
+        <h4 className="text-lg font-bold text-foreground mb-2">Continue Learning</h4>
+        <p className="text-sm text-muted-foreground mb-4">You're halfway through "Stoic Resilience"</p>
+        <Button
+          variant="default"
+          className="w-full rounded-full gap-2"
+          onClick={() => {
+            setSelectedDiscipline("history");
+            setSelectedPath("stoic-resilience");
+          }}
+        >
+          <Play className="w-4 h-4" /> Resume Now
+        </Button>
+      </div>
+    </motion.div>
+  );
+
+  const PathListView = ({ disciplineId }: { disciplineId: string }) => {
+    const paths = learningPaths.filter(p => p.disciplineId === disciplineId);
+
+    if (paths.length === 0) {
+      return (
+        <div className="px-4 mt-6">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedDiscipline(null)} className="mb-6 gap-2 hover:bg-white/5 rounded-full">
+            <ArrowLeft className="w-4 h-4" /> Back to Disciplines
+          </Button>
+          <div className="p-12 text-center glass-card rounded-[2.5rem] border-dashed border-2 border-white/10">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Play className="w-6 h-6 text-primary opacity-50" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Coming Soon</h3>
+            <p className="text-muted-foreground max-w-xs mx-auto">
+              Learning Paths for "{disciplines.find(d => d.id === disciplineId)?.title}" are being curated for Phase 2.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-4 mt-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedDiscipline(null)} className="rounded-full hover:bg-white/5">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h2 className="text-xl font-bold text-foreground">{disciplines.find(d => d.id === disciplineId)?.title}</h2>
+        </div>
+        <div className="space-y-4">
+          {paths.map((path, index) => (
+            <motion.div
+              key={path.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              onClick={() => setSelectedPath(path.id)}
+              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-muted/30 group cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-4 p-4">
+                <img src={path.image} alt={path.title} className="w-20 h-20 rounded-2xl object-cover shadow-lg" />
+                <div className="flex-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary mb-1 block">{path.level}</span>
+                  <h3 className="text-lg font-bold text-foreground leading-tight">{path.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{path.subtitle}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Play className="w-4 h-4 fill-current" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const PathDetailView = ({ pathId }: { pathId: string }) => {
+    const path = learningPaths.find(p => p.id === pathId);
+    if (!path) return null;
+
+    const { playTrack, completedLessons } = useMediaPlayer();
+
+    return (
+      <div className="min-h-screen pb-32">
+        {/* Header */}
+        <div className="relative h-64 w-full">
+          <img src={path.image} alt={path.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute top-4 left-4">
+            <Button variant="glass" size="icon" onClick={() => setSelectedPath(null)} className="rounded-full">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </div>
+          <div className="absolute bottom-6 left-6 right-6">
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-2 block">{path.level} Path</span>
+            <h2 className="text-3xl font-black text-foreground leading-tight">{path.title}</h2>
+            <p className="text-sm text-white/70 mt-2">{path.subtitle}</p>
+          </div>
+        </div>
+
+        {/* Modules & Lessons */}
+        <div className="px-6 mt-8 space-y-10">
+          {path.modules.map((module, mIdx) => (
+            <div key={module.id} className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                  {mIdx + 1}
+                </div>
+                <h3 className="text-lg font-bold text-foreground/90">{module.title}</h3>
+              </div>
+              <div className="space-y-3 pl-2">
+                {module.lessons.map((lessonId, lIdx) => {
+                  const lesson = (lessons as any)[lessonId];
+                  if (!lesson) return null;
+                  const isDone = completedLessons.includes(lessonId);
+
+                  return (
+                    <motion.div
+                      key={lessonId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: lIdx * 0.05 }}
+                      onClick={() => {
+                        const formattedLesson = {
+                          id: lesson.id,
+                          title: lesson.title,
+                          artist: lesson.artist,
+                          album: lesson.album,
+                          duration: lesson.duration,
+                          url: lesson.url,
+                          artwork: lesson.artwork
+                        };
+                        playTrack(formattedLesson);
+                      }}
+                      className="group flex items-center gap-4 p-4 rounded-[1.5rem] bg-white/5 border border-white/5 hover:bg-white/10 active:scale-[0.99] transition-all cursor-pointer"
+                    >
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          <img src={lesson.artwork} alt={lesson.title} className="w-full h-full object-cover" />
+                        </div>
+                        {isDone && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-background flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold leading-tight ${isDone ? 'text-muted-foreground' : 'text-foreground'}`}>
+                          {lesson.title}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider font-semibold">
+                          Lesson {lIdx + 1} • {Math.floor(lesson.duration / 60)} min
+                        </p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                        <PlayCircle className="w-5 h-5" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // ── PlaylistView ──────────────────────────────────────────────────────────
   const PlaylistView = ({ playlist }: { playlist: any }) => (
     <Layout hideBottomNav={!showBottomNav}>
@@ -532,10 +779,17 @@ const Music: React.FC = () => {
                   { key: "foryou", label: "For You" },
                   { key: "library", label: "Library" },
                   { key: "discover", label: "Discover" },
+                  { key: "learn", label: "Learn" },
                 ].map(mode => (
                   <button
                     key={mode.key}
-                    onClick={() => setActiveMode(mode.key as any)}
+                    onClick={() => {
+                      setActiveMode(mode.key as any);
+                      if (mode.key !== "learn") {
+                        setSelectedDiscipline(null);
+                        setSelectedPath(null);
+                      }
+                    }}
                     className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeMode === mode.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground"
@@ -649,13 +903,13 @@ const Music: React.FC = () => {
                           image={pl.image}
                           songCount={pl.songCount}
                           onClick={() => {
-                            const playlistSongs = filteredSongs.length > 0 
-                              ? filteredSongs 
+                            const playlistSongs = filteredSongs.length > 0
+                              ? filteredSongs
                               : allSongs.slice(0, pl.songCount);
-                            
+
                             if (playlistSongs.length > 0) {
-                              setSelectedPlaylist({ 
-                                ...pl, 
+                              setSelectedPlaylist({
+                                ...pl,
                                 songs: playlistSongs.map((song: any) => ({
                                   id: song.id,
                                   title: song.title,
@@ -671,15 +925,15 @@ const Music: React.FC = () => {
                           }}
                           onPlay={(e) => {
                             e.stopPropagation();
-                            
-                            const playlistSongs = filteredSongs.length > 0 
-                              ? filteredSongs 
+
+                            const playlistSongs = filteredSongs.length > 0
+                              ? filteredSongs
                               : allSongs.slice(0, pl.songCount);
-                            
+
                             if (playlistSongs.length > 0) {
                               const formattedPlaylist = playlistSongs.map((song: any) => {
                                 let durationInSeconds = 180;
-                                
+
                                 if (typeof song.duration === 'string') {
                                   const parts = song.duration.split(':');
                                   if (parts.length === 2) {
@@ -703,7 +957,7 @@ const Music: React.FC = () => {
                                   artwork: song.albumArt,
                                 };
                               });
-                              
+
                               // Play the first track from the formatted playlist
                               if (formattedPlaylist.length > 0) {
                                 playTrack(formattedPlaylist[0], formattedPlaylist, 0);
@@ -1106,6 +1360,28 @@ const Music: React.FC = () => {
                     </h3>
                     <MusicDiscovery />
                   </motion.section>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ══════════════════ LEARN MODE ═══════════════════ */}
+          <AnimatePresence mode="wait">
+            {activeMode === "learn" && (
+              <motion.div
+                key={selectedPath ? "path-detail" : selectedDiscipline ? "path-list" : "disciplines"}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="pb-32"
+              >
+                {selectedPath ? (
+                  <PathDetailView pathId={selectedPath} />
+                ) : selectedDiscipline ? (
+                  <PathListView disciplineId={selectedDiscipline} />
+                ) : (
+                  <LearnView />
                 )}
               </motion.div>
             )}
