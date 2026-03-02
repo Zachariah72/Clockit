@@ -13,9 +13,12 @@ const STORIES = [
 
 export const SnappySection = () => {
   return (
-    <section className="py-6 px-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-serif italic text-clay-400">Snappy Moments</h2>
+    <section className="mb-6">
+      <div className="flex items-center justify-between px-4 md:px-0 mb-4">
+        <h2 className="text-xl font-bold text-white">Snappy Moments</h2>
+        <button className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+          See all
+        </button>
       </div>
       
       <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">

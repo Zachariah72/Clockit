@@ -31,7 +31,7 @@ export const ReelsSection = () => {
     <section className="py-6">
       <div className="px-6 mb-4 flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-serif italic text-pink-400">Clockit Reels</h2>
+          <h2 className="text-2xl font-bold text-pink-400">Clockit Reels</h2>
           <p className="text-cream-100/60 text-sm">Short vibes, big energy</p>
         </div>
       </div>
