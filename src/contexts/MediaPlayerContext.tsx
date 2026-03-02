@@ -48,6 +48,8 @@ interface MediaPlayerState {
   likedTrackIDs: string[];
   recentlyPlayed: Track[];
   cachedTracks: Set<string>;
+  playbackRate: number;
+  completedLessons: string[];
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
@@ -58,6 +60,7 @@ interface MediaPlayerContextType extends MediaPlayerState {
   previous: () => void;
   seekTo: (time: number) => void;
   setVolume: (volume: number) => void;
+  setPlaybackRate: (rate: number) => void;
   toggleMute: () => void;
   playTrack: (track: Track, playlist?: Track[], index?: number) => void;
   addToQueue: (track: Track) => void;
@@ -72,6 +75,7 @@ interface MediaPlayerContextType extends MediaPlayerState {
   toggleLike: (trackId: string) => void;
   isLiked: (trackId: string) => boolean;
   clearHistory: () => void;
+  toggleLessonComplete: (lessonId: string) => void;
 }
 
 const MediaPlayerContext = createContext<MediaPlayerContextType | undefined>(undefined);
@@ -109,6 +113,8 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     likedTrackIDs: JSON.parse(localStorage.getItem('likedTrackIDs') || '[]'),
     recentlyPlayed: JSON.parse(localStorage.getItem('recentlyPlayed') || '[]'),
     cachedTracks: new Set<string>(),
+    playbackRate: 1,
+    completedLessons: JSON.parse(localStorage.getItem('completedLessons') || '[]'),
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -130,6 +136,10 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
   useEffect(() => {
     localStorage.setItem('recentlyPlayed', JSON.stringify(state.recentlyPlayed));
   }, [state.recentlyPlayed]);
+
+  useEffect(() => {
+    localStorage.setItem('completedLessons', JSON.stringify(state.completedLessons));
+  }, [state.completedLessons]);
 
   // Sync with Backend on Mount
   useEffect(() => {
@@ -240,12 +250,13 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     };
   }, []);
 
-  // Update audio volume
+  // Update audio volume and rate
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = state.isMuted ? 0 : state.volume;
+      audioRef.current.playbackRate = state.playbackRate;
     }
-  }, [state.volume, state.isMuted]);
+  }, [state.volume, state.isMuted, state.playbackRate]);
 
   // Sync Spotify player state
   useEffect(() => {
@@ -449,6 +460,10 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     setState(prev => ({ ...prev, volume: clampedVolume }));
   };
 
+  const setPlaybackRate = (rate: number) => {
+    setState(prev => ({ ...prev, playbackRate: rate }));
+  };
+
   const toggleMute = () => {
     setState(prev => ({ ...prev, isMuted: !prev.isMuted }));
   };
@@ -604,6 +619,15 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     setState(prev => ({ ...prev, recentlyPlayed: [] }));
   };
 
+  const toggleLessonComplete = (lessonId: string) => {
+    setState(prev => ({
+      ...prev,
+      completedLessons: prev.completedLessons.includes(lessonId)
+        ? prev.completedLessons.filter(id => id !== lessonId)
+        : [...prev.completedLessons, lessonId]
+    }));
+  };
+
   // Media Session integration for mobile media controls
   useEffect(() => {
     if ('mediaSession' in navigator && state.currentTrack) {
@@ -693,6 +717,8 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     toggleLike,
     isLiked,
     clearHistory,
+    setPlaybackRate,
+    toggleLessonComplete,
   };
 
   return (
