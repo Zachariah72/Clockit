@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -12,19 +12,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogTrigger, DialogDescription
 } from "@/components/ui/dialog";
 import { Layout } from "@/components/layout/Layout";
 import { SongCard } from "@/components/music/SongCard";
-import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
+import { FeaturedPlaylist } from "@/components/home/FeaturedPlaylists";
 import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
 import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   getListeningHistory,
@@ -52,9 +54,7 @@ const recentSongs = [
 ];
 
 const featuredPlaylistsMock = [
-  { id: "1", title: "Chill Vibes", description: "Relax and unwind with these smooth beats", image: album2, songCount: 45 },
-  { id: "2", title: "Night Drive", description: "Perfect for late night cruising", image: album3, songCount: 32 },
-  { id: "3", title: "Energy Boost", description: "Get pumped with high energy tracks", image: album1, songCount: 28 },
+  { id: "1", title: "Trending Now", description: "The hottest tracks right now", image: album3, songCount: 50 },
 ];
 
 // ─── Mood & Genre config ────────────────────────────────────────────────────
@@ -79,7 +79,11 @@ const genres = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
-const Music = () => {
+const Music: React.FC = () => {
+  const { user } = useAuth();
+  const { currentTrack, play, pause, isPlaying, recentlyPlayed, likedTrackIDs, playTrack } = useMediaPlayer();
+  const { toast } = useToast();
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -101,11 +105,12 @@ const Music = () => {
   const [showFullPlayer, setShowFullPlayer] = useState(false);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
+  // ── Missing state variables ──────────────────────────────────────────────
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
 
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -177,7 +182,7 @@ const Music = () => {
   };
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const heroBanners = [
+  const heroBanners = useMemo(() => [
     {
       id: "discover",
       title: "Discover New Sounds",
@@ -196,7 +201,7 @@ const Music = () => {
       image: album3,
       gradient: "from-purple-900/90 via-purple-900/40 to-transparent"
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (activeMode !== "foryou") return;
@@ -204,7 +209,7 @@ const Music = () => {
       setCurrentHeroIndex(prev => (prev + 1) % heroBanners.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, [activeMode, heroBanners.length]);
+  }, [activeMode, heroBanners]);
 
   // ── Computed ──────────────────────────────────────────────────────────────
   const filteredSongs = allSongs.filter(song => {
@@ -637,11 +642,78 @@ const Music = () => {
                   </div>
                   <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory scroll-smooth">
                     {featuredPlaylistsMock.map(pl => (
-                      <div key={pl.id} className="snap-start flex-shrink-0 w-[200px]">
+                      <div key={pl.id} className="snap-start flex-shrink-0 w-[360px]">
                         <FeaturedPlaylist
-                          title={pl.title} description={pl.description}
-                          image={pl.image} songCount={pl.songCount}
-                          onClick={() => handleFeaturedPlaylistClick(pl.id)}
+                          title={pl.title}
+                          description={pl.description}
+                          image={pl.image}
+                          songCount={pl.songCount}
+                          onClick={() => {
+                            const playlistSongs = filteredSongs.length > 0 
+                              ? filteredSongs 
+                              : allSongs.slice(0, pl.songCount);
+                            
+                            if (playlistSongs.length > 0) {
+                              setSelectedPlaylist({ 
+                                ...pl, 
+                                songs: playlistSongs.map((song: any) => ({
+                                  id: song.id,
+                                  title: song.title,
+                                  artist: song.artist,
+                                  albumArt: song.albumArt,
+                                  duration: song.duration,
+                                  trackUrl: song.trackUrl
+                                }))
+                              });
+                            } else {
+                              setSelectedPlaylist(pl);
+                            }
+                          }}
+                          onPlay={(e) => {
+                            e.stopPropagation();
+                            
+                            const playlistSongs = filteredSongs.length > 0 
+                              ? filteredSongs 
+                              : allSongs.slice(0, pl.songCount);
+                            
+                            if (playlistSongs.length > 0) {
+                              const formattedPlaylist = playlistSongs.map((song: any) => {
+                                let durationInSeconds = 180;
+                                
+                                if (typeof song.duration === 'string') {
+                                  const parts = song.duration.split(':');
+                                  if (parts.length === 2) {
+                                    const mins = parseInt(parts[0], 10);
+                                    const secs = parseInt(parts[1], 10);
+                                    if (!isNaN(mins) && !isNaN(secs)) {
+                                      durationInSeconds = mins * 60 + secs;
+                                    }
+                                  }
+                                } else if (typeof song.duration === 'number') {
+                                  durationInSeconds = song.duration;
+                                }
+
+                                return {
+                                  id: song.id,
+                                  title: song.title,
+                                  artist: song.artist,
+                                  album: pl.title,
+                                  duration: durationInSeconds,
+                                  url: song.trackUrl,
+                                  artwork: song.albumArt,
+                                };
+                              });
+                              
+                              // Play the first track from the formatted playlist
+                              if (formattedPlaylist.length > 0) {
+                                playTrack(formattedPlaylist[0], formattedPlaylist, 0);
+                                toast({
+                                  title: "Now Playing",
+                                  description: `${pl.title} - ${formattedPlaylist[0].title}`,
+                                });
+                              }
+                            }
+                          }}
                         />
                       </div>
                     ))}

@@ -1,16 +1,17 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Home, Search, Compass, Film, MessageCircle, Heart, PlusSquare, Menu, Music2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Home', active: true },
-  { icon: Search, label: 'Search' },
-  { icon: Compass, label: 'Explore' },
-  { icon: Film, label: 'Reels' },
-  { icon: MessageCircle, label: 'Messages', badge: 4 },
-  { icon: Heart, label: 'Notifications' },
-  { icon: PlusSquare, label: 'Create' },
-  { icon: Music2, label: 'Music' },
+  { icon: Home, label: 'Home', to: '/' },
+  { icon: Search, label: 'Search', to: '/search' },
+  { icon: Compass, label: 'Explore', to: '/explore' },
+  { icon: Film, label: 'Reels', to: '/reels' },
+  { icon: MessageCircle, label: 'Messages', to: '/messages', badge: 4 },
+  { icon: Heart, label: 'Notifications', to: '/notifications' },
+  { icon: PlusSquare, label: 'Create', to: '/create' },
+  { icon: Music2, label: 'Music', to: '/music' },
 ];
 
 export const Sidebar = () => {
@@ -23,7 +24,9 @@ export const Sidebar = () => {
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5b6cf9] via-[#a259ff] to-[#d936d0] flex items-center justify-center">
               <span className="font-sans font-bold text-white text-lg">C</span>
             </div>
-            <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">Clockit</span>
+            <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">
+              Clockit
+            </span>
           </div>
           <p className="text-cream-100/40 text-xs font-medium tracking-wide pl-10">Music & Discover</p>
         </div>
@@ -32,30 +35,37 @@ export const Sidebar = () => {
       {/* Nav Items */}
       <nav className="flex-1 space-y-2">
         {NAV_ITEMS.map((item) => (
-          <button
+          <NavLink
             key={item.label}
-            className={cn(
-              "flex items-center gap-4 p-3 w-full rounded-xl transition-all duration-200 group hover:bg-white/5",
-              item.active ? "font-bold text-white" : "font-normal text-cream-100/80"
-            )}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-4 p-3 w-full rounded-xl transition-all duration-200 group hover:bg-white/5',
+                isActive ? 'font-bold text-white' : 'font-normal text-cream-100/80'
+              )
+            }
           >
-            <div className="relative">
-              <item.icon 
-                size={24} 
-                className={cn(
-                  "transition-transform group-hover:scale-110",
-                  item.active ? "text-[#FF00D4]" : "text-current"
-                )} 
-                strokeWidth={item.active ? 2.5 : 2}
-              />
-              {item.badge && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF00D4] rounded-full text-[10px] flex items-center justify-center text-white font-bold border border-cocoa-950">
-                  {item.badge}
-                </span>
-              )}
-            </div>
-            <span className="text-base">{item.label}</span>
-          </button>
+            {({ isActive }) => (
+              <>
+                <div className="relative">
+                  <item.icon
+                    size={24}
+                    className={cn(
+                      'transition-transform group-hover:scale-110',
+                      isActive ? 'text-[#FF00D4]' : 'text-current'
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {item.badge && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF00D4] rounded-full text-[10px] flex items-center justify-center text-white font-bold border border-cocoa-950">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-base">{item.label}</span>
+              </>
+            )}
+          </NavLink>
         ))}
       </nav>
 

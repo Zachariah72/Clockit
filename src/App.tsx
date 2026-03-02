@@ -2,16 +2,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
-import { MediaPlayerProvider } from "@/contexts/MediaPlayerContext";
+import { MediaPlayerProvider, useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { MediaNotification } from "@/components/media/MediaNotification";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { FullPlayer } from '@/components/music/FullPlayer';
 import { useState } from 'react';
+import heroMusicImage from '@/assets/hero-music.jpg';
 
 // Import pages from Zach's version
 import Index from "./pages/Index";
@@ -36,7 +37,7 @@ import NotFound from "./pages/NotFound";
 
 // Import your homepage components
 import { Hero } from '@/components/home/Hero';
-import { FeaturedPlaylists } from '@/components/home/FeaturedPlaylists';
+import { FeaturedPlaylist } from './components/home/FeaturedPlaylists';
 import { CommunitySection } from '@/components/home/CommunitySection';
 import { SnappySection } from '@/components/home/SnappySection';
 import { ReelsSection } from '@/components/home/ReelsSection';
@@ -50,9 +51,65 @@ import { Plus } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
-// Your homepage component
+// Sample trending tracks
+const TRENDING_TRACKS = [
+  {
+    id: '1',
+    title: 'Essence',
+    artist: 'WizKid ft. Tems',
+    album: 'Made in Lagos',
+    coverUrl: 'https://picsum.photos/seed/wizkid/300/300',
+    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: 240,
+  },
+  {
+    id: '2',
+    title: 'Water',
+    artist: 'Tyla',
+    album: 'Water - Single',
+    coverUrl: 'https://picsum.photos/seed/tyla/300/300',
+    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    duration: 200,
+  },
+  {
+    id: '3',
+    title: 'Drive',
+    artist: 'Black Coffee ft. David Guetta',
+    album: 'Subconsciously',
+    coverUrl: 'https://picsum.photos/seed/coffee/300/300',
+    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    duration: 220,
+  },
+];
+
+// Featured playlists data
+const FEATURED_PLAYLISTS = [
+  {
+    id: 1,
+    title: 'Chill Vibes',
+    description: 'Relax and unwind with these smooth beats',
+    image: 'https://picsum.photos/seed/chill/300/300',
+    songCount: 45,
+  },
+  {
+    id: 2,
+    title: 'Night Drive',
+    description: 'Perfect for late night cruising',
+    image: 'https://picsum.photos/seed/night/300/300',
+    songCount: 32,
+  },
+];
+
 const HomePage = () => {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'forYou' | 'library' | 'discover'>('forYou');
+  const { playTrack } = useMediaPlayer();
+
+  const handlePlayTrending = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    playTrack(TRENDING_TRACKS[0]);
+    setIsPlayerOpen(true);
+  };
 
   const FEED_POSTS = [
     {
@@ -91,23 +148,80 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-cocoa-950 text-cream-50">
+    <div className="min-h-screen text-cream-50">
       <FullPlayer isOpen={isPlayerOpen} onClose={() => setIsPlayerOpen(false)} />
       
-      {/* Desktop Sidebar */}
       <Sidebar />
 
       <div className="flex justify-center md:pl-[244px] lg:pr-[320px]">
         <main className="w-full max-w-[630px] min-h-screen pb-32 md:py-8 px-0 md:px-4">
           
-          {/* Mobile Header (Hidden on Desktop) & Hero Content */}
-          <div className="mb-6">
-            <Hero />
+          {/* Navigation Tabs */}
+          <div className="flex gap-3 px-4 md:px-0 mb-6 pt-4 md:pt-0">
+            <button
+              onClick={() => setActiveTab('forYou')}
+              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
+                activeTab === 'forYou'
+                  ? 'bg-cyan-400 text-cocoa-950'
+                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              For You
+            </button>
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
+                activeTab === 'library'
+                  ? 'bg-cyan-400 text-cocoa-950'
+                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Library
+            </button>
+            <button
+              onClick={() => setActiveTab('discover')}
+              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
+                activeTab === 'discover'
+                  ? 'bg-cyan-400 text-cocoa-950'
+                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Discover
+            </button>
           </div>
 
-          {/* Featured Playlists (Moved Up) */}
-          <div className="mb-8">
-            <FeaturedPlaylists />
+          {/* Trending Now Playlist */}
+          <div className="mb-8 px-4 md:px-0">
+            <FeaturedPlaylist 
+              title="Trending Now"
+              description="The hottest tracks right now"
+              image={heroMusicImage}
+              songCount={50}
+              onPlay={handlePlayTrending}
+            />
+          </div>
+
+          {/* Featured Playlists Section */}
+          <div className="mb-8 px-4 md:px-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Featured Playlists</h2>
+              <button className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                See all
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {FEATURED_PLAYLISTS.map((playlist) => (
+                <FeaturedPlaylist
+                  key={playlist.id}
+                  title={playlist.title}
+                  description={playlist.description}
+                  image={playlist.image}
+                  songCount={playlist.songCount}
+                  onPlay={handlePlayTrending}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Stories (Snappy) */}
@@ -120,7 +234,7 @@ const HomePage = () => {
             {/* Feed Posts */}
             <div className="px-4 md:px-0">
               {FEED_POSTS.map(post => (
-                <FeedPost 
+                <FeedPost
                   key={post.id}
                   username={post.username}
                   userImage={post.userImage}
@@ -151,10 +265,38 @@ const HomePage = () => {
                 <h2 className="text-lg font-bold text-white">Listening Groups</h2>
                 <button className="text-xs font-bold text-cyan-400 hover:text-cyan-300">See all</button>
               </div>
-              {/* Placeholder for Listening Groups */}
               <div className="h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cream-100/40 text-sm">
                 Join a listening party...
               </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="mt-8 pb-28 md:pb-8">
+            <div className="mx-auto w-full max-w-[900px] px-4 border-t border-white/10 pt-6 text-center">
+              <p className="text-xs text-cream-100/60 leading-7">
+                <a href="#" className="hover:text-cream-50 transition-colors">About</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Help</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Press</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">API</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Jobs</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Privacy</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Terms</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Locations</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Language</a> •{" "}
+                <a href="#" className="hover:text-cream-50 transition-colors">Meta Verified</a>
+              </p>
+
+              <p className="mt-4 text-xs text-cream-100/60 text-center">
+                © 2026 CLOCKIT FROM AFRICA
+              </p>
+            </div>
+          </footer>
+
+          <div className="md:hidden max-w-2xl mx-auto fixed bottom-0 left-0 right-0 pointer-events-none z-50">
+            <div className="pointer-events-auto">
+              <MiniPlayer onExpand={() => setIsPlayerOpen(true)} />
+              <BottomNav />
             </div>
           </div>
         </main>
@@ -167,30 +309,6 @@ const HomePage = () => {
 
       {/* Desktop Right Panel */}
       <RightPanel />
-      
-      {/* Mobile Bottom Nav & Player */}
-      <div className="md:hidden max-w-2xl mx-auto fixed bottom-0 left-0 right-0 pointer-events-none z-50">
-        <div className="pointer-events-auto">
-          <MiniPlayer onExpand={() => setIsPlayerOpen(true)} />
-          <BottomNav />
-        </div>
-      </div>
-
-      {/* Desktop Player (Floating) */}
-      <div className="hidden md:block fixed bottom-4 right-4 z-50 w-80">
-         <div 
-          onClick={() => setIsPlayerOpen(true)}
-          className="bg-cocoa-800/95 backdrop-blur-md rounded-2xl p-3 flex items-center gap-3 shadow-xl shadow-black/40 border border-white/5 cursor-pointer hover:bg-cocoa-800 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-            <img src="https://picsum.photos/seed/wizkid/100/100" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">Essence</div>
-            <div className="text-xs text-cream-100/60 truncate">WizKid ft. Tems</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -210,13 +328,20 @@ const App = () => (
                 <Sonner />
                 <Routes>
                   <Route path="/" element={<HomePage />} />
+                  <Route path="/home" element={<Navigate to="/" replace />} />
+
                   <Route path="/stories" element={<Stories />} />
                   <Route path="/music" element={<Music />} />
+                  <Route path="/library" element={<Navigate to="/music" replace />} />
+
                   <Route path="/groups" element={<Groups />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/reels" element={<Reels />} />
                   <Route path="/live" element={<Live />} />
+
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/messages" element={<Navigate to="/chat" replace />} />
+
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/onboarding" element={<Onboarding />} />
                   <Route path="/settings" element={<Settings />} />
@@ -224,7 +349,15 @@ const App = () => (
                   <Route path="/downloads" element={<DownloadedMusic />} />
                   <Route path="/podcasts" element={<Podcasts />} />
                   <Route path="/offline-reels" element={<OfflineReels />} />
+
                   <Route path="/search" element={<Search />} />
+                  <Route path="/explore" element={<Navigate to="/search" replace />} />
+                  <Route path="/discover" element={<Navigate to="/search" replace />} />
+                  <Route path="/for-you" element={<Navigate to="/" replace />} />
+
+                  <Route path="/notifications" element={<Navigate to="/settings" replace />} />
+                  <Route path="/create" element={<Navigate to="/snap" replace />} />
+
                   <Route path="/camera-test" element={<CameraTest />} />
                   <Route path="/snap" element={<Snap />} />
                   <Route path="*" element={<NotFound />} />

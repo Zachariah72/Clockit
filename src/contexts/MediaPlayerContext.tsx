@@ -6,7 +6,8 @@ import {
   toggleMusicLike,
   recordListeningHistory,
   getListeningHistory,
-  getFollowedArtists
+  getFollowedArtists,
+  getUserLikes
 } from '@/services/api';
 
 interface BluetoothDevice {

@@ -1,104 +1,104 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
-@import "tailwindcss";
 
-@theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
-  
-  --color-cocoa-950: #05020a;
-  --color-cocoa-900: #0f0518;
-  --color-cocoa-800: #1a0b2e;
-  --color-clay-500: #ff00d4;
-  --color-clay-400: #9500ff;
-  --color-sage-900: #000000;
-  --color-sage-800: #0a0a0a;
-  --color-cream-50: #ffffff;
-  --color-cream-100: #e0e0e0;
-  
-  /* CSS variables for dynamic colors */
-  --background: 225 25% 6%;
-  --foreground: 210 40% 98%;
-  --card: 225 25% 10%;
-  --card-foreground: 210 40% 98%;
-  --popover: 225 25% 8%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 187 100% 50%;
-  --primary-foreground: 225 25% 6%;
-  --secondary: 333 100% 50%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 225 20% 15%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 270 80% 60%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 225 20% 18%;
-  --input: 225 20% 15%;
-  --ring: 187 100% 50%;
-  --radius: 1rem;
-  --cyan: 187 100% 50%;
-  --cyan-glow: 187 100% 70%;
-  --magenta: 333 100% 50%;
-  --magenta-glow: 333 100% 70%;
-  --purple: 270 80% 60%;
-  --purple-glow: 270 80% 75%;
-}
+@import "tailwindcss";
 
 @layer base {
   :root {
     color-scheme: dark;
+    --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+    
+    --color-cocoa-950: #05020a;
+    --color-cocoa-900: #0f0518;
+    --color-cocoa-800: #1a0b2e;
+    --color-clay-500: #ff00d4;
+    --color-clay-400: #9500ff;
+    --color-sage-900: #000000;
+    --color-sage-800: #0a0a0a;
+    --color-cream-50: #ffffff;
+    --color-cream-100: #e0e0e0;
+    
+    --background: 225 25% 6%;
+    --foreground: 210 40% 98%;
+    --card: 225 25% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 225 25% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 225 25% 6%;
+    --secondary: 333 100% 50%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 225 20% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 270 80% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 225 20% 18%;
+    --input: 225 20% 15%;
+    --ring: 187 100% 50%;
+    --radius: 1rem;
   }
 
-  .light {
-    color-scheme: light;
-    --background: 0 0% 98%;
-    --foreground: 225 25% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 225 25% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 225 25% 10%;
-    --primary: 187 100% 42%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 333 90% 55%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 220 15% 92%;
-    --muted-foreground: 220 10% 40%;
-    --accent: 270 70% 55%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 88%;
-    --input: 220 15% 92%;
-    --ring: 187 100% 42%;
+  html {
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  html::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
   }
 
   body {
-    background-color: var(--color-cocoa-950);
-    color: var(--color-cream-50);
+    background: 
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
+      linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
+    background-attachment: fixed !important;
+    color: #ffffff !important;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image: 
-      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.08) 0%, transparent 40%);
+    min-height: 100vh;
+    position: relative;
   }
 
-  .light body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   * {
     border-color: hsl(var(--border));
   }
-
-  html {
-    font-family: "Outfit", system-ui, sans-serif;
-  }
 }
 
 @layer components {
-  /* Glassmorphism card */
   .glass-card {
     backdrop-filter: blur(var(--blur-xl, 24px));
     border: 1px solid hsl(var(--border) / 0.5);
@@ -107,7 +107,6 @@
     box-shadow: var(--shadow-card, 0 8px 32px rgba(0, 0, 0, 0.4));
   }
 
-  /* Modern glass card with enhanced effects */
   .glass-card-modern {
     backdrop-filter: blur(32px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -123,7 +122,6 @@
       0 0 40px rgba(147, 51, 234, 0.1);
   }
 
-  /* Story ring gradient */
   .story-ring {
     background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
     padding: 3px;
@@ -143,7 +141,6 @@
     border-radius: 50%;
   }
 
-  /* Neon glow effects */
   .glow-cyan {
     box-shadow: 0 0 30px hsla(187, 100%, 50%, 0.3);
   }
@@ -156,7 +153,6 @@
     box-shadow: 0 0 30px hsla(270, 80%, 60%, 0.3);
   }
 
-  /* Text gradients */
   .text-gradient {
     background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
     -webkit-background-clip: text;
@@ -164,7 +160,6 @@
     background-clip: text;
   }
 
-  /* Bottom nav active indicator */
   .nav-active {
     color: hsl(var(--primary));
     position: relative;
@@ -183,7 +178,6 @@
     box-shadow: 0 0 8px hsl(var(--primary));
   }
 
-  /* Music player progress */
   .progress-track {
     height: 0.25rem;
     background-color: hsl(var(--muted));
@@ -197,7 +191,6 @@
     background: var(--gradient-primary, linear-gradient(135deg, hsl(187 100% 50%), hsl(270 80% 60%), hsl(333 100% 50%)));
   }
 
-  /* Floating action button */
   .fab {
     position: fixed;
     bottom: 6rem;
@@ -219,7 +212,6 @@
     box-shadow: 0 6px 30px hsla(187, 100%, 50%, 0.5);
   }
 
-  /* Custom Scrollbar for horizontal scrolling */
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -231,7 +223,6 @@
 }
 
 @layer utilities {
-  /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -242,7 +233,6 @@
   }
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -261,7 +251,6 @@
   background-color: hsl(var(--muted-foreground) / 0.5);
 }
 
-/* Top progress bar styling */
 ::-webkit-progress-bar {
   background-color: #000000;
 }
@@ -274,54 +263,29 @@
   background-color: #000000;
 }
 
-/* Animations */
 @keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 @keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes scale-in {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes progress-bar {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
+  from { width: 0%; }
+  to { width: 100%; }
 }
 
 @keyframes music-bar {

@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Search, Bell } from 'lucide-react';
 
-export const Hero = () => {
-  const [activeTab, setActiveTab] = useState('For You');
+const TABS = [
+  { label: 'For You', to: '/' },
+  { label: 'Library', to: '/music' },
+  { label: 'Discover', to: '/search' },
+];
 
+export const Hero = () => {
   return (
     <div className="pt-6 pb-2 px-4">
       {/* Header - Mobile Only */}
@@ -29,29 +34,32 @@ export const Hero = () => {
 
       {/* Tabs */}
       <div className="flex items-center justify-between bg-white/5 rounded-full p-1 mb-8">
-        {['For You', 'Library', 'Discover'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ${
-              activeTab === tab
-                ? 'bg-cyan-400 text-cocoa-950 font-bold shadow-lg shadow-cyan-400/20'
-                : 'text-cream-100/60 hover:text-white'
-            }`}
+        {TABS.map((tab) => (
+          <NavLink
+            key={tab.label}
+            to={tab.to}
+            end={tab.to === '/'}
+            className={({ isActive }) =>
+              `flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-200 text-center ${
+                isActive
+                  ? 'bg-cyan-400 text-cocoa-950 font-bold shadow-lg shadow-cyan-400/20'
+                  : 'text-cream-100/60 hover:text-white'
+              }`
+            }
           >
-            {tab}
-          </button>
+            {tab.label}
+          </NavLink>
         ))}
       </div>
 
       {/* Banner Card */}
       <div className="relative w-full aspect-[2/1] rounded-3xl overflow-hidden group cursor-pointer shadow-lg shadow-black/40">
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-800">
-           {/* Sound wave visual simulation */}
-           <div className="absolute inset-0 opacity-60 mix-blend-screen bg-[url('https://picsum.photos/seed/wave/800/400')] bg-cover bg-center" />
-           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          {/* Sound wave visual simulation */}
+          <div className="absolute inset-0 opacity-60 mix-blend-screen bg-[url('https://picsum.photos/seed/wave/800/400')] bg-cover bg-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         </div>
-        
+
         <div className="absolute inset-0 p-6 flex flex-col justify-end items-start">
           <div className="flex items-center gap-2 mb-2">
             <div className="px-2 py-0.5 bg-cyan-400/10 backdrop-blur-md border border-cyan-400/20 rounded text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
@@ -60,7 +68,7 @@ export const Hero = () => {
           </div>
           <h2 className="text-2xl font-bold text-white mb-1 leading-tight">Discover New Sounds</h2>
           <p className="text-cream-100/70 text-xs font-medium">Fresh drops every week</p>
-          
+
           {/* Pagination Dots */}
           <div className="absolute bottom-6 right-6 flex gap-1.5">
             <div className="w-6 h-1.5 bg-cyan-400 rounded-full" />
