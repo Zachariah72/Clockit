@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video, PlayCircle
+  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,17 +81,25 @@ const genres = [
 // ───────────────────────────────────────────────────────────────────────────
 const Music: React.FC = () => {
   const { user } = useAuth();
-  const { currentTrack, play, pause, isPlaying, recentlyPlayed, likedTrackIDs, playTrack } = useMediaPlayer();
+  const { currentTrack, play, pause, isPlaying, recentlyPlayed, likedTrackIDs, playTrack, lessonBookmarks, completedLessons } = useMediaPlayer();
   const { toast } = useToast();
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // ── Active mode ───────────────────────────────────────────────────────────
   const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover" | "learn">("foryou");
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    if (mode === "learn") {
+      setActiveMode("learn");
+    }
+  }, [searchParams]);
 
   // ── Music/player state (from original Music.tsx) ─────────────────────────
   const [allSongs, setAllSongs] = useState<any[]>([]);
@@ -189,6 +197,17 @@ const Music: React.FC = () => {
       ]
     },
     {
+      id: "deep-focus",
+      disciplineId: "productivity",
+      title: "Deep Focus Mastery",
+      subtitle: "Elite productivity for the digital age",
+      image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&q=80",
+      level: "Intermediate",
+      modules: [
+        { id: "df-m1", title: "The Deep Work Method", lessons: ["df-l1"] }
+      ]
+    },
+    {
       id: "personal-finance",
       disciplineId: "business",
       title: "Wealth Mastery",
@@ -206,6 +225,7 @@ const Music: React.FC = () => {
     "fr-l2": { id: "fr-l2", title: "Greetings & Polite Phrases", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 450, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
     "fr-l3": { id: "fr-l3", title: "Ordering Coffee", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 380, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
     "st-l1": { id: "st-l1", title: "Control & Perspective", artist: "Clockit Learn", album: "Stoic Resilience", artwork: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=400&q=80", duration: 600, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+    "df-l1": { id: "df-l1", title: "Eliminating Friction", artist: "Clockit Learn", album: "Deep Focus Mastery", artwork: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&q=80", duration: 420, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
     "fn-l1": { id: "fn-l1", title: "Compound Interest", artist: "Clockit Learn", album: "Wealth Mastery", artwork: "https://images.unsplash.com/photo-1565514020179-026b92b84bb6?w=400&q=80", duration: 520, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
   };
 
@@ -518,20 +538,35 @@ const Music: React.FC = () => {
         ))}
       </div>
 
-      <div className="mt-8 p-6 rounded-3xl bg-muted/30 border border-border/50 text-center">
-        <h4 className="text-lg font-bold text-foreground mb-2">Continue Learning</h4>
-        <p className="text-sm text-muted-foreground mb-4">You're halfway through "Stoic Resilience"</p>
-        <Button
-          variant="default"
-          className="w-full rounded-full gap-2"
-          onClick={() => {
-            setSelectedDiscipline("history");
-            setSelectedPath("stoic-resilience");
-          }}
-        >
-          <Play className="w-4 h-4" /> Resume Now
-        </Button>
-      </div>
+      {(() => {
+        const lastLessonId = Object.keys(lessonBookmarks || {}).sort((a, b) => (lessonBookmarks[b] || 0) - (lessonBookmarks[a] || 0))[0];
+        const lastLesson = lastLessonId ? Object.values(allLessonsMap).find(l => l.id === lastLessonId) : null;
+        const lastPath = lastLesson ? learningPaths.find(p => p.modules.some(m => m.lessons.includes(lastLessonId))) : null;
+
+        return (
+          <div className="mt-8 p-6 rounded-3xl bg-muted/30 border border-border/50 text-center">
+            <h4 className="text-lg font-bold text-foreground mb-2">Continue Learning</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              {lastLesson ? `Resume "${lastLesson.title}"` : 'Pick up where you left off'}
+            </p>
+            <Button
+              variant="default"
+              className="w-full rounded-full gap-2"
+              onClick={() => {
+                if (lastPath) {
+                  setSelectedDiscipline(lastPath.disciplineId);
+                  setSelectedPath(lastPath.id);
+                } else {
+                  setSelectedDiscipline("history");
+                  setSelectedPath("stoic-resilience");
+                }
+              }}
+            >
+              <Play className="w-4 h-4" /> Resume Now
+            </Button>
+          </div>
+        );
+      })()}
     </motion.div>
   );
 

@@ -50,6 +50,7 @@ interface MediaPlayerState {
   cachedTracks: Set<string>;
   playbackRate: number;
   completedLessons: string[];
+  lessonBookmarks: Record<string, number>;
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
@@ -115,6 +116,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     cachedTracks: new Set<string>(),
     playbackRate: 1,
     completedLessons: JSON.parse(localStorage.getItem('completedLessons') || '[]'),
+    lessonBookmarks: JSON.parse(localStorage.getItem('lesson_bookmarks') || '{}'),
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -249,6 +251,23 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       }
     };
   }, []);
+
+  // Save progress periodically for Learn lessons
+  useEffect(() => {
+    if (state.currentTrack && audioRef.current && state.currentTrack.artist === "Clockit Learn" && state.isPlaying) {
+      const interval = setInterval(() => {
+        const currentTime = audioRef.current?.currentTime || 0;
+        if (currentTime > 1) { // Only bookmark after 1 second
+          setState(prev => {
+            const nextBookmarks = { ...prev.lessonBookmarks, [state.currentTrack!.id]: currentTime };
+            localStorage.setItem('lesson_bookmarks', JSON.stringify(nextBookmarks));
+            return { ...prev, lessonBookmarks: nextBookmarks };
+          });
+        }
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [state.currentTrack, state.isPlaying]);
 
   // Update audio volume and rate
   useEffect(() => {
@@ -500,7 +519,17 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       // Auto-play after loading
       audioRef.current.addEventListener('canplay', () => {
         if (audioRef.current) {
-          audioRef.current.play();
+          // Apply playback rate
+          audioRef.current.playbackRate = state.playbackRate;
+          
+          // Resume from bookmark if it's a learn track
+          if (track.artist === "Clockit Learn" && state.lessonBookmarks[track.id]) {
+            audioRef.current.currentTime = state.lessonBookmarks[track.id];
+          }
+          
+          audioRef.current.play().catch(error => {
+            console.error('Playback error:', error);
+          });
           setState(prev => ({ ...prev, isPlaying: true }));
         }
       }, { once: true });
