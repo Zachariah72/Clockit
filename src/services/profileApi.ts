@@ -118,6 +118,37 @@ export const profileApi = {
   getDrafts: (type: 'story' | 'reel' | 'post' | 'all' = 'all') =>
     api.get<DraftItem[]>(`/profile/drafts?type=${type}`),
 
+  // Draft management
+  createDraft: (data: {
+    contentType: 'story' | 'reel' | 'post';
+    title?: string;
+    description?: string;
+    content?: string;
+    mediaUrls?: string[];
+    thumbnailUrl?: string;
+    tags?: string[];
+    completionPercentage?: number;
+  }) =>
+    api.post<DraftItem>('/profile/drafts', data),
+
+  updateDraft: (draftId: string, data: {
+    title?: string;
+    description?: string;
+    content?: string;
+    mediaUrls?: string[];
+    thumbnailUrl?: string;
+    tags?: string[];
+    completionPercentage?: number;
+    isCompleted?: boolean;
+  }) =>
+    api.put<DraftItem>(`/profile/drafts/${draftId}`, data),
+
+  deleteDraft: (draftId: string) =>
+    api.delete<{ message: string }>(`/profile/drafts/${draftId}`),
+
+  publishDraft: (draftId: string, publishData?: any) =>
+    api.post<{ success: boolean; content: any }>(`/profile/drafts/${draftId}/publish`, publishData),
+
   // Music sharing
   shareMusic: (data: {
     songId: string;
