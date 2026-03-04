@@ -426,8 +426,8 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <div className="story-ring w-36 h-36">
-                    <div className="w-full h-full rounded-full bg-background p-1">
+                  <div className="relative w-28 h-28 rounded-full border-4 border-primary/30 shadow-lg">
+                    <div className="w-full h-full rounded-full bg-background overflow-hidden">
                       <img
                         src={profile?.avatar ? \`\${profile.avatar}?t=\${avatarUpdateTime}\` : avatar1}
                         alt="Profile"
