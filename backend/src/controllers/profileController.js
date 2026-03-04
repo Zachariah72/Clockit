@@ -670,6 +670,130 @@ exports.getDrafts = async (req, res) => {
   }
 };
 
+// Create draft
+exports.createDraft = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const userId = req.user.id;
+    const { contentType, title, description, content, mediaUrls, thumbnailUrl, tags, completionPercentage = 0 } = req.body;
+
+    const draft = new DraftContent({
+      userId,
+      contentType,
+      title,
+      description,
+      content,
+      mediaUrls: mediaUrls || [],
+      thumbnailUrl,
+      tags: tags || [],
+      completionPercentage,
+      isCompleted: false,
+      isPublished: false
+    });
+
+    await draft.save();
+    res.status(201).json(draft);
+  } catch (error) {
+    console.error('Error creating draft:', error);
+    res.status(500).json({ message: 'Failed to create draft' });
+  }
+};
+
+// Update draft
+exports.updateDraft = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const userId = req.user.id;
+    const { id: draftId } = req.params;
+    
+    const draft = await DraftContent.findOne({ _id: draftId, userId });
+    
+    if (!draft) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+
+    const { title, description, content, mediaUrls, thumbnailUrl, tags, completionPercentage, isCompleted } = req.body;
+
+    if (title !== undefined) draft.title = title;
+    if (description !== undefined) draft.description = description;
+    if (content !== undefined) draft.content = content;
+    if (mediaUrls !== undefined) draft.mediaUrls = mediaUrls;
+    if (thumbnailUrl !== undefined) draft.thumbnailUrl = thumbnailUrl;
+    if (tags !== undefined) draft.tags = tags;
+    if (completionPercentage !== undefined) draft.completionPercentage = completionPercentage;
+    if (isCompleted !== undefined) draft.isCompleted = isCompleted;
+
+    await draft.save();
+    res.json(draft);
+  } catch (error) {
+    console.error('Error updating draft:', error);
+    res.status(500).json({ message: 'Failed to update draft' });
+  }
+};
+
+// Delete draft
+exports.deleteDraft = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const userId = req.user.id;
+    const { id: draftId } = req.params;
+    
+    const draft = await DraftContent.findOne({ _id: draftId, userId });
+    
+    if (!draft) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+
+    await DraftContent.findByIdAndDelete(draftId);
+    res.json({ message: 'Draft deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting draft:', error);
+    res.status(500).json({ message: 'Failed to delete draft' });
+  }
+};
+
+// Publish draft
+exports.publishDraft = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const userId = req.user.id;
+    const { id: draftId } = req.params;
+    
+    const draft = await DraftContent.findOne({ _id: draftId, userId });
+    
+    if (!draft) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+
+    // Mark as published
+    draft.isPublished = true;
+    draft.isCompleted = true;
+    await draft.save();
+
+    // Return success - in a real app, this would create the actual content (video/story/post)
+    res.json({ 
+      success: true, 
+      message: 'Draft published successfully',
+      content: draft 
+    });
+  } catch (error) {
+    console.error('Error publishing draft:', error);
+    res.status(500).json({ message: 'Failed to publish draft' });
+  }
+};
+
 // Share music
 exports.shareMusic = async (req, res) => {
   try {

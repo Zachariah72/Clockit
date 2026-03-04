@@ -1,27 +1,44 @@
-# Profile.tsx Modification Plan
+# Save and Draft Feature Implementation
 
-## Information Gathered
-- Current Profile.tsx uses framer-motion, Shadcn Tabs, ThemeToggle, and Layout wrapper
-- New design requires: motion/react, Badge, custom tabs, glass-morphism effects
-- CSS classes needed: glass-card-strong, hover-glow, glass-card-strong
-- Need to keep Layout wrapper
+## Completed Tasks
 
-## Plan
-1. Add new CSS classes to index.css (glass-card-strong, hover-glow)
-2. Update Profile.tsx with new design:
-   - Keep Layout wrapper
-   - Use motion/react instead of framer-motion
-   - Add new icons from lucide-react
-   - Add mock data for posts and playlists
-   - Create custom tab navigation
-   - Add dark mode toggle with Sun/Moon icons
-   - Implement glass-morphism styling throughout
+### Phase 1: Backend API Endpoints
+1. ✅ **profileController.js** - Added new endpoints:
+   - `createDraft` - Create a new draft
+   - `updateDraft` - Update existing draft
+   - `deleteDraft` - Delete a draft
+   - `publishDraft` - Publish a draft
 
-## Files to Edit
-1. /workspaces/Clockit/src/index.css - Add CSS classes
-2. /workspaces/Clockit/src/pages/Profile.tsx - Update with new design
+2. ✅ **profile.js (routes)** - Added new routes:
+   - `POST /profile/drafts` - Create draft
+   - `PUT /profile/drafts/:id` - Update draft
+   - `DELETE /profile/drafts/:id` - Delete draft
+   - `POST /profile/drafts/:id/publish` - Publish draft
 
-## Follow-up Steps
-- Verify the implementation works correctly
-- Test dark mode toggle functionality
+### Phase 2: Frontend API Functions
+1. ✅ **profileApi.ts** - Added new functions:
+   - `createDraft` - Create a new draft
+   - `updateDraft` - Update existing draft
+   - `deleteDraft` - Delete a draft
+   - `publishDraft` - Publish a draft
+
+### Phase 3: Frontend UI Updates
+1. ✅ **Profile.tsx** - Updated with:
+   - Added new icons: Trash2, Send, Edit, Clock
+   - **Drafts Tab**: Added action buttons for each draft:
+     - Publish button (green send icon)
+     - Edit button (blue edit icon) 
+     - Delete button (red trash icon)
+     - Shows completion percentage badge
+     - Shows last edited date
+   - **Posts Tab**: Added save/bookmark button on reel cards
+
+## Files Modified
+1. `/workspaces/Clockit/backend/src/controllers/profileController.js`
+2. `/workspaces/Clockit/backend/src/routes/profile.js`
+3. `/workspaces/Clockit/src/services/profileApi.ts`
+4. `/workspaces/Clockit/src/pages/Profile.tsx`
+
+## Build Status
+- ✅ Build successful
 

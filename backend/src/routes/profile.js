@@ -52,6 +52,12 @@ router.get('/reels', profileController.getReels);
 router.get('/saved', profileController.getSavedContent);
 router.get('/drafts', profileController.getDrafts);
 
+// Draft management routes (authenticated)
+router.post('/drafts', auth, profileController.createDraft);
+router.put('/drafts/:id', auth, profileController.updateDraft);
+router.delete('/drafts/:id', auth, profileController.deleteDraft);
+router.post('/drafts/:id/publish', auth, profileController.publishDraft);
+
 // Stories, Followers, Following - require auth for own profile (MUST come before /:userId)
 router.get('/stories', auth, profileController.getStories);
 router.get('/followers', auth, profileController.getFollowers);

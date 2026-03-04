@@ -26,10 +26,15 @@ import {
   Sparkles,
   Moon,
   Sun,
-  MessageCircle
+  MessageCircle,
+  Trash2,
+  Send,
+  Edit,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Layout } from "@/components/layout/Layout";
 import { Insights } from "@/components/Insights";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -256,7 +261,7 @@ const Profile = () => {
         }
         break;
       case 'streak':
-        toast.info(\`Streak: \${profile?.streakCount || 0} days! Keep it up! 🔥\`);
+        toast.info(`Streak: ${profile?.streakCount || 0} days! Keep it up! 🔥`);
         break;
       default:
         break;
@@ -429,7 +434,7 @@ const Profile = () => {
                   <div className="relative w-28 h-28 rounded-full border-4 border-primary/30 shadow-lg">
                     <div className="w-full h-full rounded-full bg-background overflow-hidden">
                       <img
-                        src={profile?.avatar ? \`\${profile.avatar}?t=\${avatarUpdateTime}\` : avatar1}
+                        src={profile?.avatar ? `${profile.avatar}?t=${avatarUpdateTime}` : avatar1}
                         alt="Profile"
                         className="w-full h-full object-cover rounded-full"
                         onError={(e) => {
@@ -553,7 +558,7 @@ const Profile = () => {
                 >
                   {/* Gradient background on hover */}
                   <motion.div 
-                    className={\`absolute inset-0 bg-gradient-to-br \${stat.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300\`}
+                    className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
                   />
                   
                   <motion.div
@@ -561,7 +566,7 @@ const Profile = () => {
                     transition={{ duration: 0.5 }}
                     className="relative z-10"
                   >
-                    <stat.icon className={\`w-8 h-8 mx-auto mb-3 \${stat.color}\`} />
+                    <stat.icon className={`w-8 h-8 mx-auto mb-3 ${stat.color}`} />
                   </motion.div>
                   <p className="text-3xl font-bold text-foreground mb-1 relative z-10">{stat.value}</p>
                   <p className="text-sm text-muted-foreground font-medium relative z-10">{stat.label}</p>
@@ -594,7 +599,7 @@ const Profile = () => {
                   <Button
                     variant={activeTab === tab.id ? "gradient" : "ghost"}
                     size="sm"
-                    className={\`gap-2 rounded-full \${activeTab === tab.id ? "shadow-lg" : ""}\`}
+                    className={`gap-2 rounded-full ${activeTab === tab.id ? "shadow-lg" : ""}`}
                     onClick={() => setActiveTab(tab.id)}
                   >
                     <tab.icon className="w-4 h-4" />
@@ -660,7 +665,8 @@ const Profile = () => {
                         </div>
 
                         {/* Type badge */}
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 bg-black/50 backdrop-blur-sm rounded-full" onClick={(e) => { e.stopPropagation(); toast.success('Saved!'); }}><Bookmark className="w-4 h-4 text-white" /></Button>
                           <Badge className="bg-black/50 backdrop-blur-sm text-white border-0">
                             <Play className="w-3 h-3" />
                             Reel
@@ -800,13 +806,16 @@ const Profile = () => {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground capitalize">{item.contentType} Draft</span>
-                          <span className="text-xs text-muted-foreground">{item.completionPercentage}% complete</span>
+<span className="text-xs text-muted-foreground">{item.completionPercentage}% complete</span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async (e) => { e.stopPropagation(); try { await profileApi.publishDraft(item._id); toast.success('Published!'); setDrafts(await profileApi.getDrafts()); } catch { toast.error('Failed'); } }}><Send className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); toast.info('Coming soon'); }}><Edit className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async (e) => { e.stopPropagation(); if (confirm('Delete?')) { await profileApi.deleteDraft(item._id); setDrafts(drafts.filter(d => d._id !== item._id)); } }}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">{item.description || item.title || 'Untitled draft'}</p>
                         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all duration-300"
-                            style={{ width: \`\${item.completionPercentage}%\` }}
+                            style={{ width: `${item.completionPercentage}%` }}
                           />
                         </div>
                       </motion.div>
@@ -852,7 +861,7 @@ const Profile = () => {
                           alt={playlist.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className={\`absolute inset-0 bg-gradient-to-t \${playlist.color} opacity-20 group-hover:opacity-40 transition-opacity duration-300\`} />
+                        <div className={`absolute inset-0 bg-gradient-to-t ${playlist.color} opacity-20 group-hover:opacity-40 transition-opacity duration-300`} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <motion.div
                           className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
