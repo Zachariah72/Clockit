@@ -27,9 +27,10 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
-      "https://clockit-sage.vercel.app",
       "https://clockit-gvm2.onrender.com",
       "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
       "http://localhost:5173",
       "http://localhost:8080"
     ];

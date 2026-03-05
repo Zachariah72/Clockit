@@ -233,8 +233,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   }, []);
 
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'apple' | 'facebook') => {
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'apple' | 'facebook' | 'spotify') => {
     const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('--- Auth Redirection Debug ---');
+    console.log('Provider:', provider);
+    console.log('Window Origin:', window.location.origin);
+    console.log('Redirect URL:', redirectUrl);
+    console.log('------------------------------');
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {

@@ -126,7 +126,7 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
       toast.success("Track downloaded for offline listening!");
     }
   };
-
+console.log("playbackrate",playbackRate)
   const cyclePlaybackRate = () => {
     const rates = [1, 1.25, 1.5, 0.75];
     const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
