@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { icon: Home, label: 'Home', to: '/' },
   { icon: Search, label: 'Search', to: '/search' },
-  { icon: Compass, label: 'Explore', to: '/explore' },
+  { icon: Compass, label: 'Explore', to: '/explore' }, // Changed to '/explore'
   { icon: Film, label: 'Reels', to: '/reels' },
   { icon: MessageCircle, label: 'Messages', to: '/messages', badge: 4 },
   { icon: Heart, label: 'Notifications', to: '/notifications' },

@@ -93,7 +93,6 @@ const Music: React.FC = () => {
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
-
   useEffect(() => {
     const mode = searchParams.get("mode");
     if (mode === "learn") {

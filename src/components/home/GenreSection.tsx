@@ -16,7 +16,7 @@ export const GenreSection = () => {
     <section className="py-6 px-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-serif italic text-white">Vibes & Genres</h2>
+          <h2 className="text-2xl font-bold text-white">Vibes & Genres</h2>
           <p className="text-cream-100/60 text-sm">Explore the sounds of the continent</p>
         </div>
         <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">

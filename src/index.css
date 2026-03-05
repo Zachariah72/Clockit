@@ -2,12 +2,51 @@
 
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-cocoa-950: #05020a;
+  --color-cocoa-900: #0f0518;
+  --color-cocoa-800: #1a0b2e;
+  --color-clay-500: #ff00d4;
+  --color-clay-400: #9500ff;
+  --color-sage-900: #000000;
+  --color-sage-800: #0a0a0a;
+  --color-cream-50: #ffffff;
+  --color-cream-100: #e0e0e0;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
 @layer base {
   :root {
     color-scheme: dark;
     --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
     --font-serif: "Playfair Display", ui-serif, Georgia, serif;
-    
+
     --color-cocoa-950: #05020a;
     --color-cocoa-900: #0f0518;
     --color-cocoa-800: #1a0b2e;
@@ -17,7 +56,7 @@
     --color-sage-800: #0a0a0a;
     --color-cream-50: #ffffff;
     --color-cream-100: #e0e0e0;
-    
+
     --background: 225 25% 6%;
     --foreground: 210 40% 98%;
     --card: 225 25% 10%;
@@ -53,7 +92,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
+    background-image:
       radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
       radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
     pointer-events: none;
@@ -61,7 +100,7 @@
   }
 
   body {
-    background: 
+    background:
       radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
       radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
       linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
@@ -81,7 +120,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
+    background-image:
       radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
       radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
     pointer-events: none;
@@ -112,10 +151,9 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
     background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.05),
-      rgba(0, 0, 0, 0.1)
-    );
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.05),
+        rgba(0, 0, 0, 0.1));
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.3),
       0 0 0 1px rgba(255, 255, 255, 0.1) inset,
@@ -215,7 +253,7 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
+
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -264,31 +302,69 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scale-in {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes progress-bar {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
 }
 
 @keyframes music-bar {
-  0%, 100% { height: 20%; }
-  50% { height: 100%; }
+
+  0%,
+  100% {
+    height: 20%;
+  }
+
+  50% {
+    height: 100%;
+  }
 }

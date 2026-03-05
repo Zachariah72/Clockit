@@ -17,7 +17,7 @@ export const CommunitySection = () => {
   return (
     <section className="px-6 py-8 bg-gradient-to-b from-transparent to-cocoa-900/50">
       <div className="mb-8">
-        <h2 className="text-2xl font-serif italic text-teal-400 mb-2">The Village Square</h2>
+        <h2 className="text-2xl font-bold text-teal-400 mb-2">The Village Square</h2>
         <p className="text-cream-100/60 text-sm max-w-md">
           Join the conversation. Connect with the culture. Share your rhythm.
         </p>

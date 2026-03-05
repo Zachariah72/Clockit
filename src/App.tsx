@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
@@ -11,7 +11,7 @@ import { MediaNotification } from "@/components/media/MediaNotification";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { FullPlayer } from '@/components/music/FullPlayer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import heroMusicImage from '@/assets/hero-music.jpg';
 
 // Import pages from Zach's version
@@ -34,6 +34,8 @@ import Search from "./pages/Search";
 import CameraTest from "./pages/CameraTest";
 import Snap from "./pages/Snap";
 import NotFound from "./pages/NotFound";
+import Notifications from "./pages/Notifications";
+import Discover from "./pages/Discover";
 
 // Import your homepage components
 import { Hero } from '@/components/home/Hero';
@@ -101,14 +103,31 @@ const FEATURED_PLAYLISTS = [
 ];
 
 const HomePage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'forYou' | 'library' | 'discover'>('forYou');
   const { playTrack } = useMediaPlayer();
+
+  // Auto-switch to discover tab when coming from /explore
+  useEffect(() => {
+    if (location.state?.tab === 'discover') {
+      setActiveTab('discover');
+    }
+  }, [location]);
 
   const handlePlayTrending = (e: React.MouseEvent) => {
     e.stopPropagation();
     playTrack(TRENDING_TRACKS[0]);
     setIsPlayerOpen(true);
+  };
+
+  const handleTabChange = (tab: 'forYou' | 'library' | 'discover') => {
+    if (tab === 'discover') {
+      navigate('/discover');
+    } else {
+      setActiveTab(tab);
+    }
   };
 
   const FEED_POSTS = [
@@ -159,7 +178,7 @@ const HomePage = () => {
           {/* Navigation Tabs */}
           <div className="flex gap-3 px-4 md:px-0 mb-6 pt-4 md:pt-0">
             <button
-              onClick={() => setActiveTab('forYou')}
+              onClick={() => handleTabChange('forYou')}
               className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
                 activeTab === 'forYou'
                   ? 'bg-cyan-400 text-cocoa-950'
@@ -169,7 +188,7 @@ const HomePage = () => {
               For You
             </button>
             <button
-              onClick={() => setActiveTab('library')}
+              onClick={() => handleTabChange('library')}
               className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
                 activeTab === 'library'
                   ? 'bg-cyan-400 text-cocoa-950'
@@ -179,7 +198,7 @@ const HomePage = () => {
               Library
             </button>
             <button
-              onClick={() => setActiveTab('discover')}
+              onClick={() => handleTabChange('discover')}
               className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
                 activeTab === 'discover'
                   ? 'bg-cyan-400 text-cocoa-950'
@@ -190,88 +209,117 @@ const HomePage = () => {
             </button>
           </div>
 
-          {/* Trending Now Playlist */}
-          <div className="mb-8 px-4 md:px-0">
-            <FeaturedPlaylist 
-              title="Trending Now"
-              description="The hottest tracks right now"
-              image={heroMusicImage}
-              songCount={50}
-              onPlay={handlePlayTrending}
-            />
-          </div>
-
-          {/* Featured Playlists Section */}
-          <div className="mb-8 px-4 md:px-0">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Featured Playlists</h2>
-              <button className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
-                See all
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              {FEATURED_PLAYLISTS.map((playlist) => (
-                <FeaturedPlaylist
-                  key={playlist.id}
-                  title={playlist.title}
-                  description={playlist.description}
-                  image={playlist.image}
-                  songCount={playlist.songCount}
+          {/* FOR YOU TAB CONTENT */}
+          {activeTab === 'forYou' && (
+            <>
+              {/* Trending Now Playlist */}
+              <div className="mb-8 px-4 md:px-0">
+                <FeaturedPlaylist 
+                  title="Trending Now"
+                  description="The hottest tracks right now"
+                  image={heroMusicImage}
+                  songCount={50}
                   onPlay={handlePlayTrending}
                 />
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Stories (Snappy) */}
-          <div className="mb-8">
-            <SnappySection />
-          </div>
+              {/* Featured Playlists Section */}
+              <div className="mb-8 px-4 md:px-0">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-white">Featured Playlists</h2>
+                  <button className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                    See all
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {FEATURED_PLAYLISTS.map((playlist) => (
+                    <FeaturedPlaylist
+                      key={playlist.id}
+                      title={playlist.title}
+                      description={playlist.description}
+                      image={playlist.image}
+                      songCount={playlist.songCount}
+                      onPlay={handlePlayTrending}
+                    />
+                  ))}
+                </div>
+              </div>
 
-          {/* Main Feed Content */}
-          <div className="space-y-6">
-            {/* Feed Posts */}
+              {/* Stories (Snappy) */}
+              <div className="mb-8">
+                <SnappySection />
+              </div>
+
+              {/* Main Feed Content */}
+              <div className="space-y-6">
+                {/* Feed Posts */}
+                <div className="px-4 md:px-0">
+                  {FEED_POSTS.map(post => (
+                    <FeedPost
+                      key={post.id}
+                      username={post.username}
+                      userImage={post.userImage}
+                      location={post.location}
+                      image={post.image}
+                      likes={post.likes}
+                      caption={post.caption}
+                      comments={post.comments}
+                      timeAgo={post.timeAgo}
+                    />
+                  ))}
+                </div>
+
+                {/* Interspersed Sections */}
+                <div className="py-4">
+                  <GenreSection />
+                </div>
+
+                <div className="py-4">
+                  <h3 className="px-4 md:px-0 text-lg font-bold text-white mb-4">Clockit Reels</h3>
+                  <ReelsSection />
+                </div>
+
+                <CommunitySection />
+                
+                <div className="px-4 md:px-0 py-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-white">Listening Groups</h2>
+                    <button className="text-xs font-bold text-cyan-400 hover:text-cyan-300">See all</button>
+                  </div>
+                  <div className="h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cream-100/40 text-sm">
+                    Join a listening party...
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* LIBRARY TAB CONTENT */}
+          {activeTab === 'library' && (
             <div className="px-4 md:px-0">
-              {FEED_POSTS.map(post => (
-                <FeedPost
-                  key={post.id}
-                  username={post.username}
-                  userImage={post.userImage}
-                  location={post.location}
-                  image={post.image}
-                  likes={post.likes}
-                  caption={post.caption}
-                  comments={post.comments}
-                  timeAgo={post.timeAgo}
-                />
-              ))}
-            </div>
-
-            {/* Interspersed Sections */}
-            <div className="py-4">
-              <GenreSection />
-            </div>
-
-            <div className="py-4">
-              <h3 className="px-4 md:px-0 text-lg font-bold text-white mb-4">Clockit Reels</h3>
-              <ReelsSection />
-            </div>
-
-            <CommunitySection />
-            
-            <div className="px-4 md:px-0 py-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">Listening Groups</h2>
-                <button className="text-xs font-bold text-cyan-400 hover:text-cyan-300">See all</button>
-              </div>
-              <div className="h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cream-100/40 text-sm">
-                Join a listening party...
+              <h2 className="text-2xl font-bold text-white mb-6">Your Library</h2>
+              <div className="space-y-4">
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
+                  <p className="text-cream-100/60">Your saved playlists and albums will appear here</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Footer */}
+          {/* DISCOVER TAB CONTENT */}
+          {activeTab === 'discover' && (
+            <div className="px-4 md:px-0">
+              <h2 className="text-2xl font-bold text-white mb-6">Discover</h2>
+              <div className="space-y-4">
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
+                  <p className="text-cream-100/60">Explore new music and artists</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer - always visible */}
           <footer className="mt-8 pb-28 md:pb-8">
             <div className="mx-auto w-full max-w-[900px] px-4 border-t border-white/10 pt-6 text-center">
               <p className="text-xs text-cream-100/60 leading-7">
@@ -303,7 +351,10 @@ const HomePage = () => {
       </div>
 
       {/* Floating Action Button */}
-      <button className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform">
+      <button 
+        onClick={() => navigate('/snap')}
+        className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform"
+      >
         <Plus size={28} strokeWidth={2.5} />
       </button>
 
@@ -351,11 +402,11 @@ const App = () => (
                   <Route path="/offline-reels" element={<OfflineReels />} />
 
                   <Route path="/search" element={<Search />} />
-                  <Route path="/explore" element={<Navigate to="/search" replace />} />
-                  <Route path="/discover" element={<Navigate to="/search" replace />} />
+                  <Route path="/explore" element={<Discover />} />
+                  <Route path="/discover" element={<Discover />} />
                   <Route path="/for-you" element={<Navigate to="/" replace />} />
 
-                  <Route path="/notifications" element={<Navigate to="/settings" replace />} />
+                  <Route path="/notifications" element={<Notifications />} />
                   <Route path="/create" element={<Navigate to="/snap" replace />} />
 
                   <Route path="/camera-test" element={<CameraTest />} />
