@@ -539,7 +539,7 @@ const Music: React.FC = () => {
 
       {(() => {
         const lastLessonId = Object.keys(lessonBookmarks || {}).sort((a, b) => (lessonBookmarks[b] || 0) - (lessonBookmarks[a] || 0))[0];
-        const lastLesson = lastLessonId ? Object.values(allLessonsMap).find(l => l.id === lastLessonId) : null;
+        const lastLesson = lastLessonId ? Object.values(lessons).find(l => l.id === lastLessonId) : null;
         const lastPath = lastLesson ? learningPaths.find(p => p.modules.some(m => m.lessons.includes(lastLessonId))) : null;
 
         return (
