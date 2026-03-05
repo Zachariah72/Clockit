@@ -143,21 +143,6 @@ console.log("playbackrate",playbackRate)
     }
   };
 
-  const cyclePlaybackRate = () => {
-    const rates = [1, 1.25, 1.5, 0.75];
-    const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
-    setPlaybackRate(nextRate);
-    toast.info(`Playback speed: ${nextRate}x`);
-  };
-
-  const isCompleted = currentTrack ? completedLessons.includes(currentTrack.id) : false;
-
-  const handleToggleComplete = () => {
-    if (currentTrack) {
-      toggleLessonComplete(currentTrack.id);
-      toast.success(isCompleted ? "Lesson marked as incomplete" : "Lesson marked as complete!");
-    }
-  };
 
   if (!currentTrack) return null;
 
