@@ -31,7 +31,7 @@ export const CommunitySection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group"
+            className={`bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group ${index >= 3 ? 'hidden md:block' : 'block'}`}
           >
             <div className="flex justify-between items-start mb-2">
               <span className="text-xs font-mono text-teal-400 bg-teal-400/10 px-2 py-1 rounded-full">
