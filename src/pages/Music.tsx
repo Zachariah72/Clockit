@@ -317,18 +317,18 @@ const Music: React.FC = () => {
   };
 
   // ── Computed ──────────────────────────────────────────────────────────────
-    const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
+  const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
 
-    const displayedRecentSongs = recentlyPlayed.length > 0
-      ? recentlyPlayed.map(t => ({
-          id: t.id,
-          title: t.title,
-          artist: t.artist,
-          albumArt: t.artwork || album1,
-          duration: formatDuration(t.duration * 1000),
-          trackUrl: t.url
-        }))
-      : recentSongs;
+  const displayedRecentSongs = recentlyPlayed.length > 0
+    ? recentlyPlayed.map(t => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      albumArt: t.artwork || album1,
+      duration: formatDuration(t.duration * 1000),
+      trackUrl: t.url
+    }))
+    : recentSongs;
   const filteredSongs = allSongs.filter(song => {
     const matchesSearch = !debouncedSearchQuery.trim() ||
       song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
@@ -336,7 +336,7 @@ const Music: React.FC = () => {
     const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
     const matchesMood = selectedMood === "All" || song.mood === selectedMood;
     return matchesSearch && matchesGenre && matchesMood;
-});
+  });
 
   const getApiBaseUrl = () =>
     import.meta.env.PROD ? "https://clockit-gvm2.onrender.com" : "";
@@ -737,7 +737,7 @@ const Music: React.FC = () => {
           ))}
         </div>
       </div>
-  );
+    );
   };
 
   // ── PlaylistView ──────────────────────────────────────────────────────────
@@ -830,7 +830,7 @@ const Music: React.FC = () => {
 
               {/* Row 2 — Mode Switcher Pill */}
               <div className="flex gap-1 bg-muted/40 rounded-full p-1">
-                {[ 
+                {[
                   { key: "foryou", label: "For You" },
                   { key: "library", label: "Library" },
                   { key: "discover", label: "Discover" },
@@ -838,6 +838,7 @@ const Music: React.FC = () => {
                 ].map(mode => (
                   <button
                     key={mode.key}
+                    onClick={() => setActiveMode(mode.key as any)}
                     className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeMode === mode.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground"
@@ -884,7 +885,7 @@ const Music: React.FC = () => {
                           className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "bg-primary" : "bg-white/30 w-2"}`}
                           onClick={() => handleHeroIndicatorClick(i)}
                           tabIndex={-1}
-                          aria-label={`Go to slide ${i+1}`}
+                          aria-label={`Go to slide ${i + 1}`}
                         />
                       ))}
                     </div>
