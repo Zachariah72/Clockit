@@ -5,7 +5,8 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText
+  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText,
+  Globe, Brain, Briefcase, BookOpen, Mic2, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,12 +162,12 @@ const Music: React.FC = () => {
   ]);
 
   const [disciplines] = useState([
-    { id: "languages", title: "Languages", icon: "🌍", color: "from-blue-500/20 to-blue-600/20", borderColor: "border-blue-500/30", iconColor: "text-blue-500" },
-    { id: "personal-dev", title: "Personal Development", icon: "🧠", color: "from-purple-500/20 to-purple-600/20", borderColor: "border-purple-500/30", iconColor: "text-purple-500" },
-    { id: "business", title: "Business & Finance", icon: "💰", color: "from-green-500/20 to-green-600/20", borderColor: "border-green-500/30", iconColor: "text-green-500" },
-    { id: "history", title: "History & Philosophy", icon: "📚", color: "from-amber-500/20 to-amber-600/20", borderColor: "border-amber-500/30", iconColor: "text-amber-500" },
-    { id: "career", title: "Career & Communication", icon: "🎤", color: "from-red-500/20 to-red-600/20", borderColor: "border-red-500/30", iconColor: "text-red-500" },
-    { id: "wellness", title: "Wellness & Mental Clarity", icon: "🧘", color: "from-teal-500/20 to-teal-600/20", borderColor: "border-teal-500/30", iconColor: "text-teal-500" },
+    { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500/10 to-blue-600/10", borderColor: "border-blue-400/20", iconColor: "text-blue-400" },
+    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500/10 to-purple-600/10", borderColor: "border-purple-400/20", iconColor: "text-purple-400" },
+    { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500/10 to-emerald-600/10", borderColor: "border-emerald-400/20", iconColor: "text-emerald-400" },
+    { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500/10 to-amber-600/10", borderColor: "border-amber-400/20", iconColor: "text-amber-400" },
+    { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500/10 to-red-600/10", borderColor: "border-red-400/20", iconColor: "text-red-400" },
+    { id: "wellness", title: "Wellness & Mental Clarity", icon: Activity, color: "from-cyan-500/10 to-cyan-600/10", borderColor: "border-cyan-400/20", iconColor: "text-cyan-400" },
   ]);
 
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -568,11 +569,13 @@ const Music: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={() => setSelectedDiscipline(discipline.id)}
-            className={`relative flex flex-col items-center justify-center p-6 rounded-3xl bg-gradient-to-br ${discipline.color} border ${discipline.borderColor} backdrop-blur-sm group hover:scale-[1.02] transition-transform duration-300`}
+            className={`relative flex flex-col items-center justify-center p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-xl`}
           >
-            <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">{discipline.icon}</span>
-            <span className="text-sm font-bold text-foreground text-center line-clamp-2">{discipline.title}</span>
-            <div className={`absolute bottom-3 right-3 w-2 h-2 rounded-full ${discipline.iconColor.replace('text', 'bg')} opacity-40`} />
+            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${discipline.color} flex items-center justify-center mb-4 border ${discipline.borderColor} group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
+              <discipline.icon className={`w-7 h-7 ${discipline.iconColor}`} />
+            </div>
+            <span className="text-sm font-semibold text-foreground text-center line-clamp-1 group-hover:text-primary transition-colors">{discipline.title}</span>
+            <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${discipline.iconColor.replace('text', 'bg')} opacity-60`} />
           </motion.button>
         ))}
       </div>
