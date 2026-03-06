@@ -52,7 +52,8 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { FeedPost } from '@/components/home/FeedPost';
 import { MobileSuggestions } from '@/components/home/MobileSuggestions';
-import { Plus } from 'lucide-react';
+import { NotificationCenter, type Notification } from '@/components/notifications/NotificationCenter';
+import { Plus, Bell } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,65 @@ const HomePage = () => {
   // Dropdown state for + button
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Notification State
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: "1",
+      type: "new_release",
+      message: 'New album "Midnight Waves" by Synthwave is now available!',
+      isRead: false,
+      time: "2m ago",
+      sender: { name: "Synthwave", avatar: 'https://picsum.photos/seed/synthwave/100/100' },
+      targetUrl: "/music"
+    },
+    {
+      id: "2",
+      type: "follow",
+      message: "DJ Beats started following you",
+      isRead: false,
+      time: "15m ago",
+      sender: { name: "DJ Beats", avatar: 'https://picsum.photos/seed/dj/100/100' },
+      targetUrl: "/profile/dj-beats"
+    },
+    {
+      id: "3",
+      type: "like",
+      message: 'Someone liked your playlist "Chill Mix"',
+      isRead: true,
+      time: "1h ago",
+      sender: { name: "Sarah J", avatar: 'https://picsum.photos/seed/sarah/100/100' },
+      targetUrl: "/music"
+    },
+    {
+      id: "4",
+      type: "mention",
+      message: "MusicLover mentioned you in a comment",
+      isRead: false,
+      time: "2h ago",
+      sender: { name: "MusicLover", avatar: 'https://picsum.photos/seed/lover/100/100' },
+      targetUrl: "/chat"
+    },
+  ]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteAllNotifications = () => {
+    setNotifications([]);
+  };
 
   // Auto-switch to discover tab when coming from /explore
   useEffect(() => {
@@ -201,6 +261,22 @@ const HomePage = () => {
           {/* FOR YOU TAB CONTENT */}
           {activeTab === 'forYou' && (
             <>
+              {/* Mobile Header with Notifications */}
+              <div className="flex items-center justify-between mb-4 mt-2 px-4 md:hidden">
+                <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">
+                  Clockit
+                </span>
+                <button
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="relative p-2 text-white bg-white/10 hover:bg-white/20 transition-colors rounded-full backdrop-blur-md border border-white/10"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
+                  )}
+                </button>
+              </div>
+
               {/* Stories (Snappy) */}
               <div className="mb-8">
                 <SnappySection />
@@ -357,6 +433,17 @@ const HomePage = () => {
 
       {/* Desktop Right Panel */}
       <RightPanel />
+
+      <NotificationCenter
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+        onDelete={handleDeleteNotification}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onDeleteAll={handleDeleteAllNotifications}
+        onNavigate={(url) => navigate(url)}
+      />
     </div>
   );
 };
