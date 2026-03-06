@@ -51,6 +51,7 @@ import { MiniPlayer } from '@/components/layout/MiniPlayer';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { FeedPost } from '@/components/home/FeedPost';
+import { MobileSuggestions } from '@/components/home/MobileSuggestions';
 import { Plus } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -109,7 +110,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'forYou' | 'library' | 'discover'>('forYou');
-  const { playTrack } = useMediaPlayer();
+  const { playTrack, currentTrack } = useMediaPlayer();
   // Dropdown state for + button
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -200,6 +201,9 @@ const HomePage = () => {
           {/* FOR YOU TAB CONTENT */}
           {activeTab === 'forYou' && (
             <>
+              {/* Mobile Suggested Profiles */}
+              <MobileSuggestions />
+
               {/* Trending Now Playlist */}
               <div className="mb-8 px-4 md:px-0">
                 <FeaturedPlaylist
