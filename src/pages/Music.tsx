@@ -163,7 +163,7 @@ const Music: React.FC = () => {
 
   const [disciplines] = useState([
     { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500 to-cyan-500", image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=200&q=80" },
-    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500 to-indigo-500", image: "https://images.unsplash.com/photo-1544367567-[...]?w=200&q=80" },
+    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500 to-indigo-500", image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=200&q=80" },
     { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500 to-teal-500", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&q=80" },
     { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500 to-orange-500", image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=200&q=80" },
     { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500 to-pink-500", image: "https://images.unsplash.com/photo-1552581234-26160f608093?w=200&q=80" },
@@ -572,7 +572,7 @@ const Music: React.FC = () => {
             className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
           >
             <img
-              src={discipline.image.replace('[...]', '1126620')}
+              src={discipline.image}
               alt={discipline.title}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               referrerPolicy="no-referrer"
