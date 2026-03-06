@@ -1006,9 +1006,48 @@ const Music: React.FC = () => {
                   </div>
                 </motion.section>
 
-                {/* Listening Groups */}
+                {/* Recently Played */}
                 <motion.section
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  className="px-4 mt-7"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">Recently Played</h3>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-primary"
+                      onClick={() => { setActiveMode("library"); setLibraryTab("all"); }}>
+                      See all
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
+                      <motion.div
+                        key={song.id}
+                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 + index * 0.07 }}
+                      >
+                        <SongCard
+                          title={song.title} artist={song.artist} albumArt={song.albumArt}
+                          duration={song.duration}
+                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                          onClick={() => { /* Stay on current mode when playing */ }}
+                          trackUrl={song.trackUrl}
+                          playlist={displayedRecentSongs.map(s => ({
+                            id: s.id, title: s.title, artist: s.artist,
+                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
+                          }))}
+                          currentIndex={index}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.section>
+
+                {/* Listening Groups */}
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                   className="px-4 mt-7"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -1039,45 +1078,6 @@ const Music: React.FC = () => {
                         <p className="text-sm text-muted-foreground">No active groups found. Create one to start listening together!</p>
                       </div>
                     )}
-                  </div>
-                </motion.section>
-
-                {/* Recently Played */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                  className="px-4 mt-7"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-foreground">Recently Played</h3>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-primary"
-                      onClick={() => { setActiveMode("library"); setLibraryTab("all"); }}>
-                      See all
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
-                      <motion.div
-                        key={song.id}
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.07 }}
-                      >
-                        <SongCard
-                          title={song.title} artist={song.artist} albumArt={song.albumArt}
-                          duration={song.duration}
-                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
-                          onClick={() => { /* Stay on current mode when playing */ }}
-                          trackUrl={song.trackUrl}
-                          playlist={displayedRecentSongs.map(s => ({
-                            id: s.id, title: s.title, artist: s.artist,
-                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
-                          }))}
-                          currentIndex={index}
-                        />
-                      </motion.div>
-                    ))}
                   </div>
                 </motion.section>
 
