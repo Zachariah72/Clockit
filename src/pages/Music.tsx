@@ -281,10 +281,10 @@ const Music: React.FC = () => {
   ], []);
   // Ref to store timeout id
   const heroTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Debug: log heroImages and currentHeroIndex
+  // Debug: log heroSlides and currentHeroIndex
   useEffect(() => {
-    console.log("[DEBUG] heroImages:", heroImages);
-  }, [heroImages]);
+    console.log("[DEBUG] heroSlides:", heroSlides);
+  }, [heroSlides]);
   useEffect(() => {
     console.log("[DEBUG] currentHeroIndex:", currentHeroIndex);
   }, [currentHeroIndex]);

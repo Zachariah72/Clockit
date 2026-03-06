@@ -83,6 +83,7 @@
     font-family: var(--font-sans);
     min-height: 100vh;
     position: relative;
+    scrollbar-gutter: stable;
   }
 
   html::before {
