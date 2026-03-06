@@ -23,10 +23,10 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-cocoa-950/90 backdrop-blur-lg border-t border-white/5 px-6 py-4"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-2 py-3"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
     >
-      <div className="flex items-center justify-around max-w-md mx-auto">
+      <div className="flex items-center justify-between max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -34,10 +34,10 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200",
+                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px]",
                 isActive 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  ? "text-white bg-purple-600/30" 
+                  : "text-gray-400 hover:text-white hover:bg-white/10"
               )}
             >
               <motion.div
@@ -48,11 +48,11 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
-                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-500"
                   />
                 )}
               </motion.div>
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );
         })}
