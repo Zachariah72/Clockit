@@ -187,14 +187,14 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen text-cream-50">
+    <div className="min-h-screen text-cream-50 bg-black">
       <FullPlayer isOpen={isPlayerOpen} onClose={() => setIsPlayerOpen(false)} />
-      
+
       <Sidebar />
 
       <div className="flex justify-center md:pl-[244px] lg:pr-[320px]">
         <main className="w-full max-w-[630px] min-h-screen pb-32 md:py-8 px-0 md:px-4">
-          
+
           {/* Navigation Tabs moved to Music page */}
 
           {/* FOR YOU TAB CONTENT */}
@@ -202,7 +202,7 @@ const HomePage = () => {
             <>
               {/* Trending Now Playlist */}
               <div className="mb-8 px-4 md:px-0">
-                <FeaturedPlaylist 
+                <FeaturedPlaylist
                   title="Trending Now"
                   description="The hottest tracks right now"
                   image={heroMusicImage}
@@ -219,7 +219,7 @@ const HomePage = () => {
                     See all
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   {FEATURED_PLAYLISTS.map((playlist) => (
                     <FeaturedPlaylist
@@ -269,7 +269,7 @@ const HomePage = () => {
                 </div>
 
                 <CommunitySection />
-                
+
                 <div className="px-4 md:px-0 py-4">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-white">Listening Groups</h2>
@@ -306,28 +306,6 @@ const HomePage = () => {
               </div>
             </div>
           )}
-
-          {/* Footer - always visible */}
-          <footer className="mt-8 pb-28 md:pb-8">
-            <div className="mx-auto w-full max-w-[900px] px-4 border-t border-white/10 pt-6 text-center">
-              <p className="text-xs text-cream-100/60 leading-7">
-                <a href="#" className="hover:text-cream-50 transition-colors">About</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Help</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Press</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">API</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Jobs</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Privacy</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Terms</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Locations</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Language</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Meta Verified</a>
-              </p>
-
-              <p className="mt-4 text-xs text-cream-100/60 text-center">
-                © 2026 CLOCKIT FROM AFRICA
-              </p>
-            </div>
-          </footer>
 
           <div className="md:hidden max-w-2xl mx-auto fixed bottom-0 left-0 right-0 pointer-events-none z-50">
             <div className="pointer-events-auto">
