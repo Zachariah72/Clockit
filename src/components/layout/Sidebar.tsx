@@ -1,17 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Search, Compass, Film, MessageCircle, Heart, PlusSquare, Menu, Music2 } from 'lucide-react';
+import { Home, Camera, Music, Film, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Home', to: '/' },
-  { icon: Search, label: 'Search', to: '/search' },
-  { icon: Compass, label: 'Explore', to: '/explore' }, // Changed to '/explore'
+  { icon: Camera, label: 'Snappy', to: '/stories' },
+  { icon: Music, label: 'Music', to: '/music' },
   { icon: Film, label: 'Reels', to: '/reels' },
-  { icon: MessageCircle, label: 'Messages', to: '/messages', badge: 4 },
-  { icon: Heart, label: 'Notifications', to: '/notifications' },
-  { icon: PlusSquare, label: 'Create', to: '/create' },
-  { icon: Music2, label: 'Music', to: '/music' },
+  { icon: MessageCircle, label: 'Chat', to: '/chat' },
+  { icon: User, label: 'Profile', to: '/profile' },
 ];
 
 export const Sidebar = () => {
@@ -56,11 +54,6 @@ export const Sidebar = () => {
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
-                  {item.badge && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF00D4] rounded-full text-[10px] flex items-center justify-center text-white font-bold border border-cocoa-950">
-                      {item.badge}
-                    </span>
-                  )}
                 </div>
                 <span className="text-base">{item.label}</span>
               </>
@@ -68,14 +61,6 @@ export const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      {/* Bottom Actions */}
-      <div className="mt-auto pt-4 border-t border-white/10 space-y-4">
-        <button className="flex items-center gap-4 p-3 w-full rounded-xl hover:bg-white/5 text-cream-100/80 transition-colors">
-          <Menu size={24} />
-          <span className="text-base">More</span>
-        </button>
-      </div>
     </div>
   );
 };
