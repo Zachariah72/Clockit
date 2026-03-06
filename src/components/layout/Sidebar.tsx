@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 
 export const Sidebar = () => {
   return (
-    <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[244px] border-r border-white/10 bg-black p-4 z-50">
+    <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[244px] border-r border-border bg-background p-4 z-50 transition-colors duration-300">
       {/* Logo */}
       <div className="mb-8 px-4 pt-4">
         <div className="flex flex-col items-start">
@@ -26,7 +26,7 @@ export const Sidebar = () => {
               Clockit
             </span>
           </div>
-          <p className="text-cream-100/40 text-xs font-medium tracking-wide pl-10">Music & Discover</p>
+          <p className="text-muted-foreground text-xs font-medium tracking-wide pl-10">Music & Discover</p>
         </div>
       </div>
 
@@ -38,8 +38,8 @@ export const Sidebar = () => {
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-4 p-3 w-full rounded-xl transition-all duration-200 group hover:bg-white/5',
-                isActive ? 'font-bold text-white' : 'font-normal text-cream-100/80'
+                'flex items-center gap-4 p-3 w-full rounded-xl transition-all duration-200 group hover:bg-black/5 dark:hover:bg-white/5',
+                isActive ? 'font-bold text-foreground' : 'font-normal text-muted-foreground'
               )
             }
           >

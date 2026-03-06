@@ -266,7 +266,7 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen text-cream-50 bg-black">
+    <div className="min-h-screen text-foreground bg-background transition-colors duration-300">
       <FullPlayer isOpen={isPlayerOpen} onClose={() => setIsPlayerOpen(false)} />
 
       <Sidebar />

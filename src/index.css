@@ -57,6 +57,7 @@
     --color-cream-50: #ffffff;
     --color-cream-100: #e0e0e0;
 
+    /* Base theme: Dark */
     --background: 225 25% 6%;
     --foreground: 210 40% 98%;
     --card: 225 25% 10%;
@@ -79,6 +80,27 @@
     --radius: 1rem;
   }
 
+  /* White mode (light theme) */
+  :root.light {
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 225 25% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 225 25% 6%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 25% 6%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 333 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 225 20% 95%;
+    --muted-foreground: 215 20% 45%;
+    --accent: 270 80% 60%;
+    --accent-foreground: 0 0% 100%;
+    --border: 225 20% 90%;
+    --input: 225 20% 90%;
+  }
+
   html {
     font-family: var(--font-sans);
     min-height: 100vh;
@@ -94,24 +116,21 @@
     width: 100%;
     height: 100%;
     background-image:
-      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
-      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
+      radial-gradient(circle at 15% 25%, hsla(270, 100%, 50%, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, hsla(310, 100%, 50%, 0.15) 0%, transparent 50%);
     pointer-events: none;
     z-index: -1;
   }
 
   body {
-    background:
-      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
-      linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
-    background-attachment: fixed !important;
-    color: #ffffff !important;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body::before {

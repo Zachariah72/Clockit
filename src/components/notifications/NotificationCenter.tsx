@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Bell, Check, Trash2, MoreVertical, 
+import {
+  ArrowLeft, Bell, Check, Trash2, MoreVertical,
   UserPlus, Heart, MessageSquare, Star, Settings2,
   Filter, CheckSquare, Square
 } from "lucide-react";
@@ -60,7 +60,7 @@ export const NotificationCenter = ({
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -123,9 +123,9 @@ export const NotificationCenter = ({
               </div>
               <div className="flex items-center gap-1">
                 {filteredNotifications.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setIsEditMode(!isEditMode)}
                     className={isEditMode ? "text-primary bg-primary/10" : ""}
                   >
@@ -141,7 +141,7 @@ export const NotificationCenter = ({
             {/* Sub-header / Filters */}
             {!isEditMode ? (
               <div className="px-4 pb-2 flex gap-4">
-                <button 
+                <button
                   onClick={() => setFilter('all')}
                   className={`text-sm font-medium pb-2 transition-colors relative ${filter === 'all' ? 'text-primary' : 'text-muted-foreground'}`}
                 >
@@ -150,7 +150,7 @@ export const NotificationCenter = ({
                     <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                   )}
                 </button>
-                <button 
+                <button
                   onClick={() => setFilter('unread')}
                   className={`text-sm font-medium pb-2 transition-colors relative ${filter === 'unread' ? 'text-primary' : 'text-muted-foreground'}`}
                 >
@@ -162,12 +162,12 @@ export const NotificationCenter = ({
                 </button>
               </div>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="px-4 pb-3 flex items-center justify-between bg-primary/5 py-2"
               >
-                <button 
+                <button
                   onClick={handleSelectAll}
                   className="text-sm font-medium flex items-center gap-2"
                 >
@@ -212,11 +212,10 @@ export const NotificationCenter = ({
                         }
                       }
                     }}
-                    className={`group relative flex gap-4 p-4 rounded-2xl border transition-all duration-300 ${
-                      n.isRead 
-                        ? 'bg-muted/30 border-transparent' 
+                    className={`group relative flex gap-4 p-4 rounded-2xl border transition-all duration-300 ${n.isRead
+                        ? 'bg-muted/30 border-transparent'
                         : 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20 shadow-sm shadow-primary/5'
-                    } ${isEditMode ? 'pl-12' : ''} active:scale-[0.98] cursor-pointer`}
+                      } ${isEditMode ? 'pl-12' : ''} active:scale-[0.98] cursor-pointer`}
                   >
                     {/* Selection Checkbox */}
                     {isEditMode && (
@@ -232,9 +231,9 @@ export const NotificationCenter = ({
                     {/* Avatar / Icon */}
                     <div className="relative">
                       {n.sender?.avatar ? (
-                        <img 
-                          src={n.sender.avatar} 
-                          alt={n.sender.name} 
+                        <img
+                          src={n.sender.avatar}
+                          alt={n.sender.name}
                           className="w-12 h-12 rounded-full object-cover border-2 border-background shadow-sm"
                         />
                       ) : (
@@ -257,10 +256,11 @@ export const NotificationCenter = ({
                           {n.time}
                         </span>
                       </div>
-                      {/* The message field is intentionally not displayed anymore */}
-                      {/* <p className="text-sm text-foreground/90 leading-snug">
-                        {n.message}
-                      </p> */}
+                      {n.message && (
+                        <p className="text-sm text-foreground/90 leading-snug">
+                          {n.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Unread dot */}
@@ -270,7 +270,7 @@ export const NotificationCenter = ({
 
                     {/* Quick Delete (Non-edit mode) */}
                     {!isEditMode && (
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onDelete(n.id);
