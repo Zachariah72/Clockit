@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle } from "lucide-react";
+import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { StoryCircle } from "@/components/stories/StoryCircle";
@@ -244,7 +244,12 @@ const Stories = () => {
           className="sticky top-0 z-20 glass-card rounded-b-3xl"
         >
           <div className="flex items-center justify-between p-4">
-            <h1 className="text-2xl font-bold text-foreground">Stories</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">Stories</h1>
+            </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Button
