@@ -318,7 +318,11 @@ const HomePage = () => {
 
 
       {/* Floating Action Button with Custom Dropdown */}
-      <div ref={dropdownRef} className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50">
+      <div
+        ref={dropdownRef}
+        className={`fixed right-4 md:right-8 z-50 transition-all duration-300 ${currentTrack ? 'bottom-36 md:bottom-28' : 'bottom-24 md:bottom-8'
+          }`}
+      >
         <button
           onClick={() => setDropdownOpen((open) => !open)}
           className="w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform focus:outline-none"
