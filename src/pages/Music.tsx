@@ -162,12 +162,12 @@ const Music: React.FC = () => {
   ]);
 
   const [disciplines] = useState([
-    { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500/10 to-blue-600/10", borderColor: "border-blue-400/20", iconColor: "text-blue-400" },
-    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500/10 to-purple-600/10", borderColor: "border-purple-400/20", iconColor: "text-purple-400" },
-    { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500/10 to-emerald-600/10", borderColor: "border-emerald-400/20", iconColor: "text-emerald-400" },
-    { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500/10 to-amber-600/10", borderColor: "border-amber-400/20", iconColor: "text-amber-400" },
-    { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500/10 to-red-600/10", borderColor: "border-red-400/20", iconColor: "text-red-400" },
-    { id: "wellness", title: "Wellness & Mental Clarity", icon: Activity, color: "from-cyan-500/10 to-cyan-600/10", borderColor: "border-cyan-400/20", iconColor: "text-cyan-400" },
+    { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500 to-cyan-500", image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=200&q=80" },
+    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500 to-indigo-500", image: "https://images.unsplash.com/photo-1544367567-[...]?w=200&q=80" },
+    { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500 to-teal-500", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&q=80" },
+    { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500 to-orange-500", image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=200&q=80" },
+    { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500 to-pink-500", image: "https://images.unsplash.com/photo-1552581234-26160f608093?w=200&q=80" },
+    { id: "wellness", title: "Wellness & Mental Clarity", icon: Activity, color: "from-cyan-500 to-blue-500", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=200&q=80" },
   ]);
 
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -563,20 +563,26 @@ const Music: React.FC = () => {
     >
       <div className="grid grid-cols-2 gap-4">
         {disciplines.map((discipline, index) => (
-          <motion.button
+          <motion.div
             key={discipline.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={() => setSelectedDiscipline(discipline.id)}
-            className={`relative flex flex-col items-center justify-center p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-xl`}
+            className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
           >
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${discipline.color} flex items-center justify-center mb-4 border ${discipline.borderColor} group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
-              <discipline.icon className={`w-7 h-7 ${discipline.iconColor}`} />
+            <img
+              src={discipline.image.replace('[...]', '1126620')}
+              alt={discipline.title}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              referrerPolicy="no-referrer"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${discipline.color} opacity-80 mix-blend-multiply transition-opacity group-hover:opacity-90`} />
+            <div className="absolute inset-0 flex items-center justify-between p-4 mix-blend-plus-lighter">
+              <span className="font-bold text-lg text-white leading-tight break-words max-w-[80%] pr-2 shadow-black drop-shadow-md">{discipline.title}</span>
+              <MusicIcon size={16} className="text-white/80 shrink-0" />
             </div>
-            <span className="text-sm font-semibold text-foreground text-center line-clamp-1 group-hover:text-primary transition-colors">{discipline.title}</span>
-            <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${discipline.iconColor.replace('text', 'bg')} opacity-60`} />
-          </motion.button>
+          </motion.div>
         ))}
       </div>
 
