@@ -89,14 +89,7 @@ const Music: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   // ── Active mode ───────────────────────────────────────────────────────────
-<<<<<<< HEAD
-  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover">(() => {
-    console.log("[DEBUG] Initializing activeMode to 'foryou'");
-    return "foryou";
-  });
-=======
   const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover" | "learn">("foryou");
->>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -541,18 +534,6 @@ const Music: React.FC = () => {
   };
   const handleBackToMusic = () => setSelectedPlaylist(null);
 
-<<<<<<< HEAD
-  const handlePlayTrending = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const trendingSongs = allSongs.length > 0 ? allSongs : recentSongs;
-    if (trendingSongs.length > 0) {
-      playTrack(trendingSongs[0], trendingSongs, 0);
-      toast({
-        title: "Now Playing",
-        description: `Trending Now - ${trendingSongs[0].title}`,
-      });
-    }
-=======
   // ── LearnView ─────────────────────────────────────────────────────────────
   const LearnView = () => (
     <motion.div
@@ -756,8 +737,7 @@ const Music: React.FC = () => {
           ))}
         </div>
       </div>
-    );
->>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
+  );
   };
 
   // ── PlaylistView ──────────────────────────────────────────────────────────
@@ -858,18 +838,6 @@ const Music: React.FC = () => {
                 ].map(mode => (
                   <button
                     key={mode.key}
-                    onClick={() => {
-<<<<<<< HEAD
-                      console.log("[DEBUG] Mode switcher clicked:", mode.key);
-                      setActiveMode(mode.key as any);
-=======
-                      setActiveMode(mode.key as any);
-                      if (mode.key !== "learn") {
-                        setSelectedDiscipline(null);
-                        setSelectedPath(null);
-                      }
->>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
-                    }}
                     className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeMode === mode.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground"
@@ -966,17 +934,6 @@ const Music: React.FC = () => {
                           }}
                           onPlay={(e) => {
                             e.stopPropagation();
-<<<<<<< HEAD
-                            const playlistSongs = filteredSongs.length > 0 
-                              ? filteredSongs 
-                              : allSongs.slice(0, pl.songCount);
-                            if (playlistSongs.length > 0) {
-                              playTrack(playlistSongs[0], playlistSongs, 0);
-                              toast({
-                                title: "Now Playing",
-                                description: `${pl.title} - ${playlistSongs[0].title}`,
-                              });
-=======
 
                             const playlistSongs = filteredSongs.length > 0
                               ? filteredSongs
@@ -1018,7 +975,6 @@ const Music: React.FC = () => {
                                   description: `${pl.title} - ${formattedPlaylist[0].title}`,
                                 });
                               }
->>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
                             }
                           }}
                         />

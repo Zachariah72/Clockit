@@ -199,13 +199,8 @@ console.log("playbackrate",playbackRate)
                 className="w-full aspect-square max-w-sm relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 mb-8"
               >
                 {/* Glow Effect */}
-<<<<<<< HEAD
-                <div className="absolute inset-0 bg-black/60 rounded-3xl blur-2xl opacity-50 animate-pulse" />
-                <img 
-=======
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-50 animate-pulse" />
-                <img
->>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
+                <img 
                   src={currentTrack.artwork || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.title}`}
                   alt={currentTrack.title}
                   className="w-full h-full object-cover"
