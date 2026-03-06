@@ -16,7 +16,17 @@ interface FullPlayerProps {
 }
 
 export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerProps) => {
-  const { currentTrack, cacheTrack, isTrackCached, toggleLike, isLiked: checkLiked } = useMediaPlayer();
+  const {
+    currentTrack,
+    cacheTrack,
+    isTrackCached,
+    toggleLike,
+    isLiked: checkLiked,
+    playbackRate,
+    setPlaybackRate,
+    completedLessons,
+    toggleLessonComplete
+  } = useMediaPlayer();
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeTab, setActiveTab] = useState<'art' | 'lyrics'>('art');
   const [isFollowing, setIsFollowing] = useState(false);
@@ -34,7 +44,7 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
   // Check if following artist when track changes
   useEffect(() => {
     if (!currentTrack?.artist) return;
-    
+
     const checkFollow = async () => {
       try {
         const artistId = encodeURIComponent(currentTrack.artist);
@@ -44,18 +54,18 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
         setIsFollowing(false);
       }
     };
-    
+
     checkFollow();
   }, [currentTrack?.artist]);
 
   const handleFollowToggle = async () => {
     if (!currentTrack?.artist || isFollowingLoading) return;
-    
+
     setIsFollowingLoading(true);
     try {
       const artistId = encodeURIComponent(currentTrack.artist);
       const artistImage = currentTrack.artwork || '';
-      
+
       if (isFollowing) {
         await unfollowArtist(artistId);
         setIsFollowing(false);
@@ -81,7 +91,7 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
 
   const handleShare = async () => {
     if (!currentTrack) return;
-    
+
     const shareData = {
       title: currentTrack.title,
       text: `Check out "${currentTrack.title}" by ${currentTrack.artist} on Clockit!`,
@@ -108,7 +118,7 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
 
   const handleDownload = () => {
     if (!currentTrack) return;
-    
+
     if (isTrackCached(currentTrack.id)) {
       toast.info("Track already downloaded for offline listening!");
     } else {
@@ -116,6 +126,23 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
       toast.success("Track downloaded for offline listening!");
     }
   };
+console.log("playbackrate",playbackRate)
+  const cyclePlaybackRate = () => {
+    const rates = [1, 1.25, 1.5, 0.75];
+    const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+    setPlaybackRate(nextRate);
+    toast.info(`Playback speed: ${nextRate}x`);
+  };
+
+  const isCompleted = currentTrack ? completedLessons.includes(currentTrack.id) : false;
+
+  const handleToggleComplete = () => {
+    if (currentTrack) {
+      toggleLessonComplete(currentTrack.id);
+      toast.success(isCompleted ? "Lesson marked as incomplete" : "Lesson marked as complete!");
+    }
+  };
+
 
   if (!currentTrack) return null;
 
@@ -166,14 +193,19 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
           {/* Content */}
           <div className="relative flex-1 flex flex-col items-center px-8 overflow-y-auto z-10">
             {activeTab === 'art' ? (
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="w-full aspect-square max-w-sm relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 mb-8"
               >
                 {/* Glow Effect */}
+<<<<<<< HEAD
                 <div className="absolute inset-0 bg-black/60 rounded-3xl blur-2xl opacity-50 animate-pulse" />
                 <img 
+=======
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-50 animate-pulse" />
+                <img
+>>>>>>> 3895e88116a8bdd2c17b75733b630e4d2213f33e
                   src={currentTrack.artwork || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.title}`}
                   alt={currentTrack.title}
                   className="w-full h-full object-cover"
@@ -225,7 +257,7 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
 
             {/* Bottom Actions */}
             <div className="flex gap-6 mb-8">
-              <button 
+              <button
                 onClick={() => setActiveTab('lyrics')}
                 className={cn(
                   "p-3 rounded-full transition-colors",
@@ -234,19 +266,19 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
               >
                 <Mic2 size={20} />
               </button>
-              <button 
+              <button
                 onClick={handleShare}
                 className="p-3 rounded-full text-cream-100/40 hover:text-white transition-colors"
               >
                 <Share2 size={20} />
               </button>
-              <button 
+              <button
                 onClick={handleAddToPlaylist}
                 className="p-3 rounded-full text-cream-100/40 hover:text-white transition-colors"
               >
                 <Plus size={20} />
               </button>
-              <button 
+              <button
                 onClick={handleDownload}
                 className={cn(
                   "p-3 rounded-full transition-colors",
@@ -254,6 +286,21 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
                 )}
               >
                 <Download size={20} />
+              </button>
+              <button
+                onClick={cyclePlaybackRate}
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-clay-400 hover:bg-white/10 transition-colors"
+              >
+                {playbackRate}x
+              </button>
+              <button
+                onClick={handleToggleComplete}
+                className={cn(
+                  "p-3 rounded-full transition-colors",
+                  isCompleted ? "bg-green-500/20 text-green-400" : "text-cream-100/40 hover:text-white"
+                )}
+              >
+                <Check size={20} className={cn(isCompleted && "fill-current")} />
               </button>
             </div>
 
@@ -271,11 +318,10 @@ export const FullPlayer = ({ isOpen, onClose, open, onOpenChange }: FullPlayerPr
                     <button
                       onClick={handleFollowToggle}
                       disabled={isFollowingLoading}
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        isFollowing
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${isFollowing
                           ? 'bg-white/10 text-clay-400 hover:bg-white/20'
                           : 'bg-clay-500 text-white hover:bg-clay-600'
-                      }`}
+                        }`}
                     >
                       {isFollowing ? (
                         <>
