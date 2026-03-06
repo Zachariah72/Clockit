@@ -201,8 +201,10 @@ const HomePage = () => {
           {/* FOR YOU TAB CONTENT */}
           {activeTab === 'forYou' && (
             <>
-              {/* Mobile Suggested Profiles */}
-              <MobileSuggestions />
+              {/* Stories (Snappy) */}
+              <div className="mb-8">
+                <SnappySection />
+              </div>
 
               {/* Trending Now Playlist */}
               <div className="mb-8 px-4 md:px-0">
@@ -238,9 +240,9 @@ const HomePage = () => {
                 </div>
               </div>
 
-              {/* Stories (Snappy) */}
+              {/* Mobile Suggested Profiles */}
               <div className="mb-8">
-                <SnappySection />
+                <MobileSuggestions />
               </div>
 
               {/* Main Feed Content */}
