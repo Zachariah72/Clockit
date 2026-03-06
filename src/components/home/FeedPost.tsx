@@ -20,13 +20,13 @@ interface PostProps {
   timeAgo: string;
 }
 
-export const FeedPost: React.FC<PostProps> = ({ 
-  username, 
-  userImage, 
-  location, 
-  image, 
-  caption, 
-  timeAgo 
+export const FeedPost: React.FC<PostProps> = ({
+  username,
+  userImage,
+  location,
+  image,
+  caption,
+  timeAgo
 }) => {
   // Lightweight auto-advancing image slider for homepage visual
   const sliderImages = [
@@ -43,10 +43,10 @@ export const FeedPost: React.FC<PostProps> = ({
     }, 3000); // Change image every 3 seconds
     return () => clearInterval(interval);
   }, [sliderImages.length]);
-  
+
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
-  
+
   // Mock comments data
   const [comments, setComments] = useState<Comment[]>([
     {
@@ -89,9 +89,9 @@ export const FeedPost: React.FC<PostProps> = ({
       {/* Post Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <img 
-            src={userImage} 
-            alt={username} 
+          <img
+            src={userImage}
+            alt={username}
             className="w-10 h-10 rounded-full object-cover border-2 border-purple-500/30"
             referrerPolicy="no-referrer"
           />
@@ -125,33 +125,33 @@ export const FeedPost: React.FC<PostProps> = ({
       </div>
 
       {/* Action Buttons - Click, Skip, Echo, Relay, Bave */}
-      <div className="flex items-center justify-center gap-4 mb-4 bg-gradient-to-r from-[#1a0022] to-[#2a0033] py-3 rounded-xl">
+      <div className="flex items-center gap-3 mb-4 bg-gradient-to-r from-[#1a0022] to-[#2a0033] p-3 rounded-xl overflow-x-auto scrollbar-hide snap-x md:justify-center">
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors"
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
           onClick={handleClick}
         >
           Click
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors"
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
           onClick={handleSkip}
         >
           Skip
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors"
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
           onClick={handleEcho}
         >
           Echo
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors"
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
           onClick={handleRelay}
         >
           Relay
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors"
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
           onClick={handleBave}
         >
           Bave
@@ -165,7 +165,7 @@ export const FeedPost: React.FC<PostProps> = ({
       </div>
 
       {/* Comments Dropdown Toggle */}
-      <button 
+      <button
         onClick={() => setShowComments(!showComments)}
         className="flex items-center gap-2 text-cream-100/60 hover:text-white transition-colors mb-2"
       >
