@@ -20,12 +20,16 @@ const globalSearch = async (req, res) => {
 
     // Search based on type or search all
     if (type === 'users' || !type) {
+      // Reserved usernames that should not appear in search results
+      const reservedUsernames = ['home', 'snappy', 'music', 'reels', 'chat', 'profile', 'live', 'search', 'settings', 'notifications'];
+      
       const users = await User.find({
         $or: [
           { username: searchRegex },
           { display_name: searchRegex },
           { email: searchRegex }
-        ]
+        ],
+        username: { $nin: reservedUsernames } // Exclude reserved usernames
       })
       .select('username display_name avatar_url bio followers_count')
       .limit(parseInt(limit))
