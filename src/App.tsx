@@ -122,39 +122,57 @@ const HomePage = () => {
     {
       id: "1",
       type: "new_release",
-      message: 'New album "Midnight Waves" by Synthwave is now available!',
+      message: 'New album "Made In Lagos" by Wizkid is now available!',
       isRead: false,
       time: "2m ago",
-      sender: { name: "Synthwave", avatar: 'https://picsum.photos/seed/synthwave/100/100' },
+      sender: { name: "Wizkid", avatar: 'https://picsum.photos/seed/wizkid/100/100' },
       targetUrl: "/music"
     },
     {
       id: "2",
       type: "follow",
-      message: "DJ Beats started following you",
+      message: "Tyla started following you",
       isRead: false,
       time: "15m ago",
-      sender: { name: "DJ Beats", avatar: 'https://picsum.photos/seed/dj/100/100' },
-      targetUrl: "/profile/dj-beats"
+      sender: { name: "Tyla", avatar: 'https://picsum.photos/seed/tyla/100/100' },
+      targetUrl: "/profile/tyla"
     },
     {
       id: "3",
       type: "like",
-      message: 'Someone liked your playlist "Chill Mix"',
-      isRead: true,
+      message: 'Davido liked your Reel',
+      isRead: false,
       time: "1h ago",
-      sender: { name: "Sarah J", avatar: 'https://picsum.photos/seed/sarah/100/100' },
-      targetUrl: "/music"
+      sender: { name: "Davido", avatar: 'https://picsum.photos/seed/davido/100/100' },
+      targetUrl: "/reels"
     },
     {
       id: "4",
       type: "mention",
-      message: "MusicLover mentioned you in a comment",
-      isRead: false,
+      message: "Black Coffee mentioned you in a comment",
+      isRead: true,
       time: "2h ago",
-      sender: { name: "MusicLover", avatar: 'https://picsum.photos/seed/lover/100/100' },
+      sender: { name: "Black Coffee", avatar: 'https://picsum.photos/seed/coffee/100/100' },
       targetUrl: "/chat"
     },
+    {
+      id: "5",
+      type: "system",
+      message: "Welcome to Clockit! Start exploring new music.",
+      isRead: true,
+      time: "1d ago",
+      sender: { name: "Clockit", avatar: 'https://picsum.photos/seed/clockit/100/100' },
+      targetUrl: "/"
+    },
+    {
+      id: "6",
+      type: "system",
+      message: "Your playlist 'Afrobeat Energy' was successfully synced offline.",
+      isRead: false,
+      time: "2d ago",
+      sender: { name: "System", avatar: 'https://picsum.photos/seed/system/100/100' },
+      targetUrl: "/downloads"
+    }
   ]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -272,7 +290,9 @@ const HomePage = () => {
                 >
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-black">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
                   )}
                 </button>
               </div>
