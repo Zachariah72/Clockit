@@ -257,8 +257,27 @@ const Music: React.FC = () => {
   };
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  // Images for the hero carousel
-  const heroImages = useMemo(() => [heroMusic, album1, album2, album3], []);
+  // Content for the hero carousel
+  const heroSlides = useMemo(() => [
+    {
+      image: heroMusic,
+      title: "Trending Music",
+      subtitle: "The hottest tracks right now",
+      label: "50 songs"
+    },
+    {
+      image: album1,
+      title: "Listening Groups",
+      subtitle: "Listen together with friends",
+      label: "Join now"
+    },
+    {
+      image: album2,
+      title: "Clockit Learn",
+      subtitle: "Master skills with audio lessons",
+      label: "Start learning"
+    }
+  ], []);
   // Ref to store timeout id
   const heroTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Debug: log heroImages and currentHeroIndex
@@ -271,7 +290,7 @@ const Music: React.FC = () => {
 
   // Auto-slide effect for hero carousel using setTimeout (avoids closure issues)
   useEffect(() => {
-    console.log("[DEBUG] useEffect: activeMode=", activeMode, "currentHeroIndex=", currentHeroIndex, "heroImages.length=", heroImages.length);
+    console.log("[DEBUG] useEffect: activeMode=", activeMode, "currentHeroIndex=", currentHeroIndex, "heroSlides.length=", heroSlides.length);
     if (activeMode !== "foryou") {
       if (heroTimeoutRef.current) {
         clearTimeout(heroTimeoutRef.current);
@@ -283,7 +302,7 @@ const Music: React.FC = () => {
     function scheduleNext() {
       heroTimeoutRef.current = setTimeout(() => {
         setCurrentHeroIndex(prev => {
-          const next = (prev + 1) % heroImages.length;
+          const next = (prev + 1) % heroSlides.length;
           console.log("[DEBUG] Advancing hero slide:", prev, "->", next);
           return next;
         });
@@ -296,7 +315,7 @@ const Music: React.FC = () => {
         heroTimeoutRef.current = null;
       }
     };
-  }, [activeMode, currentHeroIndex, heroImages.length]);
+  }, [activeMode, currentHeroIndex, heroSlides.length]);
 
   // Reset timeout when user manually changes slide
   const handleHeroIndicatorClick = (i: number) => {
@@ -867,19 +886,19 @@ const Music: React.FC = () => {
                 <div className="mb-8 px-4 md:px-0">
                   <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg select-none">
                     <img
-                      src={heroImages[currentHeroIndex]}
-                      alt="Trending Now"
+                      src={heroSlides[currentHeroIndex].image}
+                      alt={heroSlides[currentHeroIndex].title}
                       className="w-full h-full object-cover transition-all duration-700 pointer-events-none"
                     />
                     {/* Overlay text */}
                     <div className="absolute left-6 bottom-8 text-left pointer-events-none">
-                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">Trending Now</h2>
-                      <p className="text-sm text-white/80 drop-shadow">The hottest tracks right now</p>
-                      <span className="text-xs text-white/60">50 songs</span>
+                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">{heroSlides[currentHeroIndex].title}</h2>
+                      <p className="text-sm text-white/80 drop-shadow">{heroSlides[currentHeroIndex].subtitle}</p>
+                      <span className="text-xs text-white/60">{heroSlides[currentHeroIndex].label}</span>
                     </div>
                     {/* Carousel indicators */}
                     <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
-                      {heroImages.map((_, i) => (
+                      {heroSlides.map((_, i) => (
                         <button
                           key={i}
                           className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "bg-primary" : "bg-white/30 w-2"}`}
