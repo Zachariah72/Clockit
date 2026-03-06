@@ -12,7 +12,7 @@ interface LayoutProps {
 export const Layout = ({ children, hidePlayer, hideBottomNav }: LayoutProps) => {
   const location = useLocation();
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-black transition-colors duration-300">
       <main className="pb-20">{children}</main>
 
       {!hideBottomNav && location.pathname !== '/downloads' && location.pathname !== '/podcasts' && (

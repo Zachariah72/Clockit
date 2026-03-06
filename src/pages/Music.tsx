@@ -88,7 +88,10 @@ const Music: React.FC = () => {
   const location = useLocation();
 
   // ── Active mode ───────────────────────────────────────────────────────────
-  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover">("foryou");
+  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover">(() => {
+    console.log("[DEBUG] Initializing activeMode to 'foryou'");
+    return "foryou";
+  });
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
 
   // ── Music/player state (from original Music.tsx) ─────────────────────────
@@ -182,57 +185,56 @@ const Music: React.FC = () => {
   };
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const heroBanners = useMemo(() => [
-    {
-      id: "discover",
-      title: "Discover New Sounds",
-      subtitle: "Fresh drops every week",
-      tag: "Trending Now",
-      icon: TrendingUp,
-      image: heroMusic,
-      gradient: "from-cyan-950/90 via-cyan-900/40 to-transparent"
-    },
-    {
-      id: "groups",
-      title: "Join Listening Groups",
-      subtitle: "Experience music together",
-      tag: "Live Now",
-      icon: Radio,
-      image: album3,
-      gradient: "from-purple-900/90 via-purple-900/40 to-transparent"
-    }
-  ], []);
-
+  // Images for the hero carousel
+  const heroImages = useMemo(() => [heroMusic, album1, album2, album3], []);
+  // Ref to store timeout id
+  const heroTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Debug: log heroImages and currentHeroIndex
   useEffect(() => {
-    if (activeMode !== "foryou") return;
-    const interval = setInterval(() => {
-      setCurrentHeroIndex(prev => (prev + 1) % heroBanners.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [activeMode, heroBanners]);
+    console.log("[DEBUG] heroImages:", heroImages);
+  }, [heroImages]);
+  useEffect(() => {
+    console.log("[DEBUG] currentHeroIndex:", currentHeroIndex);
+  }, [currentHeroIndex]);
 
-  // ── Computed ──────────────────────────────────────────────────────────────
-  const filteredSongs = allSongs.filter(song => {
-    const matchesSearch = !debouncedSearchQuery.trim() ||
-      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
-    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
-    return matchesSearch && matchesGenre && matchesMood;
-  });
+  // Auto-slide effect for hero carousel using setTimeout (avoids closure issues)
+  useEffect(() => {
+    console.log("[DEBUG] useEffect: activeMode=", activeMode, "currentHeroIndex=", currentHeroIndex, "heroImages.length=", heroImages.length);
+    if (activeMode !== "foryou") {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+      return;
+    }
+    if (heroTimeoutRef.current) clearTimeout(heroTimeoutRef.current);
+    function scheduleNext() {
+      heroTimeoutRef.current = setTimeout(() => {
+        setCurrentHeroIndex(prev => {
+          const next = (prev + 1) % heroImages.length;
+          console.log("[DEBUG] Advancing hero slide:", prev, "->", next);
+          return next;
+        });
+      }, 4000);
+    }
+    scheduleNext();
+    return () => {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+    };
+  }, [activeMode, currentHeroIndex, heroImages.length]);
 
-  const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
+  // Reset timeout when user manually changes slide
+  const handleHeroIndicatorClick = (i: number) => {
+    setCurrentHeroIndex(i);
+    if (heroTimeoutRef.current) {
+      clearTimeout(heroTimeoutRef.current);
+      heroTimeoutRef.current = null;
+    }
+  };
 
-  const displayedRecentSongs = recentlyPlayed.length > 0
-    ? recentlyPlayed.map(t => ({
-      id: t.id,
-      title: t.title,
-      artist: t.artist,
-      albumArt: t.artwork || album1,
-      duration: formatDuration(t.duration * 1000),
-      trackUrl: t.url
-    }))
-    : recentSongs;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatDuration = (ms: number) => {
@@ -241,6 +243,28 @@ const Music: React.FC = () => {
     const s = total % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
+
+  // ── Computed ──────────────────────────────────────────────────────────────
+    const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
+
+    const displayedRecentSongs = recentlyPlayed.length > 0
+      ? recentlyPlayed.map(t => ({
+          id: t.id,
+          title: t.title,
+          artist: t.artist,
+          albumArt: t.artwork || album1,
+          duration: formatDuration(t.duration * 1000),
+          trackUrl: t.url
+        }))
+      : recentSongs;
+  const filteredSongs = allSongs.filter(song => {
+    const matchesSearch = !debouncedSearchQuery.trim() ||
+      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
+    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
+    return matchesSearch && matchesGenre && matchesMood;
+});
 
   const getApiBaseUrl = () =>
     import.meta.env.PROD ? "https://clockit-gvm2.onrender.com" : "";
@@ -438,10 +462,22 @@ const Music: React.FC = () => {
   };
   const handleBackToMusic = () => setSelectedPlaylist(null);
 
+  const handlePlayTrending = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const trendingSongs = allSongs.length > 0 ? allSongs : recentSongs;
+    if (trendingSongs.length > 0) {
+      playTrack(trendingSongs[0], trendingSongs, 0);
+      toast({
+        title: "Now Playing",
+        description: `Trending Now - ${trendingSongs[0].title}`,
+      });
+    }
+  };
+
   // ── PlaylistView ──────────────────────────────────────────────────────────
   const PlaylistView = ({ playlist }: { playlist: any }) => (
     <Layout hideBottomNav={!showBottomNav}>
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="min-h-screen bg-black overflow-x-hidden">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -501,7 +537,7 @@ const Music: React.FC = () => {
       {selectedPlaylist ? (
         <PlaylistView playlist={selectedPlaylist} />
       ) : (
-        <div className="min-h-screen bg-background transition-colors duration-500 overflow-x-hidden">
+        <div className="min-h-screen bg-black transition-colors duration-500 overflow-x-hidden">
 
           {/* ══════════════════════ HEADER ══════════════════════ */}
           <motion.header
@@ -528,14 +564,17 @@ const Music: React.FC = () => {
 
               {/* Row 2 — Mode Switcher Pill */}
               <div className="flex gap-1 bg-muted/40 rounded-full p-1">
-                {[
+                {[ 
                   { key: "foryou", label: "For You" },
                   { key: "library", label: "Library" },
                   { key: "discover", label: "Discover" },
                 ].map(mode => (
                   <button
                     key={mode.key}
-                    onClick={() => setActiveMode(mode.key as any)}
+                    onClick={() => {
+                      console.log("[DEBUG] Mode switcher clicked:", mode.key);
+                      setActiveMode(mode.key as any);
+                    }}
                     className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeMode === mode.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground"
@@ -560,73 +599,34 @@ const Music: React.FC = () => {
                 transition={{ duration: 0.25 }}
               >
 
-                {/* Hero Carousel */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  className="px-4 mt-6"
-                >
-                  <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden shadow-2xl">
-                    <AnimatePresence mode="wait">
-                      {heroBanners.map((banner, index) => index === currentHeroIndex && (
-                        <motion.div
-                          key={banner.id}
-                          initial={{ x: 300, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          exit={{ x: -300, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                          className="absolute inset-0"
-                        >
-                          <img
-                            src={banner.image}
-                            alt={banner.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
-                          <div className="absolute bottom-5 left-5 right-5">
-                            <motion.span
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.2 }}
-                              className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold flex items-center gap-1 w-fit mb-2"
-                            >
-                              {(() => {
-                                const Icon = banner.icon;
-                                return Icon ? <Icon className="w-3 h-3" /> : null;
-                              })()}
-                              {banner.tag}
-                            </motion.span>
-                            <motion.h2
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.3 }}
-                              className="text-2xl font-black text-white leading-tight"
-                            >
-                              {banner.title}
-                            </motion.h2>
-                            <motion.p
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.4 }}
-                              className="text-sm text-white/70 mt-1 font-medium"
-                            >
-                              {banner.subtitle}
-                            </motion.p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-
-                    {/* Indicators */}
-                    <div className="absolute bottom-3 right-5 flex gap-1.5 z-10">
-                      {heroBanners.map((_, i) => (
-                        <div
+                {/* Hero Carousel - Image Only, No Play Button */}
+                <div className="mb-8 px-4 md:px-0">
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg select-none">
+                    <img
+                      src={heroImages[currentHeroIndex]}
+                      alt="Trending Now"
+                      className="w-full h-full object-cover transition-all duration-700 pointer-events-none"
+                    />
+                    {/* Overlay text */}
+                    <div className="absolute left-6 bottom-8 text-left pointer-events-none">
+                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">Trending Now</h2>
+                      <p className="text-sm text-white/80 drop-shadow">The hottest tracks right now</p>
+                      <span className="text-xs text-white/60">50 songs</span>
+                    </div>
+                    {/* Carousel indicators */}
+                    <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+                      {heroImages.map((_, i) => (
+                        <button
                           key={i}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "w-6 bg-primary" : "w-1.5 bg-white/30"}`}
+                          className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "bg-primary" : "bg-white/30 w-2"}`}
+                          onClick={() => handleHeroIndicatorClick(i)}
+                          tabIndex={-1}
+                          aria-label={`Go to slide ${i+1}`}
                         />
                       ))}
                     </div>
                   </div>
-                </motion.section>
+                </div>
 
                 {/* Featured Playlists */}
                 <motion.section
@@ -671,47 +671,15 @@ const Music: React.FC = () => {
                           }}
                           onPlay={(e) => {
                             e.stopPropagation();
-                            
                             const playlistSongs = filteredSongs.length > 0 
                               ? filteredSongs 
                               : allSongs.slice(0, pl.songCount);
-                            
                             if (playlistSongs.length > 0) {
-                              const formattedPlaylist = playlistSongs.map((song: any) => {
-                                let durationInSeconds = 180;
-                                
-                                if (typeof song.duration === 'string') {
-                                  const parts = song.duration.split(':');
-                                  if (parts.length === 2) {
-                                    const mins = parseInt(parts[0], 10);
-                                    const secs = parseInt(parts[1], 10);
-                                    if (!isNaN(mins) && !isNaN(secs)) {
-                                      durationInSeconds = mins * 60 + secs;
-                                    }
-                                  }
-                                } else if (typeof song.duration === 'number') {
-                                  durationInSeconds = song.duration;
-                                }
-
-                                return {
-                                  id: song.id,
-                                  title: song.title,
-                                  artist: song.artist,
-                                  album: pl.title,
-                                  duration: durationInSeconds,
-                                  url: song.trackUrl,
-                                  artwork: song.albumArt,
-                                };
+                              playTrack(playlistSongs[0], playlistSongs, 0);
+                              toast({
+                                title: "Now Playing",
+                                description: `${pl.title} - ${playlistSongs[0].title}`,
                               });
-                              
-                              // Play the first track from the formatted playlist
-                              if (formattedPlaylist.length > 0) {
-                                playTrack(formattedPlaylist[0], formattedPlaylist, 0);
-                                toast({
-                                  title: "Now Playing",
-                                  description: `${pl.title} - ${formattedPlaylist[0].title}`,
-                                });
-                              }
                             }
                           }}
                         />

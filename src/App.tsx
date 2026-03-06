@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+// removed duplicate useRef import
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
@@ -11,7 +12,7 @@ import { MediaNotification } from "@/components/media/MediaNotification";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { FullPlayer } from '@/components/music/FullPlayer';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import heroMusicImage from '@/assets/hero-music.jpg';
 
 // Import pages from Zach's version
@@ -35,6 +36,7 @@ import CameraTest from "./pages/CameraTest";
 import Snap from "./pages/Snap";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
+import Post from "./pages/Post";
 import Discover from "./pages/Discover";
 
 // Import your homepage components
@@ -108,6 +110,9 @@ const HomePage = () => {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'forYou' | 'library' | 'discover'>('forYou');
   const { playTrack } = useMediaPlayer();
+  // Dropdown state for + button
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Auto-switch to discover tab when coming from /explore
   useEffect(() => {
@@ -115,6 +120,21 @@ const HomePage = () => {
       setActiveTab('discover');
     }
   }, [location]);
+
+  // Dropdown outside click handler
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
 
   const handlePlayTrending = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -175,39 +195,7 @@ const HomePage = () => {
       <div className="flex justify-center md:pl-[244px] lg:pr-[320px]">
         <main className="w-full max-w-[630px] min-h-screen pb-32 md:py-8 px-0 md:px-4">
           
-          {/* Navigation Tabs */}
-          <div className="flex gap-3 px-4 md:px-0 mb-6 pt-4 md:pt-0">
-            <button
-              onClick={() => handleTabChange('forYou')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'forYou'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              For You
-            </button>
-            <button
-              onClick={() => handleTabChange('library')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'library'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Library
-            </button>
-            <button
-              onClick={() => handleTabChange('discover')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'discover'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Discover
-            </button>
-          </div>
+          {/* Navigation Tabs moved to Music page */}
 
           {/* FOR YOU TAB CONTENT */}
           {activeTab === 'forYou' && (
@@ -350,13 +338,34 @@ const HomePage = () => {
         </main>
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => navigate('/snap')}
-        className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform"
-      >
-        <Plus size={28} strokeWidth={2.5} />
-      </button>
+
+      {/* Floating Action Button with Custom Dropdown */}
+      <div ref={dropdownRef} className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50">
+        <button
+          onClick={() => setDropdownOpen((open) => !open)}
+          className="w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform focus:outline-none"
+          aria-label="Add"
+        >
+          <Plus size={28} strokeWidth={2.5} />
+        </button>
+        {dropdownOpen && (
+          <div className="absolute bottom-16 right-0 w-44 bg-white dark:bg-cocoa-950 rounded-xl shadow-xl py-2 flex flex-col gap-0.5 animate-fade-in z-50 border border-cyan-100/30">
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 rounded-t-xl transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/post'); }}
+            >Post</button>
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/stories'); }}
+            >Stories</button>
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 rounded-b-xl transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/reels'); }}
+            >Reels</button>
+          </div>
+        )}
+      </div>
+
 
       {/* Desktop Right Panel */}
       <RightPanel />
@@ -407,6 +416,7 @@ const App = () => (
                   <Route path="/for-you" element={<Navigate to="/" replace />} />
 
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/post" element={<Post />} />
                   <Route path="/create" element={<Navigate to="/snap" replace />} />
 
                   <Route path="/camera-test" element={<CameraTest />} />

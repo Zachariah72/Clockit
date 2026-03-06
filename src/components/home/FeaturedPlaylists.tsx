@@ -40,16 +40,7 @@ export const FeaturedPlaylist: React.FC<FeaturedPlaylistProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
         {/* Play button */}
-        <motion.button
-          initial={{ scale: 0.8, opacity: 0 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={handlePlayClick}
-          className="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center shadow-lg transition-all z-10"
-        >
-          <Play className="w-5 h-5 text-primary-foreground ml-0.5" fill="currentColor" />
-        </motion.button>
+
 
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-4">

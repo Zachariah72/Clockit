@@ -16,7 +16,7 @@ const NAV_ITEMS = [
 
 export const Sidebar = () => {
   return (
-    <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[244px] border-r border-white/10 bg-cocoa-950 p-4 z-50">
+    <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[244px] border-r border-white/10 bg-black p-4 z-50">
       {/* Logo */}
       <div className="mb-8 px-4 pt-4">
         <div className="flex flex-col items-start">

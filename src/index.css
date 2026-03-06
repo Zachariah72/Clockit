@@ -61,11 +61,7 @@
   }
 
   body {
-    background: 
-      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
-      linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
-    background-attachment: fixed !important;
+    background: #000 !important;
     color: #ffffff !important;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -74,19 +70,7 @@
     position: relative;
   }
 
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
-      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
+  /* body::before gradient removed for solid black background */
 
   #root {
     position: relative;
