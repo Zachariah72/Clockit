@@ -11,6 +11,39 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getApiUrl } from '@/utils/api';
 import { leaveListeningGroup, deleteListeningGroup } from '@/services/api';
 
+// --- Types ---
+interface PopulatedUser {
+  _id: string;
+  username: string;
+  avatar_url?: string;
+}
+
+interface GroupMessage {
+  senderId: string | PopulatedUser;
+  message: string;
+  timestamp: number;
+}
+
+interface SyncState {
+  currentTrack: any; // Kept as any because track objects vary heavily from MediaPlayerContext
+  isPlaying: boolean;
+  currentTime: number;
+  lastSyncAt: number;
+  updatedBy?: string;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  creator: string | PopulatedUser;
+  members: (string | PopulatedUser)[];
+  currentTrack?: any;
+  isPlaying?: boolean;
+  currentTime?: number;
+  lastSyncAt?: number;
+}
+
 export default function GroupDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -18,10 +51,10 @@ export default function GroupDetail() {
   const { user } = useAuth();
   const { currentTrack, isPlaying, currentTime, playTrack, play, pause } = useMediaPlayer();
 
-  const [group, setGroup] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [syncState, setSyncState] = useState<any>(null);
+  const [syncState, setSyncState] = useState<SyncState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,19 +101,19 @@ export default function GroupDetail() {
     socket.emit('join_listening_group', id);
     socket.emit('request_group_sync', id);
 
-    const onSyncStateUpdated = (data: any) => {
+    const onSyncStateUpdated = (data: SyncState) => {
       setSyncState(data);
     };
 
-    const onMemberJoined = (data: any) => {
+    const onMemberJoined = (data: { userId: string }) => {
       console.log('Member joined:', data);
     };
 
-    const onNewGroupMessage = (data: any) => {
+    const onNewGroupMessage = (data: GroupMessage) => {
       setMessages(prev => [...prev, data]);
     };
 
-    const onSyncRequested = (data: any) => {
+    const onSyncRequested = (data: { requesterId: string }) => {
       if (currentTrack) {
         socket.emit('update_sync_state', {
           groupId: id,
