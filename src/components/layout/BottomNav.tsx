@@ -23,7 +23,7 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border px-2 py-3 transition-colors duration-300"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-2 py-3"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
     >
       <div className="flex items-center justify-between max-w-md mx-auto">
@@ -36,8 +36,8 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
               className={cn(
                 "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px]",
                 isActive
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-foreground/10"
+                  ? "text-white bg-purple-600/30"
+                  : "text-gray-400 hover:text-white hover:bg-white/10"
               )}
             >
               <motion.div

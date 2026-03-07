@@ -29,7 +29,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
     <div className="fixed bottom-[84px] left-4 right-4 z-40">
       <div
         onClick={onExpand}
-        className="bg-card/95 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-xl border border-border cursor-pointer hover:bg-card transition-colors"
+        className="bg-cocoa-800/95 backdrop-blur-md rounded-2xl p-2 pr-4 flex items-center gap-3 shadow-xl shadow-black/40 border border-white/5 cursor-pointer hover:bg-cocoa-800 transition-colors"
       >
         <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative">
           <img
@@ -38,33 +38,33 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
             className={`w-full h-full object-cover ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-black/10 rounded-xl ring-1 ring-inset ring-foreground/10" />
+          <div className="absolute inset-0 bg-black/10 rounded-xl ring-1 ring-inset ring-white/10" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-foreground truncate">{currentTrack.title}</h4>
-          <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
+          <h4 className="text-sm font-medium text-white truncate">{currentTrack.title}</h4>
+          <p className="text-xs text-cream-100/60 truncate">{currentTrack.artist}</p>
         </div>
 
         <div className="flex items-center gap-3">
           {isPlaying && (
             <div className="flex gap-1 h-4 items-center">
-              <div className="w-1 bg-primary rounded-full animate-pulse h-2" />
-              <div className="w-1 bg-primary rounded-full animate-pulse h-4" style={{ animationDelay: '150ms' }} />
-              <div className="w-1 bg-primary rounded-full animate-pulse h-3" style={{ animationDelay: '300ms' }} />
+              <div className="w-1 bg-cyan-400 rounded-full animate-pulse h-2" />
+              <div className="w-1 bg-cyan-400 rounded-full animate-pulse h-4" style={{ animationDelay: '150ms' }} />
+              <div className="w-1 bg-cyan-400 rounded-full animate-pulse h-3" style={{ animationDelay: '300ms' }} />
             </div>
           )}
 
           <button
             onClick={handleStop}
-            className="text-muted-foreground hover:text-destructive p-1.5 rounded-full hover:bg-background/80 transition-colors"
+            className="text-cream-100/60 hover:text-red-400 p-1.5 rounded-full hover:bg-white/10 transition-colors"
           >
             <X size={18} />
           </button>
 
           <button
             onClick={handlePlayPause}
-            className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+            className="w-10 h-10 bg-white text-cocoa-950 rounded-full flex items-center justify-center hover:scale-105 transition-transform"
           >
             {isPlaying ? (
               <Pause size={20} fill="currentColor" />
