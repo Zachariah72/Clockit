@@ -139,11 +139,35 @@ const updatePlayback = async (req, res) => {
     }
 };
 
+// Delete a group
+const deleteGroup = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const group = await ListeningGroup.findById(req.params.id);
+
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        // Only the creator can delete the group
+        if (group.creator.toString() !== userId) {
+            return res.status(403).json({ message: 'Only the creator can delete this group' });
+        }
+
+        await ListeningGroup.findByIdAndDelete(group._id);
+        res.json({ message: 'Group deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting group:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     createGroup,
     getJoinedGroups,
     discoverGroups,
     joinGroup,
     leaveGroup,
-    updatePlayback
+    updatePlayback,
+    deleteGroup
 };

@@ -262,6 +262,24 @@ export const leaveListeningGroup = async (groupId: string) => {
   return api.post(`/listening-groups/${groupId}/leave`);
 };
 
+export const deleteListeningGroup = async (groupId: string) => {
+  return api.delete(`/listening-groups/${groupId}`);
+};
+
 export const updateGroupPlayback = async (groupId: string, data: { currentTrack: any; isPlaying: boolean; currentTime: number }) => {
   return api.put(`/listening-groups/${groupId}/playback`, data);
+};
+
+// --- Podcasts API Bindings ---
+
+export const getFeaturedPodcasts = async () => {
+  return api.get('/podcasts/featured');
+};
+
+export const getPodcastCategories = async () => {
+  return api.get('/podcasts/categories');
+};
+
+export const searchPodcasts = async (query: string) => {
+  return api.get(`/podcasts/search?q=${encodeURIComponent(query)}`);
 };
