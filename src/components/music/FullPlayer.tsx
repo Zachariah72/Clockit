@@ -157,7 +157,7 @@ console.log("playbackrate",playbackRate)
           className="fixed inset-0 z-[60] bg-gradient-to-b from-cocoa-900 to-cocoa-950 flex flex-col overflow-hidden"
         >
           {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-blue-900/20" />
+          <div className="absolute inset-0 bg-black/90" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
           {/* Floating Orbs */}
@@ -200,7 +200,7 @@ console.log("playbackrate",playbackRate)
               >
                 {/* Glow Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-50 animate-pulse" />
-                <img
+                <img 
                   src={currentTrack.artwork || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentTrack.title}`}
                   alt={currentTrack.title}
                   className="w-full h-full object-cover"

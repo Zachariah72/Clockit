@@ -27,7 +27,7 @@ export const MiniPlayer = () => {
         <div className="relative mx-auto max-w-lg overflow-hidden">
           {/* Animated Background Gradient */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 rounded-2xl blur-xl"
+            className="absolute inset-0 bg-black/80 rounded-2xl blur-xl"
             animate={{
               background: [
                 "linear-gradient(45deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2), rgba(59, 130, 246, 0.2))",

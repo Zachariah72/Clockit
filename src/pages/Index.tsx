@@ -21,6 +21,7 @@ import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 
+// ...existing code...
 const recentSongs = [
   { id: "1", title: "Neon Dreams", artist: "Midnight Wave", albumArt: album1, duration: "3:42", trackUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" },
   { id: "2", title: "Sunset Drive", artist: "Synthwave", albumArt: album2, duration: "4:15", trackUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" },
@@ -35,11 +36,18 @@ const featuredPlaylists = [
 ];
 
 const Index = () => {
+    // --- FIX: Add missing handler functions ---
+    const handleStoryClick = () => {};
+    const handleSeeAllPlaylists = () => {};
+    const handlePlaylistClick = (playlistId: string) => {};
+    const handleStoryViewed = () => {};
   const navigate = useNavigate();
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  // Trending Now carousel index
+  const [currentTrendingIndex, setCurrentTrendingIndex] = useState(0);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,146 +77,102 @@ const Index = () => {
     { id: "6", username: "Lily", image: avatar3, hasUnseenStory: true },
   ]);
 
-  // Fetch stories from API on mount
-  useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
-
-        const apiUrl = getApiUrl();
-        const response = await fetch(`${apiUrl}/stories`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Transform backend story format to frontend format
-          const transformedStories = data.map((story: any) => ({
-            id: story._id,
-            username: story.userId?.username || 'Unknown User',
-            image: story.mediaUrl,
-            hasUnseenStory: true
-          }));
-          setStories(transformedStories);
-        }
-      } catch (error) {
-        console.error('Error fetching stories:', error);
-      }
-    };
-
-    fetchStories();
-  }, []);
-
-  const handleStoryClick = (storyId: string) => {
-    setSelectedStoryId(storyId);
-    setIsStoryViewerOpen(true);
-  };
-
-  const handlePlaylistClick = (playlistId: string) => {
-    // Navigate to music page with specific playlist
-    navigate('/music', { state: { selectedPlaylist: playlistId } });
-  };
-
-  const handleSeeAllPlaylists = () => {
-    // Navigate to recently played/all songs view
-    navigate('/music', { state: { showRecentlyPlayed: true } });
-  };
-
-  const handleSongClick = (song: typeof recentSongs[0], index: number) => {
-    // Navigate to music page and start playing this song
-    navigate('/music', {
-      state: {
-        playSong: song,
-        songIndex: index,
-        fromHome: true
-      }
-    });
-  };
-
-  const handleStoryViewed = (storyId: string) => {
-    // Mark the story as viewed (seen)
-    setStories(prevStories =>
-      prevStories.map(story =>
-        story.id === storyId
-          ? { ...story, hasUnseenStory: false }
-          : story
-      )
-    );
-  };
-
-  const handleStoryCreated = async (media: File, type: 'image' | 'video') => {
+// Fetch stories from API on mount
+useEffect(() => {
+  const fetchStories = async () => {
     try {
-      setIsStoryCreatorOpen(false);
-      console.log('Starting story creation, media:', media.name, 'type:', type);
-      
-      // Step 1: Upload the media file
-      const formData = new FormData();
-      formData.append('media', media);
-      
       const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
       const apiUrl = getApiUrl();
-      console.log('Uploading to:', `${apiUrl}/stories/upload`);
-      
-      const uploadResponse = await fetch(`${apiUrl}/stories/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      
-      console.log('Upload response status:', uploadResponse.status);
-      
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        console.error('Upload error:', errorData);
-        throw new Error('Failed to upload media');
-      }
-      
-      const uploadData = await uploadResponse.json();
-      console.log('Upload successful, data:', uploadData);
-      
-      // Step 2: Create the story
-      const createResponse = await fetch(`${apiUrl}/stories`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/stories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: '',
-          mediaUrl: uploadData.mediaUrl,
-          type,
-          isPrivate: false
-        })
+        }
       });
-      
-      console.log('Create story response status:', createResponse.status);
-      
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json();
-        console.error('Create story error:', errorData);
-        throw new Error('Failed to create story');
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend story format to frontend format
+        const transformedStories = data.map((story: any) => ({
+          id: story._id,
+          username: story.userId?.username || 'Unknown User',
+          image: story.mediaUrl,
+          hasUnseenStory: true
+        }));
+        setStories(transformedStories);
       }
-      
-      const newStory = await createResponse.json();
-      console.log('Story created, data:', newStory);
-      
-      // Update the stories list with the new story
-      // Format: id, username, image, hasUnseenStory (matching StoriesRow interface)
-      setStories(prev => [{
-        id: newStory._id,
-        username: 'You',
-        image: newStory.mediaUrl,
-        hasUnseenStory: true
-      }, ...prev]);
-      
-      alert('Story created successfully!');
     } catch (error) {
+      console.error('Error fetching stories:', error);
+    }
+  };
+
+  fetchStories();
+}, []);
+
+const handleStorySubmit = async (FormData: any) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const apiUrl = getApiUrl();
+    console.log('Uploading to:', `${apiUrl}/stories/upload`);
+    
+    const uploadResponse = await fetch(`${apiUrl}/stories/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: FormData
+    });
+    
+    console.log('Upload response status:', uploadResponse.status);
+    
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      console.error('Upload error:', errorData);
+      throw new Error('Failed to upload media');
+    }
+    
+    const uploadData = await uploadResponse.json();
+    console.log('Upload successful, data:', uploadData);
+    
+    // Step 2: Create the story
+    const createResponse = await fetch(`${apiUrl}/stories`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content: '',
+        mediaUrl: uploadData.mediaUrl,
+        type: 'image',
+        isPrivate: false
+      })
+    });
+    
+    console.log('Create story response status:', createResponse.status);
+    
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json();
+      console.error('Create story error:', errorData);
+      throw new Error('Failed to create story');
+    }
+    
+    const newStory = await createResponse.json();
+    console.log('Story created, data:', newStory);
+    
+    // Update the stories list with the new story
+    // Format: id, username, image, hasUnseenStory (matching StoriesRow interface)
+    setStories(prev => [{
+      id: newStory._id,
+      username: 'You',
+      image: newStory.mediaUrl,
+      hasUnseenStory: true
+    }, ...prev]);
+    
+    alert('Story created successfully!');
+  } catch (error) {
       console.error('Error creating story:', error);
       alert('Failed to create story. Please try again.');
     }
@@ -434,36 +398,6 @@ const Index = () => {
                       <button
                         onClick={() => {
                           setIsFabOpen(false);
-                          navigate('/reels');
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                          <Video className="w-5 h-5 text-purple-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Reel</p>
-                          <p className="text-xs text-muted-foreground">Create a new reel</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsFabOpen(false);
-                          navigate('/music');
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                          <Music className="w-5 h-5 text-green-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Music</p>
-                          <p className="text-xs text-muted-foreground">Share a song</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsFabOpen(false);
                           navigate('/stories');
                         }}
                         className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
@@ -472,23 +406,38 @@ const Index = () => {
                           <ImagePlus className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                          <p className="font-medium text-sm">Story</p>
+                          <p className="font-medium text-sm">Stories</p>
                           <p className="text-xs text-muted-foreground">Share a story</p>
                         </div>
                       </button>
                       <button
                         onClick={() => {
                           setIsFabOpen(false);
-                          navigate('/groups');
+                          navigate('/reels');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                          <Video className="w-5 h-5 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Reels</p>
+                          <p className="text-xs text-muted-foreground">Create a new reel</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsFabOpen(false);
+                          navigate('/post');
                         }}
                         className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
                       >
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-blue-500" />
+                          <Plus className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                          <p className="font-medium text-sm">Group</p>
-                          <p className="text-xs text-muted-foreground">Start a listening group</p>
+                          <p className="font-medium text-sm">Post</p>
+                          <p className="text-xs text-muted-foreground">Create a new post</p>
                         </div>
                       </button>
                     </div>
@@ -519,30 +468,34 @@ const Index = () => {
           />
         </motion.section>
 
-        {/* Hero Banner */}
+        {/* Trending Now Carousel (image only, no play) */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="px-4 mt-6"
+          className="mb-8 px-4 md:px-0"
         >
-          <div className="relative h-32 sm:h-40 rounded-2xl overflow-hidden">
+          <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg">
             <img
-              src={heroMusic}
-              alt="Featured"
-              className="w-full h-full object-cover"
+              src={[heroMusic, album1, album2, album3][currentTrendingIndex]}
+              alt="Trending Now"
+              className="w-full h-full object-cover transition-all duration-700"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <span className="text-xs text-primary font-medium flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" /> Trending Now
-              </span>
-              <h2 className="text-xl font-bold text-foreground mt-1">
-                Discover New Sounds
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Fresh drops every week
-              </p>
+            {/* Carousel indicators */}
+            <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+              {[0,1,2,3].map(i => (
+                <button
+                  key={i}
+                  className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentTrendingIndex ? "bg-primary" : "bg-white/30 w-2"}`}
+                  onClick={() => setCurrentTrendingIndex(i)}
+                />
+              ))}
+            </div>
+            {/* Overlay text */}
+            <div className="absolute left-6 bottom-8 text-left">
+              <h2 className="text-2xl font-bold text-white drop-shadow-lg">Trending Now</h2>
+              <p className="text-sm text-white/80 drop-shadow">The hottest tracks right now</p>
+              <span className="text-xs text-white/60">50 songs</span>
             </div>
           </div>
         </motion.section>
@@ -579,55 +532,6 @@ const Index = () => {
           </div>
         </motion.section>
 
-        {/* Recent Plays */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 px-4"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Recently Played</h3>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              See all
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {recentSongs.map((song, index) => (
-              <motion.div
-                key={song.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-              >
-                <SongCard
-                  title={song.title}
-                  artist={song.artist}
-                  albumArt={song.albumArt}
-                  duration={song.duration}
-                  isPlaying={index === 0}
-                  onClick={() => handleSongClick(song, index)}
-                  trackUrl={song.trackUrl}
-                  playlist={recentSongs.map(s => ({
-                    id: `${s.title}-${s.artist}`,
-                    title: s.title,
-                    artist: s.artist,
-                    album: 'Recently Played',
-                    duration: 180, // Default duration
-                    url: s.trackUrl || '',
-                    artwork: s.albumArt,
-                  }))}
-                  currentIndex={index}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
-
-
         {/* Story Viewer */}
         <StoryViewer
           isOpen={isStoryViewerOpen}
@@ -641,174 +545,40 @@ const Index = () => {
         <StoryCreator
           isOpen={isStoryCreatorOpen}
           onClose={() => setIsStoryCreatorOpen(false)}
-          onStoryCreated={handleStoryCreated}
+          onSubmit={handleStorySubmit}
         />
 
-        {/* Search Modal */}
-        <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle className="text-left">Search</DialogTitle>
-              <DialogDescription>Search for songs, artists, and users</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Search Input */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search for songs, artists, users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12"
-                  autoFocus
-                />
+        {/* Search Dialog */}
+        {isSearchOpen && (
+          <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle className="text-left">Search</DialogTitle>
+                <DialogDescription>Search for songs, artists, and users</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search for songs, artists, users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 h-12"
+                    autoFocus
+                  />
+                </div>
+                {/* Content */}
+                <div className="max-h-96 overflow-y-auto">
+                  {/* Render search history or results here as needed */}
+                </div>
               </div>
-
-              {/* Content */}
-              <div className="max-h-96 overflow-y-auto">
-                {searchQuery.trim() === "" ? (
-                  /* Search History */
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4 text-foreground">Recent Searches</h3>
-                    <div className="space-y-2">
-                      {searchHistory.map((item, index) => (
-                        <motion.div
-                          key={item}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer"
-                          onClick={() => setSearchQuery(item)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Search className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-foreground">{item}</span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFromHistory(item);
-                            }}
-                            className="w-6 h-6"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    {/* Popular Searches */}
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-4 text-foreground">Popular Searches</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {["Pop Music", "Rock Bands", "Jazz Artists", "Hip Hop", "Classical", "Electronic", "R&B", "Country"].map((tag, index) => (
-                          <motion.div
-                            key={tag}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                          >
-                            <Badge
-                              variant="secondary"
-                              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                              onClick={() => setSearchQuery(tag)}
-                            >
-                              {tag}
-                            </Badge>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* Search Results */
-                  <div>
-                    {isSearching ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4 text-foreground">
-                          Search Results ({searchResults.length})
-                        </h3>
-                        <div className="space-y-3">
-                          {searchResults.map((result, index) => {
-                            const getTypeIcon = (type: string) => {
-                              switch (type) {
-                                case "music": return Music;
-                                case "artist": return Music;
-                                case "user": return User;
-                                case "playlist": return Music;
-                                case "hashtag": return Hash;
-                                case "reel": return Film;
-                                default: return Search;
-                              }
-                            };
-
-                            const getTypeColor = (type: string) => {
-                              switch (type) {
-                                case "music": return "text-green-500";
-                                case "artist": return "text-purple-500";
-                                case "user": return "text-blue-500";
-                                case "playlist": return "text-orange-500";
-                                case "hashtag": return "text-pink-500";
-                                case "reel": return "text-red-500";
-                                default: return "text-gray-500";
-                              }
-                            };
-
-                            const Icon = getTypeIcon(result.type);
-                            return (
-                              <motion.div
-                                key={result.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                onClick={() => handleSearchResultClick(result)}
-                                className="flex items-center gap-4 p-3 rounded-xl bg-card border border-border hover:bg-muted/50 cursor-pointer transition-colors"
-                              >
-                                <img
-                                  src={result.image}
-                                  alt={result.title}
-                                  className="w-12 h-12 rounded-lg object-cover"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-foreground truncate">{result.title}</h4>
-                                  <p className="text-sm text-muted-foreground truncate">{result.subtitle}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className={`text-xs ${getTypeColor(result.type)}`}>
-                                    {result.category}
-                                  </Badge>
-                                  <Icon className={`w-4 h-4 ${getTypeColor(result.type)}`} />
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2 text-foreground">No results found</h3>
-                        <p className="text-muted-foreground">
-                          Try searching for songs, artists, users, or hashtags
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </Layout>
   );
-};
+}
 
 export default Index;

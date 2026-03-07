@@ -5,7 +5,8 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText
+  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText,
+  Globe, Brain, Briefcase, BookOpen, Mic2, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,12 +162,12 @@ const Music: React.FC = () => {
   ]);
 
   const [disciplines] = useState([
-    { id: "languages", title: "Languages", icon: "🌍", color: "from-blue-500/20 to-blue-600/20", borderColor: "border-blue-500/30", iconColor: "text-blue-500" },
-    { id: "personal-dev", title: "Personal Development", icon: "🧠", color: "from-purple-500/20 to-purple-600/20", borderColor: "border-purple-500/30", iconColor: "text-purple-500" },
-    { id: "business", title: "Business & Finance", icon: "💰", color: "from-green-500/20 to-green-600/20", borderColor: "border-green-500/30", iconColor: "text-green-500" },
-    { id: "history", title: "History & Philosophy", icon: "📚", color: "from-amber-500/20 to-amber-600/20", borderColor: "border-amber-500/30", iconColor: "text-amber-500" },
-    { id: "career", title: "Career & Communication", icon: "🎤", color: "from-red-500/20 to-red-600/20", borderColor: "border-red-500/30", iconColor: "text-red-500" },
-    { id: "wellness", title: "Wellness & Mental Clarity", icon: "🧘", color: "from-teal-500/20 to-teal-600/20", borderColor: "border-teal-500/30", iconColor: "text-teal-500" },
+    { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500 to-cyan-500", image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=200&q=80" },
+    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500 to-indigo-500", image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=200&q=80" },
+    { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500 to-teal-500", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&q=80" },
+    { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500 to-orange-500", image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=200&q=80" },
+    { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500 to-pink-500", image: "https://images.unsplash.com/photo-1552581234-26160f608093?w=200&q=80" },
+    { id: "wellness", title: "Wellness & Mental Clarity", icon: Activity, color: "from-cyan-500 to-blue-500", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=200&q=80" },
   ]);
 
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -257,45 +258,85 @@ const Music: React.FC = () => {
   };
   // ── Hero Carousel state ──────────────────────────────────────────────────
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const heroBanners = useMemo(() => [
+  // Content for the hero carousel
+  const heroSlides = useMemo(() => [
     {
-      id: "discover",
-      title: "Discover New Sounds",
-      subtitle: "Fresh drops every week",
-      tag: "Trending Now",
-      icon: TrendingUp,
       image: heroMusic,
-      gradient: "from-cyan-950/90 via-cyan-900/40 to-transparent"
+      title: "Trending Music",
+      subtitle: "The hottest tracks right now",
+      label: "50 songs"
     },
     {
-      id: "groups",
-      title: "Join Listening Groups",
-      subtitle: "Experience music together",
-      tag: "Live Now",
-      icon: Radio,
-      image: album3,
-      gradient: "from-purple-900/90 via-purple-900/40 to-transparent"
+      image: album1,
+      title: "Listening Groups",
+      subtitle: "Listen together with friends",
+      label: "Join now"
+    },
+    {
+      image: album2,
+      title: "Clockit Learn",
+      subtitle: "Master skills with audio lessons",
+      label: "Start learning"
     }
   ], []);
-
+  // Ref to store timeout id
+  const heroTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Debug: log heroSlides and currentHeroIndex
   useEffect(() => {
-    if (activeMode !== "foryou") return;
-    const interval = setInterval(() => {
-      setCurrentHeroIndex(prev => (prev + 1) % heroBanners.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [activeMode, heroBanners]);
+    console.log("[DEBUG] heroSlides:", heroSlides);
+  }, [heroSlides]);
+  useEffect(() => {
+    console.log("[DEBUG] currentHeroIndex:", currentHeroIndex);
+  }, [currentHeroIndex]);
+
+  // Auto-slide effect for hero carousel using setTimeout (avoids closure issues)
+  useEffect(() => {
+    console.log("[DEBUG] useEffect: activeMode=", activeMode, "currentHeroIndex=", currentHeroIndex, "heroSlides.length=", heroSlides.length);
+    if (activeMode !== "foryou") {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+      return;
+    }
+    if (heroTimeoutRef.current) clearTimeout(heroTimeoutRef.current);
+    function scheduleNext() {
+      heroTimeoutRef.current = setTimeout(() => {
+        setCurrentHeroIndex(prev => {
+          const next = (prev + 1) % heroSlides.length;
+          console.log("[DEBUG] Advancing hero slide:", prev, "->", next);
+          return next;
+        });
+      }, 4000);
+    }
+    scheduleNext();
+    return () => {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+    };
+  }, [activeMode, currentHeroIndex, heroSlides.length]);
+
+  // Reset timeout when user manually changes slide
+  const handleHeroIndicatorClick = (i: number) => {
+    setCurrentHeroIndex(i);
+    if (heroTimeoutRef.current) {
+      clearTimeout(heroTimeoutRef.current);
+      heroTimeoutRef.current = null;
+    }
+  };
+
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const formatDuration = (ms: number) => {
+    const total = Math.floor(ms / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  const filteredSongs = allSongs.filter(song => {
-    const matchesSearch = !debouncedSearchQuery.trim() ||
-      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
-    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
-    return matchesSearch && matchesGenre && matchesMood;
-  });
-
   const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
 
   const displayedRecentSongs = recentlyPlayed.length > 0
@@ -308,14 +349,14 @@ const Music: React.FC = () => {
       trackUrl: t.url
     }))
     : recentSongs;
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const formatDuration = (ms: number) => {
-    const total = Math.floor(ms / 1000);
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
+  const filteredSongs = allSongs.filter(song => {
+    const matchesSearch = !debouncedSearchQuery.trim() ||
+      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
+    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
+    return matchesSearch && matchesGenre && matchesMood;
+  });
 
   const getApiBaseUrl = () =>
     import.meta.env.PROD ? "https://clockit-gvm2.onrender.com" : "";
@@ -522,24 +563,32 @@ const Music: React.FC = () => {
     >
       <div className="grid grid-cols-2 gap-4">
         {disciplines.map((discipline, index) => (
-          <motion.button
+          <motion.div
             key={discipline.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={() => setSelectedDiscipline(discipline.id)}
-            className={`relative flex flex-col items-center justify-center p-6 rounded-3xl bg-gradient-to-br ${discipline.color} border ${discipline.borderColor} backdrop-blur-sm group hover:scale-[1.02] transition-transform duration-300`}
+            className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
           >
-            <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">{discipline.icon}</span>
-            <span className="text-sm font-bold text-foreground text-center line-clamp-2">{discipline.title}</span>
-            <div className={`absolute bottom-3 right-3 w-2 h-2 rounded-full ${discipline.iconColor.replace('text', 'bg')} opacity-40`} />
-          </motion.button>
+            <img
+              src={discipline.image}
+              alt={discipline.title}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              referrerPolicy="no-referrer"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${discipline.color} opacity-80 mix-blend-multiply transition-opacity group-hover:opacity-90`} />
+            <div className="absolute inset-0 flex items-center justify-between p-4 mix-blend-plus-lighter">
+              <span className="font-bold text-lg text-white leading-tight break-words max-w-[80%] pr-2 shadow-black drop-shadow-md">{discipline.title}</span>
+              <MusicIcon size={16} className="text-white/80 shrink-0" />
+            </div>
+          </motion.div>
         ))}
       </div>
 
       {(() => {
         const lastLessonId = Object.keys(lessonBookmarks || {}).sort((a, b) => (lessonBookmarks[b] || 0) - (lessonBookmarks[a] || 0))[0];
-        const lastLesson = lastLessonId ? Object.values(allLessonsMap).find(l => l.id === lastLessonId) : null;
+        const lastLesson = lastLessonId ? Object.values(lessons).find(l => l.id === lastLessonId) : null;
         const lastPath = lastLesson ? learningPaths.find(p => p.modules.some(m => m.lessons.includes(lastLessonId))) : null;
 
         return (
@@ -722,7 +771,7 @@ const Music: React.FC = () => {
   // ── PlaylistView ──────────────────────────────────────────────────────────
   const PlaylistView = ({ playlist }: { playlist: any }) => (
     <Layout hideBottomNav={!showBottomNav}>
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="min-h-screen bg-black overflow-x-hidden">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -782,7 +831,7 @@ const Music: React.FC = () => {
       {selectedPlaylist ? (
         <PlaylistView playlist={selectedPlaylist} />
       ) : (
-        <div className="min-h-screen bg-background transition-colors duration-500 overflow-x-hidden">
+        <div className="min-h-screen bg-black transition-colors duration-500 overflow-x-hidden">
 
           {/* ══════════════════════ HEADER ══════════════════════ */}
           <motion.header
@@ -817,13 +866,7 @@ const Music: React.FC = () => {
                 ].map(mode => (
                   <button
                     key={mode.key}
-                    onClick={() => {
-                      setActiveMode(mode.key as any);
-                      if (mode.key !== "learn") {
-                        setSelectedDiscipline(null);
-                        setSelectedPath(null);
-                      }
-                    }}
+                    onClick={() => setActiveMode(mode.key as any)}
                     className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeMode === mode.key
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground"
@@ -848,73 +891,34 @@ const Music: React.FC = () => {
                 transition={{ duration: 0.25 }}
               >
 
-                {/* Hero Carousel */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  className="px-4 mt-6"
-                >
-                  <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden shadow-2xl">
-                    <AnimatePresence mode="wait">
-                      {heroBanners.map((banner, index) => index === currentHeroIndex && (
-                        <motion.div
-                          key={banner.id}
-                          initial={{ x: 300, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          exit={{ x: -300, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                          className="absolute inset-0"
-                        >
-                          <img
-                            src={banner.image}
-                            alt={banner.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
-                          <div className="absolute bottom-5 left-5 right-5">
-                            <motion.span
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.2 }}
-                              className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold flex items-center gap-1 w-fit mb-2"
-                            >
-                              {(() => {
-                                const Icon = banner.icon;
-                                return Icon ? <Icon className="w-3 h-3" /> : null;
-                              })()}
-                              {banner.tag}
-                            </motion.span>
-                            <motion.h2
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.3 }}
-                              className="text-2xl font-black text-white leading-tight"
-                            >
-                              {banner.title}
-                            </motion.h2>
-                            <motion.p
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.4 }}
-                              className="text-sm text-white/70 mt-1 font-medium"
-                            >
-                              {banner.subtitle}
-                            </motion.p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-
-                    {/* Indicators */}
-                    <div className="absolute bottom-3 right-5 flex gap-1.5 z-10">
-                      {heroBanners.map((_, i) => (
-                        <div
+                {/* Hero Carousel - Image Only, No Play Button */}
+                <div className="mb-8 px-4 md:px-0">
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg select-none">
+                    <img
+                      src={heroSlides[currentHeroIndex].image}
+                      alt={heroSlides[currentHeroIndex].title}
+                      className="w-full h-full object-cover transition-all duration-700 pointer-events-none"
+                    />
+                    {/* Overlay text */}
+                    <div className="absolute left-6 bottom-8 text-left pointer-events-none">
+                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">{heroSlides[currentHeroIndex].title}</h2>
+                      <p className="text-sm text-white/80 drop-shadow">{heroSlides[currentHeroIndex].subtitle}</p>
+                      <span className="text-xs text-white/60">{heroSlides[currentHeroIndex].label}</span>
+                    </div>
+                    {/* Carousel indicators */}
+                    <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+                      {heroSlides.map((_, i) => (
+                        <button
                           key={i}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "w-6 bg-primary" : "w-1.5 bg-white/30"}`}
+                          className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "bg-primary" : "bg-white/30 w-2"}`}
+                          onClick={() => handleHeroIndicatorClick(i)}
+                          tabIndex={-1}
+                          aria-label={`Go to slide ${i + 1}`}
                         />
                       ))}
                     </div>
                   </div>
-                </motion.section>
+                </div>
 
                 {/* Featured Playlists */}
                 <motion.section
@@ -1008,9 +1012,48 @@ const Music: React.FC = () => {
                   </div>
                 </motion.section>
 
-                {/* Listening Groups */}
+                {/* Recently Played */}
                 <motion.section
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  className="px-4 mt-7"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">Recently Played</h3>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-primary"
+                      onClick={() => { setActiveMode("library"); setLibraryTab("all"); }}>
+                      See all
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
+                      <motion.div
+                        key={song.id}
+                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 + index * 0.07 }}
+                      >
+                        <SongCard
+                          title={song.title} artist={song.artist} albumArt={song.albumArt}
+                          duration={song.duration}
+                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                          onClick={() => { /* Stay on current mode when playing */ }}
+                          trackUrl={song.trackUrl}
+                          playlist={displayedRecentSongs.map(s => ({
+                            id: s.id, title: s.title, artist: s.artist,
+                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
+                          }))}
+                          currentIndex={index}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.section>
+
+                {/* Listening Groups */}
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                   className="px-4 mt-7"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -1041,45 +1084,6 @@ const Music: React.FC = () => {
                         <p className="text-sm text-muted-foreground">No active groups found. Create one to start listening together!</p>
                       </div>
                     )}
-                  </div>
-                </motion.section>
-
-                {/* Recently Played */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                  className="px-4 mt-7"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-foreground">Recently Played</h3>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-primary"
-                      onClick={() => { setActiveMode("library"); setLibraryTab("all"); }}>
-                      See all
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
-                      <motion.div
-                        key={song.id}
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.07 }}
-                      >
-                        <SongCard
-                          title={song.title} artist={song.artist} albumArt={song.albumArt}
-                          duration={song.duration}
-                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
-                          onClick={() => { /* Stay on current mode when playing */ }}
-                          trackUrl={song.trackUrl}
-                          playlist={displayedRecentSongs.map(s => ({
-                            id: s.id, title: s.title, artist: s.artist,
-                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
-                          }))}
-                          currentIndex={index}
-                        />
-                      </motion.div>
-                    ))}
                   </div>
                 </motion.section>
 

@@ -70,6 +70,7 @@ export const CommunitySection = () => {
             transition={{ delay: index * 0.1 }}
             onClick={() => navigate(`/groups/${group._id}`)}
             className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group flex items-start gap-4"
+            className={`bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group ${index >= 3 ? 'hidden md:block' : 'block'}`}
           >
             <img
               src={group.image || '/api/placeholder/48/48'}

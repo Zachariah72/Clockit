@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+// removed duplicate useRef import
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
@@ -11,7 +12,7 @@ import { MediaNotification } from "@/components/media/MediaNotification";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { FullPlayer } from '@/components/music/FullPlayer';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import heroMusicImage from '@/assets/hero-music.jpg';
 
 // Import pages from Zach's version
@@ -35,6 +36,7 @@ import CameraTest from "./pages/CameraTest";
 import Snap from "./pages/Snap";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
+import Post from "./pages/Post";
 import Discover from "./pages/Discover";
 
 // Import your homepage components
@@ -49,7 +51,9 @@ import { MiniPlayer } from '@/components/layout/MiniPlayer';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { FeedPost } from '@/components/home/FeedPost';
-import { Plus } from 'lucide-react';
+import { MobileSuggestions } from '@/components/home/MobileSuggestions';
+import { NotificationCenter, type Notification } from '@/components/notifications/NotificationCenter';
+import { Plus, Bell } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -107,7 +111,87 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'forYou' | 'library' | 'discover'>('forYou');
-  const { playTrack } = useMediaPlayer();
+  const { playTrack, currentTrack } = useMediaPlayer();
+  // Dropdown state for + button
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Notification State
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: "1",
+      type: "new_release",
+      message: 'New album "Made In Lagos" by Wizkid is now available!',
+      isRead: false,
+      time: "2m ago",
+      sender: { name: "Wizkid", avatar: 'https://picsum.photos/seed/wizkid/100/100' },
+      targetUrl: "/music"
+    },
+    {
+      id: "2",
+      type: "follow",
+      message: "Tyla started following you",
+      isRead: false,
+      time: "15m ago",
+      sender: { name: "Tyla", avatar: 'https://picsum.photos/seed/tyla/100/100' },
+      targetUrl: "/profile/tyla"
+    },
+    {
+      id: "3",
+      type: "like",
+      message: 'Davido liked your Reel',
+      isRead: false,
+      time: "1h ago",
+      sender: { name: "Davido", avatar: 'https://picsum.photos/seed/davido/100/100' },
+      targetUrl: "/reels"
+    },
+    {
+      id: "4",
+      type: "mention",
+      message: "Black Coffee mentioned you in a comment",
+      isRead: true,
+      time: "2h ago",
+      sender: { name: "Black Coffee", avatar: 'https://picsum.photos/seed/coffee/100/100' },
+      targetUrl: "/chat"
+    },
+    {
+      id: "5",
+      type: "system",
+      message: "Welcome to Clockit! Start exploring new music.",
+      isRead: true,
+      time: "1d ago",
+      sender: { name: "Clockit", avatar: 'https://picsum.photos/seed/clockit/100/100' },
+      targetUrl: "/"
+    },
+    {
+      id: "6",
+      type: "system",
+      message: "Your playlist 'Afrobeat Energy' was successfully synced offline.",
+      isRead: false,
+      time: "2d ago",
+      sender: { name: "System", avatar: 'https://picsum.photos/seed/system/100/100' },
+      targetUrl: "/downloads"
+    }
+  ]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteAllNotifications = () => {
+    setNotifications([]);
+  };
 
   // Auto-switch to discover tab when coming from /explore
   useEffect(() => {
@@ -115,6 +199,21 @@ const HomePage = () => {
       setActiveTab('discover');
     }
   }, [location]);
+
+  // Dropdown outside click handler
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
 
   const handlePlayTrending = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -167,54 +266,45 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen text-cream-50">
+    <div className="min-h-screen text-cream-50 bg-black">
       <FullPlayer isOpen={isPlayerOpen} onClose={() => setIsPlayerOpen(false)} />
-      
+
       <Sidebar />
 
       <div className="flex justify-center md:pl-[244px] lg:pr-[320px]">
         <main className="w-full max-w-[630px] min-h-screen pb-32 md:py-8 px-0 md:px-4">
-          
-          {/* Navigation Tabs */}
-          <div className="flex gap-3 px-4 md:px-0 mb-6 pt-4 md:pt-0">
-            <button
-              onClick={() => handleTabChange('forYou')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'forYou'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              For You
-            </button>
-            <button
-              onClick={() => handleTabChange('library')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'library'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Library
-            </button>
-            <button
-              onClick={() => handleTabChange('discover')}
-              className={`flex-1 py-3 px-6 rounded-full text-sm font-bold transition-all ${
-                activeTab === 'discover'
-                  ? 'bg-cyan-400 text-cocoa-950'
-                  : 'bg-white/5 text-cream-100/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Discover
-            </button>
-          </div>
+
+          {/* Navigation Tabs moved to Music page */}
 
           {/* FOR YOU TAB CONTENT */}
           {activeTab === 'forYou' && (
             <>
+              {/* Mobile Header with Notifications */}
+              <div className="flex items-center justify-between mb-4 mt-2 px-4 md:hidden">
+                <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">
+                  Clockit
+                </span>
+                <button
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="relative p-2 text-white bg-white/10 hover:bg-white/20 transition-colors rounded-full backdrop-blur-md border border-white/10"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-black">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Stories (Snappy) */}
+              <div className="mb-8">
+                <SnappySection />
+              </div>
+
               {/* Trending Now Playlist */}
               <div className="mb-8 px-4 md:px-0">
-                <FeaturedPlaylist 
+                <FeaturedPlaylist
                   title="Trending Now"
                   description="The hottest tracks right now"
                   image={heroMusicImage}
@@ -231,7 +321,7 @@ const HomePage = () => {
                     See all
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   {FEATURED_PLAYLISTS.map((playlist) => (
                     <FeaturedPlaylist
@@ -246,9 +336,9 @@ const HomePage = () => {
                 </div>
               </div>
 
-              {/* Stories (Snappy) */}
+              {/* Mobile Suggested Profiles */}
               <div className="mb-8">
-                <SnappySection />
+                <MobileSuggestions />
               </div>
 
               {/* Main Feed Content */}
@@ -281,7 +371,7 @@ const HomePage = () => {
                 </div>
 
                 <CommunitySection />
-                
+
                 <div className="px-4 md:px-0 py-4">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-white">Listening Groups</h2>
@@ -319,28 +409,6 @@ const HomePage = () => {
             </div>
           )}
 
-          {/* Footer - always visible */}
-          <footer className="mt-8 pb-28 md:pb-8">
-            <div className="mx-auto w-full max-w-[900px] px-4 border-t border-white/10 pt-6 text-center">
-              <p className="text-xs text-cream-100/60 leading-7">
-                <a href="#" className="hover:text-cream-50 transition-colors">About</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Help</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Press</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">API</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Jobs</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Privacy</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Terms</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Locations</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Language</a> •{" "}
-                <a href="#" className="hover:text-cream-50 transition-colors">Meta Verified</a>
-              </p>
-
-              <p className="mt-4 text-xs text-cream-100/60 text-center">
-                © 2026 CLOCKIT FROM AFRICA
-              </p>
-            </div>
-          </footer>
-
           <div className="md:hidden max-w-2xl mx-auto fixed bottom-0 left-0 right-0 pointer-events-none z-50">
             <div className="pointer-events-auto">
               <MiniPlayer onExpand={() => setIsPlayerOpen(true)} />
@@ -350,16 +418,52 @@ const HomePage = () => {
         </main>
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => navigate('/snap')}
-        className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform"
+
+      {/* Floating Action Button with Custom Dropdown */}
+      <div
+        ref={dropdownRef}
+        className={`fixed right-4 md:right-8 z-50 transition-all duration-300 ${currentTrack ? 'bottom-36 md:bottom-28' : 'bottom-24 md:bottom-8'
+          }`}
       >
-        <Plus size={28} strokeWidth={2.5} />
-      </button>
+        <button
+          onClick={() => setDropdownOpen((open) => !open)}
+          className="w-14 h-14 bg-cyan-400 rounded-full flex items-center justify-center text-cocoa-950 shadow-xl shadow-cyan-400/20 hover:scale-110 transition-transform focus:outline-none"
+          aria-label="Add"
+        >
+          <Plus size={28} strokeWidth={2.5} />
+        </button>
+        {dropdownOpen && (
+          <div className="absolute bottom-16 right-0 w-44 bg-white dark:bg-cocoa-950 rounded-xl shadow-xl py-2 flex flex-col gap-0.5 animate-fade-in z-50 border border-cyan-100/30">
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 rounded-t-xl transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/post'); }}
+            >Post</button>
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/stories'); }}
+            >Stories</button>
+            <button
+              className="w-full text-left px-4 py-3 font-semibold text-cyan-900 dark:text-cyan-100 bg-white dark:bg-cocoa-950 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 rounded-b-xl transition-colors"
+              onClick={() => { setDropdownOpen(false); navigate('/reels'); }}
+            >Reels</button>
+          </div>
+        )}
+      </div>
+
 
       {/* Desktop Right Panel */}
       <RightPanel />
+
+      <NotificationCenter
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+        onDelete={handleDeleteNotification}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onDeleteAll={handleDeleteAllNotifications}
+        onNavigate={(url) => navigate(url)}
+      />
     </div>
   );
 };
@@ -407,6 +511,7 @@ const App = () => (
                   <Route path="/for-you" element={<Navigate to="/" replace />} />
 
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/post" element={<Post />} />
                   <Route path="/create" element={<Navigate to="/snap" replace />} />
 
                   <Route path="/camera-test" element={<CameraTest />} />

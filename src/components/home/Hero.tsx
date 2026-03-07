@@ -54,7 +54,7 @@ export const Hero = () => {
 
       {/* Banner Card */}
       <div className="relative w-full aspect-[2/1] rounded-3xl overflow-hidden group cursor-pointer shadow-lg shadow-black/40">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-800">
+        <div className="absolute inset-0 bg-black">
           {/* Sound wave visual simulation */}
           <div className="absolute inset-0 opacity-60 mix-blend-screen bg-[url('https://picsum.photos/seed/wave/800/400')] bg-cover bg-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />

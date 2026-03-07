@@ -100,7 +100,7 @@ const Discover = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cocoa-950 to-cocoa-900 text-cream-50">
+    <div className="min-h-screen bg-black text-cream-50">
       <Sidebar />
 
       <div className="flex justify-center md:pl-[244px] lg:pr-[320px]">

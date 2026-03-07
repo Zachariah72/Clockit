@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image, UserPlus, UserCheck } from "lucide-react";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image, UserPlus, UserCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -365,7 +365,12 @@ const Profile = () => {
           className="sticky top-0 z-20 glass-card rounded-b-3xl"
         >
           <div className="flex items-center justify-between p-4">
-            <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+            </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>

@@ -1,5 +1,12 @@
-import React from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MoreHorizontal, ChevronDown, ChevronUp, Send } from 'lucide-react';
+
+interface Comment {
+  id: number;
+  username: string;
+  text: string;
+  timestamp: string;
+}
 
 interface PostProps {
   id?: number;
@@ -13,71 +20,200 @@ interface PostProps {
   timeAgo: string;
 }
 
-export const FeedPost: React.FC<PostProps> = ({ username, userImage, location, image, likes, caption, comments, timeAgo }) => {
+export const FeedPost: React.FC<PostProps> = ({
+  username,
+  userImage,
+  location,
+  image,
+  caption,
+  timeAgo
+}) => {
+  // Lightweight auto-advancing image slider for homepage visual
+  const sliderImages = [
+    image,
+    // Add more image URLs here for the slider
+    'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
+  ];
+  const [currentSlide, setCurrentSlide] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
+    }, 3000); // Change image every 3 seconds
+    return () => clearInterval(interval);
+  }, [sliderImages.length]);
+
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+
+  // Mock comments data
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: 1,
+      username: 'user123',
+      text: 'Great post! 🔥',
+      timestamp: '2h ago'
+    },
+    {
+      id: 2,
+      username: 'fan_account',
+      text: 'Love this content',
+      timestamp: '1h ago'
+    }
+  ]);
+
+  // Define action handlers
+  const handleClick = () => alert('Click action!');
+  const handleSkip = () => alert('Skip action!');
+  const handleEcho = () => alert('Echo action!');
+  const handleRelay = () => alert('Relay action!');
+  const handleBave = () => alert('Bave action!');
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newComment.trim()) {
+      const comment: Comment = {
+        id: comments.length + 1,
+        username: 'current_user', // Replace with actual username
+        text: newComment,
+        timestamp: 'Just now'
+      };
+      setComments([...comments, comment]);
+      setNewComment('');
+    }
+  };
+
   return (
     <div className="mb-8 border-b border-white/5 pb-6 last:border-0">
       {/* Post Header */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2962FF] to-[#FF00D4] p-[2px] cursor-pointer">
-            <img 
-              src={userImage} 
-              alt={username} 
-              className="w-full h-full rounded-full border border-cocoa-950 object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+          <img
+            src={userImage}
+            alt={username}
+            className="w-10 h-10 rounded-full object-cover border-2 border-purple-500/30"
+            referrerPolicy="no-referrer"
+          />
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white cursor-pointer hover:text-cream-100">{username}</span>
-              <span className="text-xs text-cream-100/40">• {timeAgo}</span>
-            </div>
-            {location && <div className="text-xs text-cream-100/60">{location}</div>}
+            <h3 className="font-semibold text-white">{username}</h3>
+            {location && <p className="text-xs text-cream-100/60">{location}</p>}
           </div>
         </div>
-        <button className="text-cream-100/60 hover:text-white">
+        <button className="text-cream-100/60 hover:text-white transition-colors">
           <MoreHorizontal size={20} />
         </button>
       </div>
 
-      {/* Post Image */}
+      {/* Auto-advancing Image Slider (No Sound) */}
       <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 border border-white/5 shadow-lg shadow-black/20">
-        <img 
-          src={image} 
-          alt="Post content" 
-          className="w-full h-full object-cover"
+        <img
+          src={sliderImages[currentSlide]}
+          alt={`Slide ${currentSlide + 1}`}
+          className="w-full h-full object-cover transition-all duration-700"
           referrerPolicy="no-referrer"
         />
+        {/* Optional: Slider indicators */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          {sliderImages.map((_, idx) => (
+            <span
+              key={idx}
+              className={`w-2 h-2 rounded-full ${idx === currentSlide ? 'bg-purple-400' : 'bg-white/30'} transition-all`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-4">
-          <button className="text-white hover:text-[#FF00D4] transition-colors">
-            <Heart size={24} />
-          </button>
-          <button className="text-white hover:text-[#9500FF] transition-colors">
-            <MessageCircle size={24} />
-          </button>
-          <button className="text-white hover:text-[#2962FF] transition-colors">
-            <Send size={24} />
-          </button>
-        </div>
-        <button className="text-white hover:text-cream-100/60 transition-colors">
-          <Bookmark size={24} />
+      {/* Action Buttons - Click, Skip, Echo, Relay, Bave */}
+      <div className="flex items-center gap-3 mb-4 bg-gradient-to-r from-[#1a0022] to-[#2a0033] p-3 rounded-xl overflow-x-auto scrollbar-hide snap-x md:justify-center">
+        <button
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          onClick={handleClick}
+        >
+          Click
+        </button>
+        <button
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          onClick={handleSkip}
+        >
+          Skip
+        </button>
+        <button
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          onClick={handleEcho}
+        >
+          Echo
+        </button>
+        <button
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          onClick={handleRelay}
+        >
+          Relay
+        </button>
+        <button
+          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          onClick={handleBave}
+        >
+          Bave
         </button>
       </div>
 
-      {/* Likes & Caption */}
-      <div className="px-1">
-        <div className="text-sm font-bold text-white mb-2">{likes.toLocaleString()} likes</div>
-        <div className="text-sm text-cream-100/90 mb-2">
-          <span className="font-bold text-white mr-2">{username}</span>
-          {caption}
-        </div>
-        <button className="text-sm text-cream-100/40 mb-1 hover:text-cream-100/60">View all {comments} comments</button>
-        <div className="text-xs text-cream-100/40 uppercase tracking-wide">Add a comment...</div>
+      {/* Caption */}
+      <div className="mb-3">
+        <span className="font-semibold text-white mr-2">{username}</span>
+        <span className="text-cream-100/80">{caption}</span>
       </div>
+
+      {/* Comments Dropdown Toggle */}
+      <button
+        onClick={() => setShowComments(!showComments)}
+        className="flex items-center gap-2 text-cream-100/60 hover:text-white transition-colors mb-2"
+      >
+        <span className="text-sm">Comments ({comments.length})</span>
+        {showComments ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      {/* Comments Dropdown Content */}
+      {showComments && (
+        <div className="bg-[#1a0022]/50 rounded-xl p-4 mb-3 border border-white/5">
+          {/* Comments List */}
+          <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex items-start gap-2">
+                <div className="w-6 h-6 rounded-full bg-purple-500/30 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold text-white">{comment.username}</span>
+                    <span className="text-xs text-cream-100/40">{comment.timestamp}</span>
+                  </div>
+                  <p className="text-sm text-cream-100/80">{comment.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add Comment Form */}
+          <form onSubmit={handleAddComment} className="flex gap-2">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-cream-100/40 focus:outline-none focus:border-purple-500/50"
+            />
+            <button
+              type="submit"
+              className="p-2 bg-purple-600/30 hover:bg-purple-600/50 rounded-lg transition-colors"
+              disabled={!newComment.trim()}
+            >
+              <Send size={18} className="text-white" />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Timestamp */}
+      <p className="text-xs text-cream-100/40">{timeAgo}</p>
     </div>
   );
 };

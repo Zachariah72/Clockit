@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-console.log("genres seeded ")
+
 
 // Seed genres (one-time or admin)
 router.post('/seed', async (req, res) => {
@@ -31,6 +31,6 @@ router.post('/seed', async (req, res) => {
   }
 });
 
-
+console.log("show all genres ")
 
 module.exports = router;

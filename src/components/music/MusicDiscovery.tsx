@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Music, TrendingUp, Users, Disc, Star, Loader2 } from 'lucide-react';
+import { Music, TrendingUp, Users, Disc, Star, Loader2, ExternalLink } from 'lucide-react';
 import { useMediaPlayer } from '@/contexts/MediaPlayerContext';
 
 interface LastfmArtist {
@@ -170,38 +170,36 @@ const MusicDiscovery: React.FC = () => {
                 {topArtists.map((artist, index) => (
                   <div
                     key={artist.mbid || artist.name}
-                    className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group"
                   >
-                    <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
-                      <span className="text-sm font-bold text-primary">#{index + 1}</span>
+                    <div className="flex items-center justify-center w-6 h-6 bg-primary/20 rounded-full shrink-0">
+                      <span className="text-[10px] font-bold text-primary">#{index + 1}</span>
                     </div>
 
                     <img
                       src={artist.image?.[2]?.['#text'] || '/placeholder.svg'}
                       alt={artist.name}
-                      className="w-16 h-16 rounded-lg object-cover"
+                      className="w-12 h-12 rounded-xl object-cover shadow-lg shrink-0"
                     />
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{artist.name}</h3>
+                      <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">{artist.name}</h3>
                       {artist.stats && (
-                        <div className="flex items-center gap-4 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {formatNumber(artist.stats.listeners)} listeners
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {formatNumber(artist.stats.playcount)} plays
-                          </Badge>
+                        <div className="flex items-center gap-2 mt-0.5 opacity-60">
+                          <span className="text-[10px] uppercase tracking-wider font-medium">
+                            {formatNumber(artist.stats.listeners)} Listeners
+                          </span>
                         </div>
                       )}
                     </div>
 
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="rounded-full hover:bg-white/10"
                       onClick={() => window.open(artist.url, '_blank')}
                     >
-                      View on Last.fm
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </Button>
                   </div>
                 ))}

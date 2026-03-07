@@ -42,6 +42,7 @@ router.post('/:id/follow', auth, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+console.log("follow artists route")
 
 // Unfollow artist
 router.post('/:id/unfollow', auth, async (req, res) => {
@@ -67,5 +68,6 @@ router.get('/followed', auth, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+console.log("followed artists routes")
 
 module.exports = router;

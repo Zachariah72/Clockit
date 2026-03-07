@@ -23,10 +23,40 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-cocoa-950/90 backdrop-blur-lg border-t border-white/5 px-6 py-4"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-2 py-3"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
     >
-      {/* ... rest of your component ... */}
+      <div className="flex items-center justify-between max-w-md mx-auto">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px]",
+                isActive
+                  ? "text-white bg-purple-600/30"
+                  : "text-gray-400 hover:text-white hover:bg-white/10"
+              )}
+            >
+              <motion.div
+                whileTap={{ scale: 0.95 }}
+                className="relative"
+              >
+                <item.icon className="w-6 h-6" />
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-500"
+                  />
+                )}
+              </motion.div>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 };
