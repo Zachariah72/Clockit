@@ -8,7 +8,8 @@ const {
   discoverGroups,
   joinGroup,
   leaveGroup,
-  updatePlayback
+  updatePlayback,
+  deleteGroup
 } = require('../controllers/listeningGroupController');
 
 // All listening group routes require authentication
@@ -31,5 +32,8 @@ router.post('/:id/leave', generalLimiter, leaveGroup);
 
 // PUT update playback state
 router.put('/:id/playback', generalLimiter, updatePlayback);
+
+// DELETE group
+router.delete('/:id', generalLimiter, deleteGroup);
 
 module.exports = router;

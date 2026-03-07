@@ -1,59 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { MessageCircle, Users, Hash, Heart } from 'lucide-react';
-
-const TOPICS = [
-  { id: 1, tag: '#AfroBeatsDaily', title: 'Is Amapiano taking over the world? 🇿🇦', active: 1240 },
-  { id: 2, tag: '#LagosLife', title: 'Best spots for live music this weekend? 🇳🇬', active: 856 },
-  { id: 3, tag: '#GhanaJollof', title: 'The eternal debate continues... 🇬🇭', active: 2300 },
-  { id: 4, tag: '#KigaliVibes', title: 'Rwanda\'s rising hip-hop scene 🇷🇼', active: 420 },
-  { id: 5, tag: '#NairobiNights', title: 'Gengetone vs Afro-pop: What\'s next? 🇰🇪', active: 675 },
-  { id: 6, tag: '#LuandaSounds', title: 'Kizomba or Semba for the weekend? 🇦🇴', active: 390 },
-  { id: 7, tag: '#AccraChills', title: 'Highlife evolution in 2024 🇬🇭', active: 512 },
-  { id: 8, tag: '#JoburgHouse', title: 'Deep House culture in SA 🇿🇦', active: 980 },
-];
+import { MessageCircle, Users, Radio, Music, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { discoverPublicGroups } from '@/services/api';
 
 export const CommunitySection = () => {
+  const [suggestedGroups, setSuggestedGroups] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const groups = await discoverPublicGroups();
+        if (Array.isArray(groups)) {
+          // Take top 4 groups for the home page
+          setSuggestedGroups(groups.slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Failed to fetch suggested groups:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  if (!isLoading && suggestedGroups.length === 0) {
+    return null;
+  }
+
   return (
     <section className="px-6 py-8 bg-gradient-to-b from-transparent to-cocoa-900/50">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-teal-400 mb-2">The Village Square</h2>
-        <p className="text-cream-100/60 text-sm max-w-md">
-          Join the conversation. Connect with the culture. Share your rhythm.
-        </p>
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-teal-400 mb-2">
+            <Radio className="w-6 h-6" /> Suggested Groups
+          </h2>
+          <p className="text-cream-100/60 text-sm max-w-md">
+            Join the conversation. Listen together in real-time.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/groups')}
+          className="text-xs text-teal-400 hover:text-white flex items-center gap-1 transition-colors"
+        >
+          See all <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
 
       <div className="grid gap-4">
-        {TOPICS.map((topic, index) => (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl animate-pulse flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-white/10 rounded w-1/3" />
+                <div className="h-3 bg-white/10 rounded w-1/2" />
+              </div>
+            </div>
+          ))
+        ) : suggestedGroups.map((group, index) => (
           <motion.div
-            key={topic.id}
+            key={group._id}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
+            onClick={() => navigate(`/groups/${group._id}`)}
+            className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group flex items-start gap-4"
             className={`bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group ${index >= 3 ? 'hidden md:block' : 'block'}`}
           >
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs font-mono text-teal-400 bg-teal-400/10 px-2 py-1 rounded-full">
-                {topic.tag}
-              </span>
-              <div className="flex items-center gap-1 text-xs text-cream-100/40">
-                <Users size={12} />
-                <span>{topic.active} online</span>
+            <img
+              src={group.image || '/api/placeholder/48/48'}
+              alt={group.name}
+              className="w-12 h-12 rounded-full object-cover shadow-sm bg-black/20"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/api/placeholder/48/48'; }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start mb-1">
+                <h3 className="text-base font-semibold text-cream-50 truncate group-hover:text-teal-200 transition-colors pr-2">
+                  {group.name}
+                </h3>
+                <div className="flex items-center gap-1 text-[10px] text-cream-100/40 bg-black/20 px-2 py-0.5 rounded-full shrink-0">
+                  <Users size={10} />
+                  <span>{group.members?.length || 1} online</span>
+                </div>
               </div>
-            </div>
-            <h3 className="text-lg font-medium text-cream-50 mb-3 group-hover:text-teal-200 transition-colors">
-              {topic.title}
-            </h3>
-            <div className="flex items-center gap-4 text-cream-100/40">
-              <button className="flex items-center gap-1 text-xs hover:text-white transition-colors">
-                <MessageCircle size={14} />
-                <span>Join Chat</span>
-              </button>
-              <button className="flex items-center gap-1 text-xs hover:text-pink-400 transition-colors">
-                <Heart size={14} />
-                <span>Like</span>
-              </button>
+              <p className="text-xs text-cream-100/60 line-clamp-1 mb-2">
+                {group.description || 'A great place to discover new music.'}
+              </p>
+              <div className="flex items-center gap-3 text-cream-100/40">
+                <span className="flex items-center gap-1 text-[11px]">
+                  <Music size={12} />
+                  <span>{group.currentTrack ? 'Playing now' : 'Idle'}</span>
+                </span>
+                <span className="flex items-center gap-1 text-[11px] text-teal-400 group-hover:text-white transition-colors">
+                  <MessageCircle size={12} />
+                  <span>Join Room</span>
+                </span>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -61,3 +108,4 @@ export const CommunitySection = () => {
     </section>
   );
 };
+
