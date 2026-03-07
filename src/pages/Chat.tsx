@@ -677,8 +677,8 @@ const ChatView = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
         <PatternBackground />
         <GradientBlob size={300} color="#8B5CF6" opacity={15} blur={80} position={{ top: "-50px", right: "-50px" }} />
-        <GradientBlob size={250} color="#EC4899" opacity={12} blur={60} position={{ bottom: "50px", left: "-30px" }} />
-        <GradientBlob size={200} color="#3B82F6" opacity={10} blur={50} position={{ top: "30%", left: "-20px" }} />
+        <GradientBlob size={250} color="#EC4899" opacity={12} blur={60} position={{ bottom: "50px", left: "-80px" }} />
+        <GradientBlob size={200} color="#3B82F6" opacity={10} blur={50} position={{ top: "40%", right: "-30px" }} />
         <AnimatePresence>
           {isLoadingMessages ? (
             <div className="flex items-center justify-center py-8">
