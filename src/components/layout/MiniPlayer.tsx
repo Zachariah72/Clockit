@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, SkipBack, SkipForward, Heart, Repeat, Pause, X } from 'lucide-react';
+import { Play, Pause, X } from 'lucide-react';
 import { useMediaPlayer } from '@/contexts/MediaPlayerContext';
 
 interface MiniPlayerProps {
@@ -7,14 +7,13 @@ interface MiniPlayerProps {
 }
 
 export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
-  const { currentTrack, isPlaying, play, pause, stopPlugin } = useMediaPlayer();
+  const { currentTrack, isPlaying, play, pause, stop } = useMediaPlayer();
 
   if (!currentTrack) return null;
 
   const handleStop = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (stopPlugin) stopPlugin();
-    pause();
+    stop();
   };
 
   const handlePlayPause = (e: React.MouseEvent) => {
@@ -34,8 +33,8 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
       >
         <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 relative">
           <img
-            src={currentTrack.albumArt || "https://picsum.photos/seed/wizkid/100/100"}
-            alt={currentTrack.title}
+            src={currentTrack.artwork || "https://picsum.photos/seed/wizkid/100/100"}
+            alt={currentTrack.title || "Track artwork"}
             className={`w-full h-full object-cover ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}
             referrerPolicy="no-referrer"
           />
