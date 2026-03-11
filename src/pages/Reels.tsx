@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff, Play, ChevronUp, ChevronDown, Upload, ArrowLeft } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff, Play, ChevronUp, ChevronDown, Upload, ArrowLeft, X } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -99,8 +99,8 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
 
   return (
     <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-14 px-4 md:px-0 bg-[#0a0a0a]">
-      {/* Video Container (The "Frame") - Minimalist Rounded Corners */}
-      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border-2 border-white/10 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
+      {/* Video Container - Minimalist TikTok Style */}
+      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/5 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
         {/* Video Background */}
         <video
           ref={videoRef}
@@ -223,10 +223,12 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
         </div>
       </div>
 
-      {/* Desktop Interaction Panel */}
-      <div className="hidden md:flex flex-col items-center gap-6 self-end pb-8">
-        {/* Profile */}
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="relative group cursor-pointer mb-2">
+      {/* Desktop Interaction & Navigation Cluster */}
+      <div className="hidden md:flex items-center gap-6 self-center mb-12">
+        {/* Interaction Buttons Column */}
+        <div className="flex flex-col items-center gap-5">
+          {/* Profile */}
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="relative group cursor-pointer mb-1">
           <img
             src={reel.author.avatar_url}
             alt={reel.author.username}
@@ -296,33 +298,35 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             className="w-14 h-14 p-1.5 bg-zinc-900 rounded-full border-4 border-white/10 shadow-2xl relative cursor-pointer group"
           >
             <div className="absolute inset-0 rounded-full border border-white/5 group-hover:border-white/20 transition-colors" />
-            <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover relative z-10" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-zinc-900 rounded-full border border-white/20 z-20" />
+            <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover relative z-10" />            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-zinc-900 rounded-full border border-white/20 z-20" />
           </motion.div>
         </div>
-
-        {/* Navigation Arrows */}
-        <div className="mt-4 flex flex-col gap-2">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.8 }}
-            onClick={onNext}
-            disabled={currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1}
-            className={`w-12 h-12 rounded-full bg-white/10 flex items-center justify-center transition-colors ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/20 text-white'}`}
-          >
-            <ChevronDown className="w-6 h-6" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.8 }}
-            onClick={onPrev}
-            disabled={currentIndex !== undefined && currentIndex <= 0}
-            className={`w-12 h-12 rounded-full bg-white/10 flex items-center justify-center transition-colors ${currentIndex !== undefined && currentIndex <= 0 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/20 text-white'}`}
-          >
-            <ChevronUp className="w-6 h-6" />
-          </motion.button>
-        </div>
       </div>
+
+      {/* Navigation Arrows Column (to the right of interactions) */}
+      <div className="hidden md:flex flex-col gap-3 self-center">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.8 }}
+          onClick={onPrev}
+          disabled={currentIndex !== undefined && currentIndex <= 0}
+          className={`w-11 h-11 rounded-full bg-white/5 flex items-center justify-center transition-colors border border-white/10 ${currentIndex !== undefined && currentIndex <= 0 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 text-white shadow-xl'}`}
+        >
+          <ChevronUp className="w-6 h-6" />
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.8 }}
+          onClick={onNext}
+          disabled={currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1}
+          className={`w-11 h-11 rounded-full bg-white/5 flex items-center justify-center transition-colors border border-white/10 ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 text-white shadow-xl'}`}
+        >
+          <ChevronDown className="w-6 h-6" />
+        </motion.button>
+      </div>
+    </div>
+
+
 
       {/* Mobile Comment Drawer */}
       <AnimatePresence>
@@ -376,47 +380,52 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             exit={{ opacity: 0, x: 50 }}
             className="hidden md:flex absolute right-[5%] w-[380px] h-full bg-zinc-900/40 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-2xl flex-col p-6 z-20 overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-xl">Comments</h3>
+            <div className="flex items-center justify-between mb-6 px-2">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-lg">Comments</h3>
+                <span className="text-white/30 text-sm font-medium">{reel.stats.comment_count}</span>
+              </div>
               <button 
                 onClick={() => setShowComments(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"
+                className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors group"
               >
-                <ChevronDown className="w-5 h-5 rotate-90" />
+                <X className="w-5 h-5 text-white/40 group-hover:text-white" />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 overflow-hidden">
+            <div className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex-shrink-0 overflow-hidden border border-white/5">
                     <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="user" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs font-bold text-white/60">user_{i}</span>
-                      <span className="text-[10px] text-white/20">2h</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold text-white/90">user_premium_{i}</span>
+                      <span className="text-xs text-white/20">2d ago</span>
                     </div>
-                    <p className="text-sm text-white/80 leading-relaxed">This is a premium blaze! 🚀 loving the vibe of this music source.</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <button className="text-[10px] font-bold text-white/40 hover:text-white">Reply</button>
-                      <button className="text-[10px] font-bold text-white/40 hover:text-white flex items-center gap-1">
-                        <Heart className="w-3 h-3" /> 24
-                      </button>
+                    <p className="text-sm text-white/70 leading-relaxed mb-3">This exact layout matches the premium TikTok experience 🤙🏽 minimalist and clean.</p>
+                    <div className="flex items-center gap-6">
+                      <button className="text-xs font-bold text-white/40 hover:text-white transition-colors">Reply</button>
+                      <div className="flex items-center gap-1.5 text-white/30">
+                        <Heart className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-bold">{10 + i * 5}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             
-            <div className="mt-6 pt-4 border-t border-white/5">
-              <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 border border-white/5">
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10 focus-within:border-white/20 transition-all">
+                <img src={reel.author.avatar_url} className="w-8 h-8 rounded-full border border-white/10" />
                 <input 
                   type="text" 
                   placeholder="Add comment..." 
                   className="bg-transparent flex-1 text-sm outline-none placeholder:text-white/20"
                 />
-                <button className="text-secondary font-bold text-sm">Post</button>
+                <button className="text-secondary font-bold text-sm px-2">Post</button>
               </div>
             </div>
           </motion.div>
