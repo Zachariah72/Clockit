@@ -28,7 +28,7 @@ export const Layout = ({ children, hidePlayer, hideBottomNav, hideSidebar, hideR
       {!hideSidebar && <Sidebar />}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 md:pl-[244px] lg:pr-[320px]">
+      <div className={`flex-1 flex flex-col min-w-0 ${!hideSidebar ? 'md:pl-[244px]' : ''} ${!hideRightPanel ? 'lg:pr-[320px]' : ''}`}>
         {/* Desktop Header - Only on large screens */}
         <DesktopHeader />
         
