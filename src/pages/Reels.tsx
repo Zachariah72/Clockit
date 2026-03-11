@@ -100,7 +100,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   return (
     <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-14 px-4 md:px-0 bg-[#0a0a0a]">
       {/* Video Container - Minimalist TikTok Style */}
-      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/5 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
+      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/10 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[20%] scale-[0.98]' : ''}`}>
         {/* Video Background */}
         <video
           ref={videoRef}
@@ -375,10 +375,10 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
       <AnimatePresence>
         {showComments && (
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            className="hidden md:flex absolute right-[5%] w-[380px] h-full bg-zinc-900/40 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-2xl flex-col p-6 z-20 overflow-hidden"
+            exit={{ opacity: 0, x: -50 }}
+            className="hidden md:flex absolute left-[5%] w-[380px] h-[85vh] bg-zinc-900/60 backdrop-blur-3xl rounded-[32px] border border-white/10 shadow-3xl flex-col p-6 z-20 overflow-hidden"
           >
             <div className="flex items-center justify-between mb-6 px-2">
               <div className="flex items-center gap-2">
