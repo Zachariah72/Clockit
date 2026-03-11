@@ -4,7 +4,7 @@ import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX,
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { UploadVideoModal } from "@/components/reels/UploadVideoModal";
+// Simplified Reels view
 
 interface Reel {
   id: string;

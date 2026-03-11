@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export const DesktopHeader = () => {
   const navigate = useNavigate();
