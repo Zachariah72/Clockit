@@ -207,8 +207,8 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             <img src={reel.thumbnail_url} alt="music" className="w-full h-full object-cover" />
           </motion.div>
 
-          {/* Navigation Buttons */}
-          <div className="flex flex-col items-center gap-2">
+          {/* Navigation Buttons (Desktop Only) */}
+          <div className="hidden md:flex flex-col items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.8 }}
               onClick={onNext}
