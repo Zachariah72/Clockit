@@ -99,8 +99,8 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
 
   return (
     <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-14 px-4 md:px-0 bg-[#0a0a0a]">
-      {/* Video Container (The "Frame") */}
-      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-[54px] shadow-[0_0_80px_rgba(0,0,0,0.8)] border-[8px] border-white/10 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
+      {/* Video Container (The "Frame") - Minimalist Rounded Corners */}
+      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border-2 border-white/10 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
         {/* Video Background */}
         <video
           ref={videoRef}
@@ -534,14 +534,14 @@ const Reels = () => {
           </motion.div>
         </div>
 
-        {/* Swipe Hints */}
+        {/* Swipe Hints - strictly mobile */}
         <AnimatePresence>
           {currentIndex === 0 && !showOfflineMode && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none md:bottom-12"
+              className="md:hidden absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
             >
               <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-xs text-white/60 flex items-center gap-2">
                 <ChevronUp className="w-3 h-3 animate-bounce" />
