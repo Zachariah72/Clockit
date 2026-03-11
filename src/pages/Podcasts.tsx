@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Search, Play, Clock, User, TrendingUp, Headphones, Filter, Star, ArrowLeft } from "lucide-react";
@@ -6,54 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getFeaturedPodcasts, getPodcastCategories } from "@/services/api";
 
 const Podcasts = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [featuredPodcasts, setFeaturedPodcasts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock podcast data
-  const featuredPodcasts = [
-    {
-      id: "1",
-      title: "Tech Talk Daily",
-      host: "Sarah Chen",
-      description: "Daily insights into the latest technology trends and innovations",
-      episodes: 245,
-      duration: "45 min",
-      rating: 4.8,
-      category: "Technology",
-      image: "/api/placeholder/200/200",
-      isSubscribed: false,
-    },
-    {
-      id: "2",
-      title: "Mindful Moments",
-      host: "Dr. James Wilson",
-      description: "Guided meditations and mindfulness practices for busy professionals",
-      episodes: 120,
-      duration: "20 min",
-      rating: 4.9,
-      category: "Wellness",
-      image: "/api/placeholder/200/200",
-      isSubscribed: true,
-    },
-    {
-      id: "3",
-      title: "Business Breakthrough",
-      host: "Maria Rodriguez",
-      description: "Strategies and stories from successful entrepreneurs",
-      episodes: 89,
-      duration: "35 min",
-      rating: 4.7,
-      category: "Business",
-      image: "/api/placeholder/200/200",
-      isSubscribed: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchPodcastsData = async () => {
+      try {
+        const [podcastsRes, categoriesRes] = await Promise.all([
+          getFeaturedPodcasts(),
+          getPodcastCategories()
+        ]);
 
-  const categories = [
-    "All", "Technology", "Business", "Wellness", "News", "Comedy", "Education", "True Crime"
-  ];
+        if (podcastsRes?.podcasts) setFeaturedPodcasts(podcastsRes.podcasts);
+        if (categoriesRes?.categories) setCategories(categoriesRes.categories);
+      } catch (err) {
+        console.error("Failed to fetch podcasts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPodcastsData();
+  }, []);
 
   return (
     <Layout>
@@ -110,7 +90,23 @@ const Podcasts = () => {
               </div>
 
               <div className="grid gap-4">
-                {featuredPodcasts.map((podcast, index) => (
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="glass-card p-4 rounded-2xl animate-pulse flex gap-4">
+                      <div className="w-20 h-20 bg-white/10 rounded-xl" />
+                      <div className="flex-1 space-y-3">
+                        <div className="flex justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 bg-white/10 rounded w-1/3" />
+                            <div className="h-3 bg-white/10 rounded w-1/4" />
+                          </div>
+                        </div>
+                        <div className="h-3 bg-white/10 rounded w-full" />
+                        <div className="h-3 bg-white/10 rounded w-5/6" />
+                      </div>
+                    </div>
+                  ))
+                ) : featuredPodcasts.map((podcast, index) => (
                   <motion.div
                     key={podcast.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -178,7 +174,14 @@ const Podcasts = () => {
             <TabsContent value="categories" className="space-y-6">
               <h2 className="text-xl font-semibold text-foreground">Browse by Category</h2>
               <div className="grid grid-cols-2 gap-3">
-                {categories.map((category, index) => (
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="glass-card p-4 rounded-xl animate-pulse space-y-3">
+                      <div className="h-4 bg-white/10 rounded w-2/3" />
+                      <div className="h-3 bg-white/10 rounded w-1/3" />
+                    </div>
+                  ))
+                ) : categories.map((category, index) => (
                   <motion.button
                     key={category}
                     initial={{ opacity: 0, scale: 0.9 }}
