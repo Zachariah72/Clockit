@@ -183,7 +183,6 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
                 <Plus className="w-3 h-3 text-white" />
               </div>
             </motion.div>
- 
             {/* Interaction Buttons - Vertically Centered */}
             <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
@@ -191,21 +190,21 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
               </div>
               <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(likes)}</span>
             </motion.button>
- 
+
             <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
                 <MessageCircle className="w-6 h-6" />
               </div>
               <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.comment_count)}</span>
             </motion.button>
- 
+
             <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
                 <Bookmark className={`w-6 h-6 transition-colors ${isSaved ? "text-yellow-400 fill-yellow-400" : ""}`} />
               </div>
               <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg opacity-0">0</span>
             </motion.button>
- 
+
             <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
                 <Share2 className="w-6 h-6" />
@@ -236,7 +235,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
               <Music2 className="w-4 h-4 text-white" />
               <div className="overflow-hidden">
                 <motion.p
-                   animate={{ x: isActive ? [0, -100, 0] : 0 }}
+                   animate={isActive ? { x: [0, -100, 0] } : { x: 0 }}
                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                    className="text-xs text-white whitespace-nowrap"
                 >
@@ -246,6 +245,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             </div>
           </div>
         </div>
+        </div> {/* CLOSE VIDEO CONTAINER */}
 
         {/* Desktop Controls (Interaction Pillar & Navigation) - FLANKING THE VIDEO */}
         <div className="hidden md:flex flex-col items-center gap-6 absolute right-[-85px] bottom-12 z-10">
@@ -272,7 +272,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             </button>
           </div>
         </div>
-      </div>
+      </div> {/* CLOSE CENTER COLUMN */}
 
       {/* RIGHT COLUMN: Recommendations (Desktop Only) */}
       <div className="hidden lg:flex flex-col w-[350px] border-l border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
@@ -282,7 +282,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 custom-scrollbar">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 overflow-hidden relative group cursor-pointer transition-all hover:scale-105 border border-white/5">
-              <img src={`https://picsum.photos/seed/rec_${i}/400/600`} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+              <img src={"https://picsum.photos/seed/rec_" + i + "/400/600"} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <p className="text-[10px] font-bold text-white line-clamp-1 mb-1">Blaze Premium</p>
                 <div className="flex items-center gap-1 text-[8px] text-white/60">
@@ -298,11 +298,6 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   );
 };
 
-
-
-    </div>
-  );
-};
 
 const Reels = () => {
   console.log('Reels component mounted');
@@ -377,7 +372,7 @@ const Reels = () => {
   }
 
   return (
-    <Layout hidePlayer hideRightPanel>
+    <Layout hidePlayer hideSidebar hideRightPanel>
       <div className="h-[calc(100vh-80px)] md:h-screen relative overflow-hidden bg-black flex justify-center items-center">
         {/* Reels Container - Absolute 3-Column Width */}
         <div className="h-full w-full md:h-full relative flex items-center justify-center">
