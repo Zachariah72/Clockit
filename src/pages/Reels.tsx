@@ -127,8 +127,9 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           </motion.div>
         </motion.button>
       )}
-      {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none" />
+      {/* Overlay gradient - more aggressive at bottom/right for visibility */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
 
       {/* Double Tap Heart Animation */}
       <AnimatePresence>
@@ -162,38 +163,38 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
 
           {/* Like */}
           <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
-            <div className={`p-2 rounded-full ${isLiked ? "text-secondary" : "text-white"}`}>
+            <div className={`p-2 rounded-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${isLiked ? "text-secondary" : "text-white"}`}>
               <Heart className={`w-7 h-7 ${isLiked ? "fill-secondary" : ""}`} />
             </div>
-            <span className="text-xs font-semibold text-white">{formatCount(likes)}</span>
+            <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(likes)}</span>
           </motion.button>
 
           {/* Comment */}
           <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
-            <div className="p-2 rounded-full text-white">
+            <div className="p-2 rounded-full text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               <MessageCircle className="w-7 h-7" />
             </div>
-            <span className="text-xs font-semibold text-white">{formatCount(reel.stats.comment_count)}</span>
+            <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(reel.stats.comment_count)}</span>
           </motion.button>
 
           {/* Save */}
           <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center gap-1">
-            <div className={`p-2 rounded-full ${isSaved ? "text-accent" : "text-white"}`}>
+            <div className={`p-2 rounded-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${isSaved ? "text-accent" : "text-white"}`}>
               <Bookmark className={`w-7 h-7 ${isSaved ? "fill-accent" : ""}`} />
             </div>
           </motion.button>
 
           {/* Share */}
           <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
-            <div className="p-2 rounded-full text-white">
+            <div className="p-2 rounded-full text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               <Share2 className="w-7 h-7" />
             </div>
-            <span className="text-xs font-semibold text-white">{formatCount(reel.stats.share_count)}</span>
+            <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(reel.stats.share_count)}</span>
           </motion.button>
 
           {/* Mute */}
           <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
-            <div className="p-2 rounded-full text-white">
+            <div className="p-2 rounded-full text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               {isMuted ? <VolumeX className="w-7 h-7" /> : <Volume2 className="w-7 h-7" />}
             </div>
           </motion.button>
@@ -215,7 +216,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
               disabled={currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1}
               className="flex flex-col items-center gap-1"
             >
-              <div className={`p-2 rounded-full ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'text-white/20' : 'text-white'}`}>
+              <div className={`p-2 rounded-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'text-white/20' : 'text-white'}`}>
                 <ChevronUp className="w-7 h-7" />
               </div>
             </motion.button>
@@ -225,7 +226,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
               disabled={currentIndex !== undefined && currentIndex <= 0}
               className="flex flex-col items-center gap-1"
             >
-              <div className={`p-2 rounded-full ${currentIndex !== undefined && currentIndex <= 0 ? 'text-white/20' : 'text-white'}`}>
+              <div className={`p-2 rounded-full drop-shadow-[0_2px_8_rgba(0,0,0,0.8)] ${currentIndex !== undefined && currentIndex <= 0 ? 'text-white/20' : 'text-white'}`}>
                 <ChevronDown className="w-7 h-7" />
               </div>
             </motion.button>
