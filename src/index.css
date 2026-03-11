@@ -137,6 +137,7 @@
       border-color: hsl(var(--border));
     }
   }
+  }
 
   @layer components {
     .glass-card {
