@@ -98,9 +98,9 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   };
 
   return (
-    <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12 px-4 md:px-0">
-      {/* Video Container */}
-      <div className={`relative h-full w-full max-w-[500px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-[42px] shadow-[0_0_60px_rgba(0,0,0,0.6)] border-[6px] border-white/5 transition-all duration-300 ${showComments ? 'md:translate-x-[-15%]' : ''}`}>
+    <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-14 px-4 md:px-0 bg-[#0a0a0a]">
+      {/* Video Container (The "Frame") */}
+      <div className={`relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-[54px] shadow-[0_0_80px_rgba(0,0,0,0.8)] border-[8px] border-white/10 transition-all duration-500 ease-out ${showComments ? 'md:translate-x-[-15%] scale-[0.98]' : ''}`}>
         {/* Video Background */}
         <video
           ref={videoRef}
@@ -140,11 +140,11 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           {showHeart && (
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ scale: 1.2, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
             >
-              <Heart className="w-24 h-24 text-secondary fill-secondary" />
+              <Heart className="w-32 h-32 text-red-500 fill-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -187,13 +187,15 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
               <span className="text-xs font-bold text-white drop-shadow-md">{formatCount(reel.stats.share_count)}</span>
             </motion.button>
 
-            {/* Rotating music disc - mobile overlay */}
+            {/* Rotating music disc - mobile overlay cluster */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="w-10 h-10 mt-2 p-1 bg-gradient-to-tr from-zinc-800 to-zinc-600 rounded-full border-2 border-white/20 shadow-xl"
+              className="w-12 h-12 mt-4 p-1.5 bg-zinc-900 rounded-full border-4 border-white/10 shadow-2xl relative"
             >
-              <img src={reel.thumbnail_url} alt="music" className="w-full h-full rounded-full object-cover" />
+              <div className="absolute inset-0 rounded-full border border-white/5 z-0" />
+              <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover relative z-10" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-zinc-900 rounded-full border border-white/20 z-20" />
             </motion.div>
           </div>
         </div>
@@ -286,14 +288,16 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           <span className="text-sm font-bold text-white/90">{formatCount(reel.stats.share_count)}</span>
         </div>
 
-        {/* Music Disc - Desktop sidebar */}
+        {/* Music Disc - Desktop sidebar premium vinyl style */}
         <div className="flex flex-col items-center gap-1 mb-2">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            className="w-12 h-12 p-1 bg-gradient-to-tr from-zinc-800 to-zinc-600 rounded-full border-2 border-white/20 shadow-2xl cursor-pointer"
+            className="w-14 h-14 p-1.5 bg-zinc-900 rounded-full border-4 border-white/10 shadow-2xl relative cursor-pointer group"
           >
-            <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover" />
+            <div className="absolute inset-0 rounded-full border border-white/5 group-hover:border-white/20 transition-colors" />
+            <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover relative z-10" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-zinc-900 rounded-full border border-white/20 z-20" />
           </motion.div>
         </div>
 
@@ -319,6 +323,49 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           </motion.button>
         </div>
       </div>
+
+      {/* Mobile Comment Drawer */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="md:hidden fixed inset-x-0 bottom-0 h-[70vh] bg-zinc-900/95 backdrop-blur-xl rounded-t-[40px] z-[100] border-t border-white/10 flex flex-col"
+          >
+            <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto my-4" onClick={() => setShowComments(false)} />
+            <div className="px-6 flex-1 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-lg">Comments</h3>
+                <span className="text-white/40 text-sm">{formatCount(reel.stats.comment_count)}</span>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-6 pb-20 custom-scrollbar">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex gap-4">
+                    <img src={`https://picsum.photos/seed/${i+50}/100/100`} alt="user" className="w-10 h-10 rounded-full object-cover bg-white/5" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-white/50">user_mobile_{i}</span>
+                        <span className="text-[10px] text-white/20">1h</span>
+                      </div>
+                      <p className="text-sm text-white/90 leading-relaxed">This look is so premium now! Love the frame roundness 🤙🏽</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-zinc-900 via-zinc-900 to-transparent">
+                <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <input type="text" placeholder="Add comment..." className="bg-transparent flex-1 text-sm outline-none" />
+                  <button className="text-secondary font-bold text-sm">Post</button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Side Comment Panel (Desktop Only) */}
       <AnimatePresence>
