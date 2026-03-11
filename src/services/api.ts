@@ -2,15 +2,19 @@ import { toast } from 'sonner';
 
 // Build the API base URL - ensure it's always a proper URL
 const getApiBaseUrl = () => {
-  const devUrl = 'http://localhost:5000/api';
-  const prodUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-  // In development, try to use proxy if available, otherwise use direct URL
+  // In development, use localhost backend
   if (import.meta.env.DEV) {
-    // Check if there's a proxy configured (Vite dev server)
-    return devUrl;
+    return 'http://localhost:5000/api';
   }
-  return prodUrl;
+  
+  // In production (Vercel), use the Vercel proxy (/api/* routes are proxied to Render backend)
+  // If VITE_API_URL is explicitly set, use it (e.g., for direct backend URL)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Default: use /api which will be proxied by Vercel to the Render backend
+  return '/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
