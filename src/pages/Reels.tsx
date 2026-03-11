@@ -50,6 +50,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'comments' | 'recommended'>('comments');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -151,9 +152,9 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
 
         {/* Mobile ONLY Actions Overlay - Precision Aligned Interaction Pillar */}
         <div className="absolute inset-0 z-10 pointer-events-none md:hidden pt-20">
-          <div className="absolute right-2 bottom-36 flex flex-col items-center gap-5 pointer-events-auto w-16">
+          <div className="absolute right-2 bottom-[140px] flex flex-col items-center gap-4 pointer-events-auto w-16">
             {/* Profile Pillar */}
-            <motion.div whileTap={{ scale: 0.9 }} className="relative mb-2 flex justify-center">
+            <motion.div whileTap={{ scale: 0.9 }} className="relative mb-2 flex flex-col items-center">
               <div className="w-12 h-12 rounded-full border-2 border-primary overflow-hidden shadow-xl">
                 <img src={reel.author.avatar_url} alt={reel.author.username} className="w-full h-full object-cover" />
               </div>
@@ -163,38 +164,39 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             </motion.div>
  
             {/* Interaction Buttons - Vertically Centered */}
-            <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 shadow-2xl">
                 <Heart className={`w-6 h-6 transition-colors ${isLiked ? "text-red-500 fill-red-500" : ""}`} />
               </div>
-              <span className="text-[10px] font-bold text-white mt-1 drop-shadow-lg">{formatCount(likes)}</span>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(likes)}</span>
             </motion.button>
  
-            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 shadow-2xl">
                 <MessageCircle className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-bold text-white mt-1 drop-shadow-lg">{formatCount(reel.stats.comment_count)}</span>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.comment_count)}</span>
             </motion.button>
  
-            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 shadow-2xl">
                 <Bookmark className={`w-6 h-6 transition-colors ${isSaved ? "text-yellow-400 fill-yellow-400" : ""}`} />
               </div>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg opacity-0">0</span>
             </motion.button>
  
-            <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center">
+            <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center w-full">
               <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 shadow-2xl">
                 <Share2 className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-bold text-white mt-1 drop-shadow-lg">{formatCount(reel.stats.share_count)}</span>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.share_count)}</span>
             </motion.button>
  
             {/* Rotating music disc - perfectly aligned bottom pillar */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="w-11 h-11 mt-2 p-1 bg-zinc-900 rounded-full border-[3px] border-white/20 shadow-2xl relative flex items-center justify-center"
+              className="w-11 h-11 mt-1 p-1 bg-zinc-900 rounded-full border-[3px] border-white/20 shadow-2xl relative flex items-center justify-center shrink-0"
             >
               <div className="w-full h-full rounded-full overflow-hidden">
                 <img src={reel.author.avatar_url} alt="music" className="w-full h-full object-cover" />
@@ -375,63 +377,107 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
         )}
       </AnimatePresence>
 
-      {/* Side Comment Panel (Desktop Only) - Anchored to Right Edge */}
+      {/* Side Commentary & Recommendations Panel (Desktop Only) */}
       <AnimatePresence>
         {showComments && (
           <motion.div
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 100 }}
-            className="hidden md:flex absolute right-0 w-[420px] h-full bg-black/80 backdrop-blur-3xl border-l border-white/10 shadow-3xl flex-col p-8 z-20 overflow-hidden"
+            className="hidden md:flex absolute right-0 w-[450px] h-full bg-black/90 backdrop-blur-3xl border-l border-white/10 shadow-3xl flex-col z-20 overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-6 px-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-lg">Comments</h3>
-                <span className="text-white/30 text-sm font-medium">{reel.stats.comment_count}</span>
+            {/* Tabbed Header */}
+            <div className="flex flex-col p-6 pb-2 border-b border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-8">
+                  <button 
+                    onClick={() => setActiveTab('comments')}
+                    className={`relative pb-3 text-sm font-bold transition-colors ${activeTab === 'comments' ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+                  >
+                    Comments {formatCount(reel.stats.comment_count)}
+                    {activeTab === 'comments' && (
+                      <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('recommended')}
+                    className={`relative pb-3 text-sm font-bold transition-colors ${activeTab === 'recommended' ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+                  >
+                    You may like
+                    {activeTab === 'recommended' && (
+                      <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />
+                    )}
+                  </button>
+                </div>
+                <button 
+                  onClick={() => setShowComments(false)}
+                  className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors group"
+                >
+                  <X className="w-5 h-5 text-white/40 group-hover:text-white" />
+                </button>
               </div>
-              <button 
-                onClick={() => setShowComments(false)}
-                className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors group"
-              >
-                <X className="w-5 h-5 text-white/40 group-hover:text-white" />
-              </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex gap-4 group">
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex-shrink-0 overflow-hidden border border-white/5">
-                    <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="user" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-bold text-white/90">user_premium_{i}</span>
-                      <span className="text-xs text-white/20">2d ago</span>
-                    </div>
-                    <p className="text-sm text-white/70 leading-relaxed mb-3">This exact layout matches the premium TikTok experience 🤙🏽 minimalist and clean.</p>
-                    <div className="flex items-center gap-6">
-                      <button className="text-xs font-bold text-white/40 hover:text-white transition-colors">Reply</button>
-                      <div className="flex items-center gap-1.5 text-white/30">
-                        <Heart className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold">{10 + i * 5}</span>
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              {activeTab === 'comments' ? (
+                <div className="space-y-6">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex gap-4 group">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex-shrink-0 overflow-hidden border border-white/5">
+                        <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="user" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-bold text-white/90">user_premium_{i}</span>
+                          <span className="text-xs text-white/20">2d ago</span>
+                        </div>
+                        <p className="text-sm text-white/70 leading-relaxed mb-3">Implementing the Tabbed UI for total alignment with the reference. This looks so clean! 🤙🏽</p>
+                        <div className="flex items-center gap-6">
+                          <button className="text-xs font-bold text-white/40 hover:text-white transition-colors">Reply</button>
+                          <div className="flex items-center gap-1.5 text-white/30">
+                            <Heart className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-bold">{10 + i * 5}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="grid grid-cols-2 gap-3 pb-8">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <motion.div 
+                      key={i} 
+                      whileHover={{ scale: 1.02 }}
+                      className="aspect-[3/4] rounded-lg bg-zinc-900 overflow-hidden relative group cursor-pointer"
+                    >
+                      <img src={`https://picsum.photos/seed/reel_${i}/400/600`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
+                        <p className="text-[10px] font-bold text-white line-clamp-1 mb-1">Recommended Blaze {i}</p>
+                        <div className="flex items-center gap-1.5 text-[8px] text-white/60">
+                          <Play className="w-2 h-2 fill-white/60" />
+                          {formatCount(120000 + i * 15000)}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
             
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10 focus-within:border-white/20 transition-all">
-                <img src={reel.author.avatar_url} className="w-8 h-8 rounded-full border border-white/10" />
-                <input 
-                  type="text" 
-                  placeholder="Add comment..." 
-                  className="bg-transparent flex-1 text-sm outline-none placeholder:text-white/20"
-                />
-                <button className="text-secondary font-bold text-sm px-2">Post</button>
+            {activeTab === 'comments' && (
+              <div className="p-6 pt-4 border-t border-white/10 bg-black/40 backdrop-blur-xl">
+                <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10 focus-within:border-white/20 transition-all">
+                  <img src={reel.author.avatar_url} className="w-8 h-8 rounded-full border border-white/10" />
+                  <input 
+                    type="text" 
+                    placeholder="Add comment..." 
+                    className="bg-transparent flex-1 text-sm outline-none placeholder:text-white/20"
+                  />
+                  <button className="text-secondary font-bold text-sm px-2 transition-colors hover:text-white">Post</button>
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
