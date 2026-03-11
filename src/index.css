@@ -79,6 +79,7 @@
     --ring: 187 100% 50%;
     --radius: 1rem;
   }
+  }
 
   html {
     font-family: var(--font-sans);

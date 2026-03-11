@@ -843,9 +843,14 @@ const Music: React.FC = () => {
 
               {/* Row 1 — Title + Icons */}
               <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h1 className="text-2xl font-bold text-gradient">Clockit</h1>
-                  <p className="text-xs text-muted-foreground">Music & Discover</p>
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gradient">Clockit</h1>
+                    <p className="text-xs text-muted-foreground">Music & Discover</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   {/* Search → Discover mode */}

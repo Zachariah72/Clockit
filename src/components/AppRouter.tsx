@@ -71,6 +71,11 @@ const AppRouter: React.FC = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
+      
+      {/* Settings routes - accessible to all (will redirect if not logged in) */}
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/settings/:sectionId" element={<Settings />} />
+      <Route path="/settings/appearance" element={<Appearance />} />
 
       {/* Protected routes - only accessible when logged in */}
       {user ? (
@@ -92,9 +97,6 @@ const AppRouter: React.FC = () => {
           <Route path="/search" element={<Search />} />
           <Route path="/camera-test" element={<CameraTest />} />
           <Route path="/snap" element={<Snap />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/:sectionId" element={<Settings />} />
-          <Route path="/settings/appearance" element={<Appearance />} />
         </>
       ) : (
         // No routes here - public routes are already defined above
