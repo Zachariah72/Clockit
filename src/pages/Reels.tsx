@@ -49,6 +49,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -97,9 +98,9 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   };
 
   return (
-    <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+    <div className="relative h-full w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12 px-4 md:px-0">
       {/* Video Container */}
-      <div className="relative h-full w-full max-w-[500px] md:h-full md:aspect-[9/16] overflow-hidden bg-black md:rounded-[32px] shadow-[0_0_40px_rgba(0,0,0,0.5)] md:border md:border-white/10">
+      <div className={`relative h-full w-full max-w-[500px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-[42px] shadow-[0_0_60px_rgba(0,0,0,0.6)] border-[6px] border-white/5 transition-all duration-300 ${showComments ? 'md:translate-x-[-15%]' : ''}`}>
         {/* Video Background */}
         <video
           ref={videoRef}
@@ -160,31 +161,40 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             </motion.div>
 
             <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
-              <div className="p-2 rounded-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] text-white">
-                <Heart className={`w-7 h-7 ${isLiked ? "text-secondary fill-secondary" : ""}`} />
+              <div className="p-2.5 rounded-full bg-black/20 backdrop-blur-md drop-shadow-xl text-white">
+                <Heart className={`w-7 h-7 transition-colors ${isLiked ? "text-red-500 fill-red-500" : ""}`} />
               </div>
-              <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(likes)}</span>
+              <span className="text-xs font-bold text-white drop-shadow-md">{formatCount(likes)}</span>
             </motion.button>
 
-            <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
-              <div className="p-2 rounded-full text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center gap-1">
+              <div className="p-2.5 rounded-full bg-black/20 backdrop-blur-md drop-shadow-xl text-white">
                 <MessageCircle className="w-7 h-7" />
               </div>
-              <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(reel.stats.comment_count)}</span>
+              <span className="text-xs font-bold text-white drop-shadow-md">{formatCount(reel.stats.comment_count)}</span>
             </motion.button>
 
             <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center gap-1">
-              <div className={`p-2 rounded-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${isSaved ? "text-accent" : "text-white"}`}>
-                <Bookmark className={`w-7 h-7 ${isSaved ? "fill-accent" : ""}`} />
+              <div className="p-2.5 rounded-full bg-black/20 backdrop-blur-md drop-shadow-xl text-white">
+                <Bookmark className={`w-7 h-7 transition-colors ${isSaved ? "text-yellow-400 fill-yellow-400" : ""}`} />
               </div>
             </motion.button>
 
             <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
-              <div className="p-2 rounded-full text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              <div className="p-2.5 rounded-full bg-black/20 backdrop-blur-md drop-shadow-xl text-white">
                 <Share2 className="w-7 h-7" />
               </div>
-              <span className="text-xs font-semibold text-white drop-shadow-md">{formatCount(reel.stats.share_count)}</span>
+              <span className="text-xs font-bold text-white drop-shadow-md">{formatCount(reel.stats.share_count)}</span>
             </motion.button>
+
+            {/* Rotating music disc - mobile overlay */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="w-10 h-10 mt-2 p-1 bg-gradient-to-tr from-zinc-800 to-zinc-600 rounded-full border-2 border-white/20 shadow-xl"
+            >
+              <img src={reel.thumbnail_url} alt="music" className="w-full h-full rounded-full object-cover" />
+            </motion.div>
           </div>
         </div>
 
@@ -231,11 +241,11 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.8 }}
             onClick={handleLike}
-            className={`w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center transition-all border border-white/5 ${isLiked ? "text-secondary border-secondary/20" : "hover:bg-white/20 text-white"}`}
+            className={`w-12 h-12 rounded-full bg-white/10 backdrop-blur-lg flex items-center justify-center transition-all border border-white/10 shadow-lg ${isLiked ? "text-red-500 border-red-500/30" : "hover:bg-white/20 text-white"}`}
           >
-            <Heart className={`w-6 h-6 ${isLiked ? "fill-secondary" : ""}`} />
+            <Heart className={`w-6 h-6 ${isLiked ? "fill-current" : ""}`} />
           </motion.button>
-          <span className="text-sm font-bold text-white/80 drop-shadow-sm">{formatCount(likes)}</span>
+          <span className="text-sm font-bold text-white/90 drop-shadow-sm">{formatCount(likes)}</span>
         </div>
 
         {/* Comment */}
@@ -243,11 +253,12 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.8 }}
-            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+            onClick={() => setShowComments(!showComments)}
+            className={`w-12 h-12 rounded-full bg-white/10 backdrop-blur-lg hover:bg-white/20 text-white flex items-center justify-center border border-white/10 shadow-lg ${showComments ? 'bg-white/20 border-white/30' : ''}`}
           >
             <MessageCircle className="w-6 h-6" />
           </motion.button>
-          <span className="text-sm font-bold text-white/80">{formatCount(reel.stats.comment_count)}</span>
+          <span className="text-sm font-bold text-white/90">{formatCount(reel.stats.comment_count)}</span>
         </div>
 
         {/* Save */}
@@ -268,11 +279,22 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.8 }}
-            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/10 shadow-lg"
           >
             <Share2 className="w-6 h-6" />
           </motion.button>
-          <span className="text-sm font-bold text-white/80">{formatCount(reel.stats.share_count)}</span>
+          <span className="text-sm font-bold text-white/90">{formatCount(reel.stats.share_count)}</span>
+        </div>
+
+        {/* Music Disc - Desktop sidebar */}
+        <div className="flex flex-col items-center gap-1 mb-2">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 p-1 bg-gradient-to-tr from-zinc-800 to-zinc-600 rounded-full border-2 border-white/20 shadow-2xl cursor-pointer"
+          >
+            <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover" />
+          </motion.div>
         </div>
 
         {/* Navigation Arrows */}
@@ -297,6 +319,62 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
           </motion.button>
         </div>
       </div>
+
+      {/* Side Comment Panel (Desktop Only) */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className="hidden md:flex absolute right-[5%] w-[380px] h-full bg-zinc-900/40 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-2xl flex-col p-6 z-20 overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-xl">Comments</h3>
+              <button 
+                onClick={() => setShowComments(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 overflow-hidden">
+                    <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="user" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-bold text-white/60">user_{i}</span>
+                      <span className="text-[10px] text-white/20">2h</span>
+                    </div>
+                    <p className="text-sm text-white/80 leading-relaxed">This is a premium blaze! 🚀 loving the vibe of this music source.</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <button className="text-[10px] font-bold text-white/40 hover:text-white">Reply</button>
+                      <button className="text-[10px] font-bold text-white/40 hover:text-white flex items-center gap-1">
+                        <Heart className="w-3 h-3" /> 24
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-white/5">
+              <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-3 border border-white/5">
+                <input 
+                  type="text" 
+                  placeholder="Add comment..." 
+                  className="bg-transparent flex-1 text-sm outline-none placeholder:text-white/20"
+                />
+                <button className="text-secondary font-bold text-sm">Post</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
