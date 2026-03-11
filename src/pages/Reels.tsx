@@ -71,6 +71,16 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
     }
   }, [isMuted]);
 
+  // Cleanup to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+      }
+    };
+  }, []);
+
   const handleDoubleTap = () => {
     if (!isLiked) {
       setIsLiked(true);
@@ -107,6 +117,7 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
         loop
         playsInline
         muted
+        preload="metadata"
         onDoubleClick={handleDoubleTap}
         onClick={handlePlay}
       />
@@ -289,6 +300,12 @@ const Reels = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOfflineMode, setShowOfflineMode] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  
+  // Pagination states for infinite loading
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
   const dragConstraints = { top: 0, bottom: 0 };
@@ -321,29 +338,62 @@ const Reels = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchReels = async () => {
-      try {
-        console.log('Fetching reels from TikTok API...');
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
-        const response = await fetch(`${apiUrl}/tiktok/trending`);
-        console.log('TikTok API response status:', response.status);
-        const data = await response.json();
-        console.log('TikTok API response data:', data);
-        if (data.videos) {
-          console.log('Setting reels data:', data.videos.length, 'videos');
-          setReels(data.videos);
-        } else {
-          console.log('No videos in response');
-        }
-      } catch (error) {
-        console.error('Failed to fetch reels:', error);
-      } finally {
-        setLoading(false);
+  // Reusable fetch function with pagination
+  const fetchReels = async (pageNumber: number = 1) => {
+    try {
+      console.log('Fetching reels from TikTok API, page:', pageNumber);
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+      const response = await fetch(`${apiUrl}/tiktok/trending?page=${pageNumber}`);
+      console.log('TikTok API response status:', response.status);
+      
+      if (!response.ok) throw new Error('Failed to fetch reels');
+      
+      const data = await response.json();
+      console.log('TikTok API response data:', data);
+      
+      if (data.videos && data.videos.length > 0) {
+        console.log('Setting reels data:', data.videos.length, 'videos');
+        setReels((prev) => [...prev, ...data.videos]);
+      } else {
+        setHasMore(false);
+        console.log('No more videos to load');
       }
+    } catch (error) {
+      console.error('Failed to fetch reels:', error);
+    }
+  };
+
+  // Smart video preloading - preload next and previous videos
+  useEffect(() => {
+    if (!reels.length) return;
+
+    // Preload next video (full preload for instant playback)
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < reels.length) {
+      const nextVideo = document.createElement('video');
+      nextVideo.src = reels[nextIndex].video_url;
+      nextVideo.preload = 'auto';
+      console.log('Preloading next video:', reels[nextIndex].video_url);
+    }
+
+    // Preload previous video (metadata preload for quick access)
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      const prevVideo = document.createElement('video');
+      prevVideo.src = reels[prevIndex].video_url;
+      prevVideo.preload = 'metadata';
+      console.log('Preloading previous video:', reels[prevIndex].video_url);
+    }
+  }, [currentIndex, reels]);
+
+  // Initial load
+  useEffect(() => {
+    const load = async () => {
+      await fetchReels(1);
+      setLoading(false);
     };
 
-    fetchReels();
+    load();
   }, []);
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -363,6 +413,14 @@ const Reels = () => {
     if (info.offset.y < -verticalThreshold && currentIndex < reels.length - 1) {
       // Swipe up - next video
       setCurrentIndex((prev) => prev + 1);
+
+      // Load more reels when near end (3 reels from the end)
+      if (currentIndex >= reels.length - 3 && hasMore && !loadingMore) {
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchReels(nextPage).finally(() => setLoadingMore(false));
+      }
     } else if (info.offset.y > verticalThreshold && currentIndex > 0) {
       // Swipe down - previous video
       setCurrentIndex((prev) => prev - 1);
@@ -436,6 +494,13 @@ const Reels = () => {
             </motion.div>
           </AnimatePresence>
         </motion.div>
+
+        {/* Loading More Indicator */}
+        {loadingMore && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground">
+            Loading more reels...
+          </div>
+        )}
 
 
         {/* Swipe Hint */}
