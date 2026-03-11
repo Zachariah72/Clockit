@@ -209,20 +209,6 @@ export const Camera: React.FC<CameraProps> = ({
                 {/* Camera Controls Overlay */}
                 {isStreaming && !isLoading && !error && (
                   <>
-                    {/* Filter Toggle */}
-                    {enableFilters && (
-                      <div className="absolute top-4 right-4">
-                        <Button
-                          onClick={() => setShowFilters(!showFilters)}
-                          variant="secondary"
-                          size="icon"
-                          className="rounded-full bg-black/50 hover:bg-black/70 border-white/20"
-                        >
-                          <Palette className="w-5 h-5 text-white" />
-                        </Button>
-                      </div>
-                    )}
-
                     {/* Active Filter Badge */}
                     {activeFilter !== 'none' && (
                       <div className="absolute top-4 left-4">
@@ -232,38 +218,32 @@ export const Camera: React.FC<CameraProps> = ({
                       </div>
                     )}
 
-                    {/* Filter Selection */}
-                    <AnimatePresence>
-                      {showFilters && enableFilters && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
-                          className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-2xl p-3"
-                        >
-                          <div className="flex gap-2">
-                            {filters.map((filter) => {
-                              const Icon = filter.icon;
-                              return (
-                                <Button
-                                  key={filter.id}
-                                  onClick={() => {
-                                    setActiveFilter(filter.id);
-                                    setShowFilters(false);
-                                  }}
-                                  variant={activeFilter === filter.id ? "default" : "ghost"}
-                                  size="sm"
-                                  className="flex flex-col gap-1 h-auto p-2 min-w-16"
-                                >
-                                  <Icon className="w-4 h-4" />
-                                  <span className="text-xs">{filter.name}</span>
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {/* Filter Selection - Always Visible at Bottom */}
+                    {enableFilters && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-2xl px-4 py-2"
+                      >
+                        <div className="flex gap-2">
+                          {filters.map((filter) => {
+                            const Icon = filter.icon;
+                            return (
+                              <Button
+                                key={filter.id}
+                                onClick={() => setActiveFilter(filter.id)}
+                                variant={activeFilter === filter.id ? "default" : "ghost"}
+                                size="sm"
+                                className="flex flex-col gap-0.5 h-auto p-2 min-w-12"
+                              >
+                                <Icon className="w-4 h-4" />
+                                <span className="text-[10px]">{filter.name}</span>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
 
                     {/* Main Controls */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
@@ -394,20 +374,6 @@ export const Camera: React.FC<CameraProps> = ({
                   {/* Camera Controls Overlay */}
                   {isStreaming && !isLoading && !error && (
                     <>
-                      {/* Filter Toggle */}
-                      {enableFilters && (
-                        <div className="absolute top-4 right-4">
-                          <Button
-                            onClick={() => setShowFilters(!showFilters)}
-                            variant="secondary"
-                            size="icon"
-                            className="rounded-full bg-black/50 hover:bg-black/70 border-white/20"
-                          >
-                            <Palette className="w-5 h-5 text-white" />
-                          </Button>
-                        </div>
-                      )}
-
                       {/* Active Filter Badge */}
                       {activeFilter !== 'none' && (
                         <div className="absolute top-4 left-4">
@@ -417,38 +383,32 @@ export const Camera: React.FC<CameraProps> = ({
                         </div>
                       )}
 
-                      {/* Filter Selection */}
-                      <AnimatePresence>
-                        {showFilters && enableFilters && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-2xl p-3"
-                          >
-                            <div className="flex gap-2">
-                              {filters.map((filter) => {
-                                const Icon = filter.icon;
-                                return (
-                                  <Button
-                                    key={filter.id}
-                                    onClick={() => {
-                                      setActiveFilter(filter.id);
-                                      setShowFilters(false);
-                                    }}
-                                    variant={activeFilter === filter.id ? "default" : "ghost"}
-                                    size="sm"
-                                    className="flex flex-col gap-1 h-auto p-2 min-w-16"
-                                  >
-                                    <Icon className="w-4 h-4" />
-                                    <span className="text-xs">{filter.name}</span>
-                                  </Button>
-                                );
-                              })}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {/* Filter Selection - Always Visible at Bottom */}
+                      {enableFilters && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm rounded-2xl px-4 py-2"
+                        >
+                          <div className="flex gap-2">
+                            {filters.map((filter) => {
+                              const Icon = filter.icon;
+                              return (
+                                <Button
+                                  key={filter.id}
+                                  onClick={() => setActiveFilter(filter.id)}
+                                  variant={activeFilter === filter.id ? "default" : "ghost"}
+                                  size="sm"
+                                  className="flex flex-col gap-0.5 h-auto p-2 min-w-12"
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  <span className="text-[10px]">{filter.name}</span>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
 
                       {/* Main Controls */}
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
