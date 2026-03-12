@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion"
 import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, CloudOff, Play, ChevronUp, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Reel {
   id: string;
@@ -45,6 +46,8 @@ const ReelCard = ({
   isActive,
   onNext,
   onPrev,
+  globalMuted,
+  setGlobalMuted,
 }: {
   reel: Reel;
   isActive: boolean;
@@ -61,6 +64,7 @@ const ReelCard = ({
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: number; username: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -107,10 +111,29 @@ const ReelCard = ({
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: reel.title,
+      text: `Check out this blaze by @${reel.author.username} on Clockit!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+    }
+  };
+
   return (
     <div className="relative h-full w-full flex items-stretch justify-center bg-[#0a0a0a] overflow-hidden">
       {/* Container that handles the layout */}
-      <div className="flex-1 w-full h-full flex flex-col items-center justify-start relative bg-black md:px-12 overflow-hidden">
+      <div className={`flex-1 w-full h-full flex ${showComments ? 'flex-row' : 'flex-col'} items-center justify-center relative bg-black md:px-12 overflow-hidden transition-all duration-300`}>
         
         {/* Main Video Wrapper (no overflow-hidden strictly so action column can overflow on desktop) */}
         <motion.div 
@@ -132,7 +155,7 @@ const ReelCard = ({
             muted
             onDoubleClick={handleDoubleTap}
             onClick={handlePlay}
-            onEnded={onNext}
+            onEnded={() => onNext?.()}
           />
 
           {/* Play Button Overlay */}
@@ -233,7 +256,7 @@ const ReelCard = ({
             </motion.button>
 
             {/* Share */}
-            <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center w-full group">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center w-full group">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
                 <Share2 className="w-6 h-6 md:w-6 md:h-6 group-hover:text-green-400 transition-colors" />
               </div>
@@ -275,11 +298,11 @@ const ReelCard = ({
         <AnimatePresence>
           {showComments && (
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ y: "100%", x: 0 }}
+              animate={{ y: 0, x: 0 }}
+              exit={{ y: "100%", x: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute bottom-0 left-0 right-0 h-[50%] bg-[#121212] z-40 rounded-t-2xl md:max-w-[480px] md:mx-auto border-t border-white/10 flex flex-col shadow-2xl"
+              className="absolute bottom-0 left-0 right-0 h-[50%] md:h-full md:relative md:w-[350px] lg:w-[450px] bg-[#121212] z-40 rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-white/10 flex flex-col shadow-2xl"
             >
               {/* Comment Header */}
               <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
@@ -290,7 +313,8 @@ const ReelCard = ({
                   onClick={() => setShowComments(false)}
                   className="text-white/60 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
                 >
-                  <ChevronDown className="w-5 h-5" />
+                  <ChevronDown className="w-5 h-5 md:hidden" />
+                  <span className="hidden md:block text-xs uppercase font-bold tracking-widest bg-white/10 px-2 py-1 rounded">Close</span>
                 </button>
               </div>
 
@@ -306,7 +330,12 @@ const ReelCard = ({
                        <p className="text-white/90 text-sm">This is an amazing blaze! 🔥 Keep it up. Really love the content here.</p>
                        <div className="flex items-center gap-4 mt-2">
                          <span className="text-white/40 text-[10px]">2h ago</span>
-                         <button className="text-white/40 text-[10px] font-semibold hover:text-white transition-colors">Reply</button>
+                         <button 
+                          onClick={() => setReplyingTo({ id: i, username: `user_name_${i}` })}
+                          className="text-white/40 text-[10px] font-semibold hover:text-white transition-colors"
+                         >
+                            Reply
+                         </button>
                        </div>
                      </div>
                      <button className="flex flex-col items-center text-white/40 hover:text-red-500 transition-colors pt-2 shrink-0">
@@ -318,16 +347,24 @@ const ReelCard = ({
               </div>
 
               {/* Comment Input */}
-              <div className="p-4 border-t border-white/10 flex items-center gap-3 bg-[#121212] shrink-0 pb-8 sm:pb-4">
-                <div className="w-8 h-8 rounded-full bg-white/10 shrink-0 overflow-hidden">
-                   <img src={`https://i.pravatar.cc/150?img=5`} alt="me" className="w-full h-full object-cover" />
+              <div className="p-4 border-t border-white/10 bg-[#121212] shrink-0 pb-8 sm:pb-4">
+                {replyingTo && (
+                  <div className="flex items-center justify-between py-1 px-3 bg-white/5 rounded-t-lg border-x border-t border-white/10">
+                    <span className="text-[10px] text-white/60">Replying to <span className="text-primary font-bold">@{replyingTo.username}</span></span>
+                    <button onClick={() => setReplyingTo(null)} className="text-white/40 hover:text-white"><ChevronDown className="w-3 h-3" /></button>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/10 shrink-0 overflow-hidden">
+                    <img src={`https://i.pravatar.cc/150?img=5`} alt="me" className="w-full h-full object-cover" />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder={replyingTo ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
+                    className="flex-1 bg-white/5 rounded-full px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-primary border border-transparent focus:border-primary/50"
+                  />
+                  <button className="text-primary font-bold text-sm px-2 hover:text-primary/80 transition-colors">Post</button>
                 </div>
-                <input 
-                  type="text" 
-                  placeholder="Add a comment..."
-                  className="flex-1 bg-white/5 rounded-full px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-primary border border-transparent focus:border-primary/50"
-                />
-                <button className="text-primary font-bold text-sm px-2 hover:text-primary/80 transition-colors">Post</button>
               </div>
             </motion.div>
           )}
@@ -341,7 +378,6 @@ const ReelCard = ({
 
 const Reels = () => {
   console.log("Reels component mounted");
-  const navigate = useNavigate();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -368,7 +404,7 @@ const Reels = () => {
     fetchReels();
   }, []);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     const verticalThreshold = 30;
     const horizontalThreshold = 60;
 
