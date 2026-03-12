@@ -491,6 +491,7 @@ const App = () => (
 
                   <Route path="/groups" element={<Groups />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:userId" element={<Profile />} />
                   <Route path="/reels" element={<Reels />} />
                   <Route path="/live" element={<Live />} />
 
