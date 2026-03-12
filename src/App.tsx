@@ -500,6 +500,7 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/onboarding" element={<Onboarding />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings/:sectionId" element={<Settings />} />
                   <Route path="/settings/appearance" element={<Appearance />} />
                   <Route path="/downloads" element={<DownloadedMusic />} />
                   <Route path="/podcasts" element={<Podcasts />} />
