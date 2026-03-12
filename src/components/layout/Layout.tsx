@@ -16,6 +16,7 @@ interface LayoutProps {
 
 export const Layout = ({ children, hidePlayer, hideBottomNav, hideSidebar, hideRightPanel }: LayoutProps) => {
   const location = useLocation();
+  const isReels = location.pathname === '/reels';
   
   // Check if we're on desktop/large screens
   const isLargeDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
@@ -32,10 +33,17 @@ export const Layout = ({ children, hidePlayer, hideBottomNav, hideSidebar, hideR
         {/* Desktop Header - Only on large screens */}
         <DesktopHeader />
         
-        <main className="flex-1 pb-20 md:pb-0 h-full">
-          <div className="max-w-[1200px] mx-auto w-full h-full">
-            {children}
-          </div>
+        <main className={`flex-1 h-full ${isReels ? '' : 'pb-20 md:pb-0'}`}>
+          {isReels ? (
+            // Reels: no max-width, no padding — true edge-to-edge on mobile
+            <div className="w-full h-full">
+              {children}
+            </div>
+          ) : (
+            <div className="max-w-[1200px] mx-auto w-full h-full">
+              {children}
+            </div>
+          )}
         </main>
       </div>
 
