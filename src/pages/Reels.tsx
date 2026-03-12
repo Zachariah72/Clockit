@@ -52,11 +52,12 @@ const ReelCard = ({
   onPrev?: () => void;
   currentIndex?: number;
   reelsLength?: number;
+  globalMuted: boolean;
+  setGlobalMuted: (muted: boolean) => void;
 }) => {
   const [isLiked, setIsLiked] = useState(reel.isLiked || false);
   const [isSaved, setIsSaved] = useState(reel.isSaved || false);
   const [likes, setLikes] = useState(reel.stats.like_count);
-  const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -77,9 +78,9 @@ const ReelCard = ({
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = isMuted;
+      videoRef.current.muted = globalMuted;
     }
-  }, [isMuted]);
+  }, [globalMuted]);
 
   const handleDoubleTap = () => {
     if (!isLiked) {
@@ -240,18 +241,18 @@ const ReelCard = ({
             </motion.button>
 
             {/* Volume toggle (Mobile Only, or integrated) */}
-            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsMuted(!isMuted)} className="md:hidden flex flex-col items-center w-full group">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setGlobalMuted(!globalMuted)} className="md:hidden flex flex-col items-center w-full group">
               <div className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 transition-colors">
-                {isMuted
+                {globalMuted
                   ? <VolumeX className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                   : <Volume2 className="w-5 h-5 text-white group-hover:text-white transition-colors" />}
               </div>
             </motion.button>
             
             {/* Desktop Volume toggle (Floating inside the video frame, moved in TikTok, but we can put it above action column) */}
-            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsMuted(!isMuted)} className="hidden md:flex absolute -right-4 -top-16 flex-col items-center group">
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setGlobalMuted(!globalMuted)} className="hidden md:flex absolute -right-4 -top-16 flex-col items-center group">
               <div className="w-10 h-10 rounded-full bg-zinc-800/50 hover:bg-zinc-700 backdrop-blur flex items-center justify-center text-white transition-colors">
-                {isMuted
+                {globalMuted
                   ? <VolumeX className="w-5 h-5 text-white/90" />
                   : <Volume2 className="w-5 h-5 text-white/90" />}
               </div>
@@ -345,6 +346,7 @@ const Reels = () => {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOfflineMode, setShowOfflineMode] = useState(false);
+  const [globalMuted, setGlobalMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
 
@@ -439,6 +441,8 @@ const Reels = () => {
                   onPrev={() => currentIndex > 0 && setCurrentIndex((prev) => prev - 1)}
                   currentIndex={currentIndex}
                   reelsLength={reels.length}
+                  globalMuted={globalMuted}
+                  setGlobalMuted={setGlobalMuted}
                 />
               </motion.div>
             </AnimatePresence>
