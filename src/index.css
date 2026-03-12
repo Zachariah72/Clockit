@@ -78,68 +78,68 @@
     --input: 225 20% 15%;
     --ring: 187 100% 50%;
     --radius: 1rem;
-
-    html {
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      position: relative;
-      scrollbar-gutter: stable;
-    }
-
-    html::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image:
-        radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
-        radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    body {
-      background:
-        radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
-        linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
-      background-attachment: fixed !important;
-      color: #ffffff !important;
-      font-family: var(--font-sans);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      min-height: 100vh;
-      position: relative;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image:
-        radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
-        radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    #root {
-      position: relative;
-      z-index: 1;
-    }
-
-    * {
-      border-color: hsl(var(--border));
-    }
-  }
   }
 
-  @layer components {
+  html {
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    position: relative;
+    scrollbar-gutter: stable;
+  }
+
+  html::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
+      linear-gradient(135deg, #1a0b2e 0%, #0f0518 50%, #1a0b2e 100%) !important;
+    background-attachment: fixed !important;
+    color: #ffffff !important;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(149, 0, 255, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(255, 0, 212, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+}
+
+@layer components {
     .glass-card {
       backdrop-filter: blur(var(--blur-xl, 24px));
       border: 1px solid hsl(var(--border) / 0.5);
@@ -264,15 +264,30 @@
 
   /* This closing brace was added to correctly close the @layer components block. */
 
-  @layer utilities {
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 
   ::-webkit-scrollbar {

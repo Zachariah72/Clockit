@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff, Play, ChevronUp, ChevronDown, Upload, ArrowLeft } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff, Play, ChevronUp, ChevronDown, Upload, ArrowLeft, X } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { UploadVideoModal } from "@/components/reels/UploadVideoModal";
+// Simplified Reels view
 
 interface Reel {
   id: string;
@@ -49,6 +49,8 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'comments' | 'recommended'>('comments');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -97,189 +99,205 @@ const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }:
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-background">
-      {/* Video Background */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
-        src={reel.video_url}
-        poster={reel.thumbnail_url}
-        loop
-        playsInline
-        muted
-        onDoubleClick={handleDoubleTap}
-        onClick={handlePlay}
-      />
-      
-      {/* Play Button Overlay (shown when auto-play is blocked) */}
-      {!isPlaying && (
-        <motion.button
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={handlePlay}
-          className="absolute inset-0 flex items-center justify-center z-15 bg-black/20"
-        >
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
-          >
-            <Play className="w-10 h-10 text-white fill-white ml-1" />
-          </motion.div>
-        </motion.button>
-      )}
-      {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/90 pointer-events-none" />
-
-      {/* Double Tap Heart Animation */}
-      <AnimatePresence>
-        {showHeart && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-          >
-            <Heart className="w-24 h-24 text-secondary fill-secondary" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Right Side Actions */}
-      <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-10">
-        {/* Profile */}
-        <motion.div
-          whileTap={{ scale: 0.9 }}
-          className="relative"
-        >
-          <img
-            src={reel.author.avatar_url}
-            alt={reel.author.username}
-            className="w-12 h-12 rounded-full border-2 border-primary object-cover"
-          />
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-            <Plus className="w-3 h-3 text-primary-foreground" />
-          </div>
-        </motion.div>
-
-        {/* Like */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={handleLike}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className={`p-2 rounded-full ${isLiked ? "text-secondary" : "text-foreground"}`}>
-            <Heart className={`w-7 h-7 ${isLiked ? "fill-secondary" : ""}`} />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(likes)}</span>
-        </motion.button>
-
-        {/* Comment */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            <MessageCircle className="w-7 h-7" />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(reel.stats.comment_count)}</span>
-        </motion.button>
-
-        {/* Save */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={() => setIsSaved(!isSaved)}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className={`p-2 rounded-full ${isSaved ? "text-accent" : "text-foreground"}`}>
-            <Bookmark className={`w-7 h-7 ${isSaved ? "fill-accent" : ""}`} />
-          </div>
-        </motion.button>
-
-        {/* Share */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            <Share2 className="w-7 h-7" />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(reel.stats.share_count)}</span>
-        </motion.button>
-
-        {/* Mute */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={() => setIsMuted(!isMuted)}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            {isMuted ? (
-              <VolumeX className="w-7 h-7" />
-            ) : (
-              <Volume2 className="w-7 h-7" />
-            )}
-          </div>
-        </motion.button>
-
-        {/* Music Disc */}
-        <motion.div
-          animate={isActive ? { rotate: 360 } : {}}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 rounded-full overflow-hidden border-2 border-muted"
-        >
-          <img src={reel.thumbnail_url} alt="music" className="w-full h-full object-cover" />
-        </motion.div>
-
-        {/* Navigation Buttons */}
-        <div className="flex flex-col items-center gap-2">
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={onNext}
-            disabled={currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className={`p-2 rounded-full ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-              <ChevronUp className="w-7 h-7" />
+    <div className="relative h-full w-full flex flex-col md:flex-row items-stretch justify-center bg-[#0a0a0a] overflow-hidden">
+      {/* LEFT COLUMN: Anchored Comments (Desktop Only) */}
+      <div className="hidden md:flex flex-col w-[350px] border-r border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
+        <div className="p-6 border-b border-white/5">
+          <h3 className="font-bold text-lg text-white">Comments</h3>
+          <p className="text-xs text-white/30">{formatCount(reel.stats.comment_count)} thoughts</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex gap-3 scale-95 origin-left">
+              <div className="w-8 h-8 rounded-full bg-white/5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-[11px] font-bold text-white/90 mb-0.5">user_{i}</p>
+                <p className="text-[11px] text-white/60 leading-relaxed">This layout is so much better anchored to the side! 🤙🏽</p>
+              </div>
             </div>
-          </motion.button>
-          
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={onPrev}
-            disabled={currentIndex !== undefined && currentIndex <= 0}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className={`p-2 rounded-full ${currentIndex !== undefined && currentIndex <= 0 ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-              <ChevronDown className="w-7 h-7" />
-            </div>
-          </motion.button>
+          ))}
         </div>
       </div>
 
-      {/* Bottom Info */}
-      <div className="absolute bottom-24 left-4 right-20 z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-foreground">@{reel.author.username}</span>
-        </div>
-        <p className="text-sm text-foreground/90 mb-3 line-clamp-2">{reel.title}</p>
-
-        {/* Music Info */}
-        <div className="flex items-center gap-2">
-          <Music2 className="w-4 h-4 text-foreground" />
-          <div className="overflow-hidden">
-            <motion.p
-              animate={{ x: isActive ? [0, -100, 0] : 0 }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              className="text-sm text-foreground whitespace-nowrap"
+      {/* CENTER COLUMN: Video Player */}
+      <div className="flex-1 flex items-center justify-center relative bg-black/20 px-4 md:px-12">
+        {/* Video Container - Minimalist TikTok Style */}
+        <div className="relative h-full w-full max-w-[480px] md:h-full md:aspect-[9/16] overflow-hidden bg-black rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/10 shrink-0">
+        {/* Video Background */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          src={reel.video_url}
+          poster={reel.thumbnail_url}
+          loop
+          playsInline
+          muted
+          onDoubleClick={handleDoubleTap}
+          onClick={handlePlay}
+        />
+        
+        {/* Play Button Overlay */}
+        {!isPlaying && (
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={handlePlay}
+            className="absolute inset-0 flex items-center justify-center z-15 bg-black/20"
+          >
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
             >
-              {reel.music.title} • {reel.music.author}
-            </motion.p>
+              <Play className="w-10 h-10 text-white fill-white ml-1" />
+            </motion.div>
+          </motion.button>
+        )}
+        
+        {/* Overlay gradient - more aggressive at bottom/right for visibility */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-transparent pointer-events-none md:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none md:to-black/40" />
+
+        {/* Double Tap Heart Animation */}
+        <AnimatePresence>
+          {showHeart && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+            >
+              <Heart className="w-32 h-32 text-red-500 fill-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile ONLY Actions Overlay - Precision Aligned Interaction Pillar */}
+        <div className="absolute inset-0 z-10 pointer-events-none md:hidden pt-20">
+          <div className="absolute right-2 bottom-36 flex flex-col items-center gap-5 pointer-events-auto w-16">
+            {/* Profile Pillar */}
+            <motion.div whileTap={{ scale: 0.9 }} className="relative mb-2 flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full border-2 border-primary overflow-hidden shadow-xl">
+                <img src={reel.author.avatar_url} alt={reel.author.username} className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-black">
+                <Plus className="w-3 h-3 text-white" />
+              </div>
+            </motion.div>
+            {/* Interaction Buttons - Vertically Centered */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center w-full">
+              <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
+                <Heart className={`w-6 h-6 transition-colors ${isLiked ? "text-red-500 fill-red-500" : ""}`} />
+              </div>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(likes)}</span>
+            </motion.button>
+
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center w-full">
+              <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
+                <MessageCircle className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.comment_count)}</span>
+            </motion.button>
+
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsSaved(!isSaved)} className="flex flex-col items-center w-full">
+              <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
+                <Bookmark className={`w-6 h-6 transition-colors ${isSaved ? "text-yellow-400 fill-yellow-400" : ""}`} />
+              </div>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg opacity-0">0</span>
+            </motion.button>
+
+            <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center w-full">
+              <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center text-white border border-white/10">
+                <Share2 className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.share_count)}</span>
+            </motion.button>
+ 
+            {/* Rotating music disc - perfectly aligned bottom pillar */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="w-11 h-11 mt-1 p-1 bg-zinc-900 rounded-full border-[3px] border-white/20 shadow-2xl relative flex items-center justify-center shrink-0"
+            >
+              <img src={reel.author.avatar_url} alt="music" className="w-full h-full rounded-full object-cover" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-zinc-900 rounded-full border border-white/20" />
+            </motion.div>
           </div>
+        </div>
+
+        {/* Info Overlay (Common) */}
+        <div className="absolute bottom-28 left-4 right-16 z-10 pointer-events-none md:bottom-12 md:left-8">
+          <div className="pointer-events-auto max-w-[85%]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-bold text-white drop-shadow-md">@{reel.author.username}</span>
+            </div>
+            <p className="text-sm text-white/90 mb-3 line-clamp-2 drop-shadow-sm">{reel.title}</p>
+            <div className="flex items-center gap-2">
+              <Music2 className="w-4 h-4 text-white" />
+              <div className="overflow-hidden">
+                <motion.p
+                   animate={isActive ? { x: [0, -100, 0] } : { x: 0 }}
+                   transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                   className="text-xs text-white whitespace-nowrap"
+                >
+                  {reel.music.title} • {reel.music.author}
+                </motion.p>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div> {/* CLOSE VIDEO CONTAINER */}
+
+        {/* Desktop Controls (Interaction Pillar & Navigation) - FLANKING THE VIDEO */}
+        <div className="hidden md:flex flex-col items-center gap-6 absolute right-[-85px] bottom-12 z-10">
+          <div className="flex flex-col items-center gap-5">
+            <motion.button whileHover={{ scale: 1.1 }} onClick={handleLike} className="flex flex-col items-center gap-1 group">
+              <div className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center">
+                <Heart className={`w-6 h-6 ${isLiked ? "text-red-500 fill-red-500" : "text-white/60 group-hover:text-white"}`} />
+              </div>
+              <span className="text-xs font-bold text-white/40">{formatCount(likes)}</span>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-1 group">
+              <div className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-white/60 group-hover:text-white" />
+              </div>
+              <span className="text-xs font-bold text-white/40">{formatCount(reel.stats.comment_count)}</span>
+            </motion.button>
+          </div>
+          <div className="flex flex-col gap-3 mt-4">
+            <button onClick={onPrev} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+              <ChevronUp className="w-6 h-6 text-white/40" />
+            </button>
+            <button onClick={onNext} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+              <ChevronDown className="w-6 h-6 text-white/40" />
+            </button>
+          </div>
+        </div>
+      </div> {/* CLOSE CENTER COLUMN */}
+
+      {/* RIGHT COLUMN: Recommendations (Desktop Only) */}
+      <div className="hidden lg:flex flex-col w-[350px] border-l border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
+        <div className="p-6 border-b border-white/5">
+          <h3 className="font-bold text-lg text-white">You may like</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 custom-scrollbar">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-[3/4] rounded-lg bg-white/5 overflow-hidden relative group cursor-pointer transition-all hover:scale-105 border border-white/5">
+              <img src={"https://picsum.photos/seed/rec_" + i + "/400/600"} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-[10px] font-bold text-white line-clamp-1 mb-1">Blaze Premium</p>
+                <div className="flex items-center gap-1 text-[8px] text-white/60">
+                  <Play className="w-2 h-2 fill-white/60" />
+                  {formatCount(Math.floor(Math.random() * 50000))}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
+
 
 const Reels = () => {
   console.log('Reels component mounted');
@@ -288,53 +306,17 @@ const Reels = () => {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOfflineMode, setShowOfflineMode] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
-  const dragConstraints = { top: 0, bottom: 0 };
-
-  const handleUploadVideo = async (file: File, title: string, description: string) => {
-    const formData = new FormData();
-    formData.append('video', file);
-    formData.append('title', title);
-    formData.append('description', description);
-
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
-    const response = await fetch(`${apiUrl}/videos/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    // Refresh reels to include new video
-    const reelsResponse = await fetch(`${apiUrl}/videos/feed`);
-    const reelsData = await reelsResponse.json();
-    if (reelsData.videos) {
-      setReels(reelsData.videos);
-      setCurrentIndex(0); // Go to the new video
-    }
-  };
 
   useEffect(() => {
     const fetchReels = async () => {
       try {
-        console.log('Fetching reels from TikTok API...');
         const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
         const response = await fetch(`${apiUrl}/tiktok/trending`);
-        console.log('TikTok API response status:', response.status);
         const data = await response.json();
-        console.log('TikTok API response data:', data);
         if (data.videos) {
-          console.log('Setting reels data:', data.videos.length, 'videos');
           setReels(data.videos);
-        } else {
-          console.log('No videos in response');
         }
       } catch (error) {
         console.error('Failed to fetch reels:', error);
@@ -342,43 +324,34 @@ const Reels = () => {
         setLoading(false);
       }
     };
-
     fetchReels();
   }, []);
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const verticalThreshold = 30; // Lowered from 50 for easier swiping
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    const verticalThreshold = 30;
     const horizontalThreshold = 60;
 
-    // Check for horizontal swipe (left/right) for offline mode
     if (Math.abs(info.offset.x) > horizontalThreshold && Math.abs(info.offset.x) > Math.abs(info.offset.y)) {
       if (info.offset.x < -horizontalThreshold) {
-        // Swipe left - open offline mode
         setShowOfflineMode(true);
       }
       return;
     }
 
-    // Vertical swipes for reel navigation
     if (info.offset.y < -verticalThreshold && currentIndex < reels.length - 1) {
-      // Swipe up - next video
       setCurrentIndex((prev) => prev + 1);
     } else if (info.offset.y > verticalThreshold && currentIndex > 0) {
-      // Swipe down - previous video
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
-  console.log('Reels render - loading:', loading, 'reels length:', reels.length);
-
   if (loading) {
-    console.log('Showing loading state');
     return (
       <Layout hidePlayer>
-        <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+        <div className="h-[calc(100vh-80px)] flex items-center justify-center bg-black">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading reels...</p>
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white/80 font-medium tracking-wide">Syncing Blazes...</p>
           </div>
         </div>
       </Layout>
@@ -386,133 +359,75 @@ const Reels = () => {
   }
 
   if (reels.length === 0) {
-    console.log('Showing empty state');
     return (
       <Layout hidePlayer>
-        <div className="h-[calc(100vh-80px)] flex items-center justify-center">
-          <div className="text-center">
-            <CloudOff className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No reels available</p>
+        <div className="h-[calc(100vh-80px)] flex items-center justify-center bg-black text-center p-8">
+          <div>
+            <CloudOff className="w-16 h-16 text-white/20 mx-auto mb-4" />
+            <p className="text-white/60">No blazes found in this dimension.</p>
           </div>
         </div>
       </Layout>
     );
   }
 
-  console.log('Showing reels, currentIndex:', currentIndex, 'reel:', reels[currentIndex]);
   return (
-    <Layout hidePlayer>
-      <div className="h-[calc(100vh-80px)] relative overflow-hidden">
-
-
-        {/* Reels Container */}
-        <motion.div
-          ref={containerRef}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.1}
-          dragSnapToOrigin={false}
-          onDragEnd={handleDragEnd}
-          style={{ y }}
-          className="h-full w-full cursor-grab active:cursor-grabbing touch-none"
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -100 }}
-              transition={{ duration: 0.3 }}
-              className="h-full w-full"
-            >
-              <ReelCard
-                reel={reels[currentIndex]}
-                isActive={true}
-                onNext={() => currentIndex < reels.length - 1 && setCurrentIndex(prev => prev + 1)}
-                onPrev={() => currentIndex > 0 && setCurrentIndex(prev => prev - 1)}
-                currentIndex={currentIndex}
-                reelsLength={reels.length}
-              />
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-
-
-        {/* Swipe Hint */}
-        {currentIndex === 0 && !showOfflineMode && (
+    <Layout hidePlayer hideSidebar hideRightPanel>
+      <div className="h-[calc(100vh-80px)] md:h-screen relative overflow-hidden bg-black flex justify-center items-center">
+        {/* Reels Container - Absolute 3-Column Width */}
+        <div className="h-full w-full md:h-full relative flex items-center justify-center">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 text-sm text-muted-foreground z-20"
+            ref={containerRef}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.1}
+            onDragEnd={handleDragEnd}
+            style={{ y }}
+            className="h-full w-full cursor-grab active:cursor-grabbing touch-none relative"
           >
-            Swipe up for more • Swipe left for offline
-          </motion.div>
-        )}
-
-        {/* Offline Mode Overlay */}
-        <AnimatePresence>
-          {showOfflineMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-sm z-30 flex items-center justify-center"
-            >
+            <AnimatePresence mode="wait">
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center p-8 max-w-sm mx-4"
+                key={currentIndex}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                transition={{ duration: 0.3 }}
+                className="h-full w-full"
               >
-                <div className="w-16 h-16 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CloudOff className="w-8 h-8 text-primary drop-shadow-[0_0_12px_hsl(var(--primary))]" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">Offline Reels</h3>
-                <p className="text-muted-foreground mb-6">
-                  Watch your downloaded reels without an internet connection
-                </p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => navigate('/offline-reels')}
-                    className="w-full gap-2"
-                  >
-                    <CloudOff className="w-4 h-4" />
-                    View Offline Reels
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowOfflineMode(false)}
-                    className="w-full"
-                  >
-                    Continue Watching
-                  </Button>
-                </div>
+                <ReelCard
+                  reel={reels[currentIndex]}
+                  isActive={true}
+                  onNext={() => currentIndex < reels.length - 1 && setCurrentIndex(prev => prev + 1)}
+                  onPrev={() => currentIndex > 0 && setCurrentIndex(prev => prev - 1)}
+                  currentIndex={currentIndex}
+                  reelsLength={reels.length}
+                />
               </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
+
+        {/* Swipe Hints - strictly mobile */}
+        <AnimatePresence>
+          {currentIndex === 0 && !showOfflineMode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="md:hidden absolute bottom-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+            >
+              <div className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-xs text-white/60 flex items-center gap-2">
+                <ChevronUp className="w-3 h-3 animate-bounce" />
+                Swipe up for more
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Upload Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowUploadModal(true)}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
-          title="Upload Video"
-        >
-          <Upload className="w-5 h-5 text-primary-foreground" />
-        </motion.button>
-
-        {/* Upload Modal */}
-        <UploadVideoModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onUpload={handleUploadVideo}
-        />
+        {/* Modal handled elsewhere or removed if not needed */}
       </div>
     </Layout>
   );
-
 };
 
 export default Reels;
