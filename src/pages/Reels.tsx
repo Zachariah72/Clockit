@@ -386,7 +386,7 @@ const Reels = () => {
 
   if (loading) {
     return (
-      <Layout hidePlayer>
+      <Layout hidePlayer hideRightPanel>
         <div className="h-[calc(100vh-80px)] flex items-center justify-center bg-black">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -399,7 +399,7 @@ const Reels = () => {
 
   if (reels.length === 0) {
     return (
-      <Layout hidePlayer>
+      <Layout hidePlayer hideRightPanel>
         <div className="h-[calc(100vh-80px)] flex items-center justify-center bg-black text-center p-8">
           <div>
             <CloudOff className="w-16 h-16 text-white/20 mx-auto mb-4" />
@@ -411,7 +411,7 @@ const Reels = () => {
   }
 
   return (
-    <Layout hidePlayer>
+    <Layout hidePlayer hideRightPanel>
       <div className="h-[100dvh] w-full relative overflow-hidden bg-black flex justify-center items-center">
         <div className="h-full w-full relative flex items-center justify-center">
           <motion.div
