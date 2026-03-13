@@ -95,9 +95,40 @@ const ReelCard = ({
     setTimeout(() => setShowHeart(false), 1000);
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLike = async () => {
+    // 1. Optimistic UI update
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
     setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    // 2. Real API call
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "https://your-backend.onrender.com";
+      const token = localStorage.getItem('token'); // Assuming JWT is in localStorage
+      
+      const response = await fetch(`${apiUrl}/likes/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          contentId: reel.id || reel.video_id,
+          contentType: 'video'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle like');
+      
+      // If server returns a different count or status, we should ideally sync here
+      // but typical Optimistic UI just trusts the increment unless there's an error.
+    } catch (err) {
+      console.error("Like failed:", err);
+      // Rollback on error
+      setIsLiked(!newIsLiked);
+      setLikes((prev) => (newIsLiked ? prev - 1 : prev + 1));
+      toast.error("Cloud sync failed. Reverting like.");
+    }
   };
 
   const handlePlay = async () => {
