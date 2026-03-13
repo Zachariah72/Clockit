@@ -108,8 +108,8 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-  // Check if viewing own profile
-  const isOwnProfile = !userId || (user?.id && userId === user.id);
+  // Check if viewing own profile (including 'me' as shortcut for current user)
+  const isOwnProfile = !userId || userId === 'me' || (user?.id && userId === user.id);
 
   // Check for edit query param and open modal
   useEffect(() => {
