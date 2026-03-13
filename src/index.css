@@ -264,6 +264,39 @@
 
   /* This closing brace was added to correctly close the @layer components block. */
 
+  /* Strong glass card with enhanced effects */
+  .glass-card-strong {
+    @apply backdrop-blur-2xl border border-border/30 rounded-3xl;
+    background: linear-gradient(135deg, 
+      hsl(var(--card) / 0.8), 
+      hsl(var(--card) / 0.6)
+    );
+    box-shadow: 
+      0 8px 32px hsl(0 0% 0% / 0.3),
+      0 0 0 1px hsl(0 0% 100% / 0.05) inset;
+  }
+
+  /* Hover glow effect */
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  /* Modern glass card with enhanced effects */
+  .glass-card-modern {
+    @apply backdrop-blur-2xl border border-white/10 rounded-2xl;
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.05),
+      rgba(0, 0, 0, 0.1)
+    );
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+      0 0 40px rgba(147, 51, 234, 0.1);
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

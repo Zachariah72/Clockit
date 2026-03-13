@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, RotateCcw, Zap, Download, Share2, Heart, MessageCircle, Eye, RefreshCw } from "lucide-react";
+import { ArrowLeft, Send, RotateCcw, Zap, Download, Share2, Heart, MessageCircle, Eye, RefreshCw, Pencil, Trash2, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getApiUrl } from "@/utils/api";
 
+interface SnapItem {
+  image: string;
+  caption?: string;
+  createdAt?: number;
+}
+
 const Snap = () => {
   const navigate = useNavigate();
   const [currentSnap, setCurrentSnap] = useState<string | null>(null);
@@ -17,9 +23,26 @@ const Snap = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [caption, setCaption] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [snapHistory, setSnapHistory] = useState<string[]>([]);
+  const [snapHistory, setSnapHistory] = useState<SnapItem[]>([]);
   const [stories, setStories] = useState<any[]>([]);
   const [isLoadingStories, setIsLoadingStories] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editCaption, setEditCaption] = useState("");
+
+  // Load snap history from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("snapHistory");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setSnapHistory(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse snap history:", e);
+      }
+    }
+  }, []);
 
   // Fetch stories on component mount
   useEffect(() => {
@@ -122,8 +145,13 @@ const Snap = () => {
 
       if (response.ok) {
         toast.success("Snap sent to your story! ✨");
-        // Save to snap history for cross-page access
-        const updatedHistory = [currentSnap, ...snapHistory.slice(0, 9)];
+        // Save to snap history for cross-page access (as object with image and caption)
+        const newSnap: SnapItem = { 
+          image: currentSnap, 
+          caption,
+          createdAt: Date.now()
+        };
+        const updatedHistory = [newSnap, ...snapHistory.slice(0, 9)];
         setSnapHistory(updatedHistory);
         localStorage.setItem('snapHistory', JSON.stringify(updatedHistory));
         // Refresh stories
@@ -206,22 +234,110 @@ const Snap = () => {
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: index * 0.05 }}
-                          className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                          className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity relative group"
                           onClick={() => {
-                            setCurrentSnap(snap);
+                            setCurrentSnap(snap.image);
+                            setCaption(snap.caption || "");
                             setShowPreview(true);
                           }}
                         >
                           <img
-                            src={snap}
+                            src={snap.image}
                             alt={`Snap ${index + 1}`}
                             className="w-full h-full object-cover"
                           />
+                          {/* Overlay with actions */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="rounded-full h-8 w-8 bg-white/20 hover:bg-white/40 border-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingIndex(index);
+                                setEditCaption(snap.caption || "");
+                              }}
+                            >
+                              <Pencil className="w-3 h-3 text-white" />
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="rounded-full h-8 w-8 bg-white/20 hover:bg-white/40 border-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = snapHistory.filter((_, i) => i !== index);
+                                setSnapHistory(updated);
+                                localStorage.setItem('snapHistory', JSON.stringify(updated));
+                                toast.success("Snap deleted");
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 text-white" />
+                            </Button>
+                          </div>
+                          {snap.caption && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1">
+                              <p className="text-[10px] text-white truncate">{snap.caption}</p>
+                            </div>
+                          )}
                         </motion.div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Edit Caption Modal */}
+                <AnimatePresence>
+                  {editingIndex !== null && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+                      onClick={() => setEditingIndex(null)}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.9 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.9 }}
+                        className="bg-card p-4 rounded-xl w-full max-w-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="font-semibold mb-3">Edit Caption</h3>
+                        <Textarea
+                          value={editCaption}
+                          onChange={(e) => setEditCaption(e.target.value)}
+                          placeholder="Add a caption..."
+                          className="mb-3"
+                          maxLength={100}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditingIndex(null)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const updated = snapHistory.map((snap, i) => 
+                                i === editingIndex ? { ...snap, caption: editCaption } : snap
+                              );
+                              setSnapHistory(updated);
+                              localStorage.setItem('snapHistory', JSON.stringify(updated));
+                              setEditingIndex(null);
+                              toast.success("Caption updated!");
+                            }}
+                            className="flex-1"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Stories Feed */}
                 <div>
@@ -399,6 +515,17 @@ const Snap = () => {
                     )}
                   </Button>
                 </div>
+
+                {/* Edit Snap Button - Send back to camera */}
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowPreview(false)}
+                  className="w-full gap-2"
+                  disabled={isSending}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit Snap (Add Filters)
+                </Button>
 
                 {/* Story Preview */}
                 <div className="bg-muted/50 rounded-xl p-4">

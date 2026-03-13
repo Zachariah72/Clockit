@@ -86,6 +86,16 @@ const ReelCard = ({
     }
   }, [globalMuted]);
 
+  // Cleanup to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+      }
+    };
+  }, []);
+
   const handleDoubleTap = () => {
     if (!isLiked) {
       setIsLiked(true);
@@ -131,6 +141,60 @@ const ReelCard = ({
   };
 
   return (
+    <div className="relative h-full w-full overflow-hidden bg-background">
+      {/* Video Background */}
+      <video
+        ref={videoRef}
+        className="absolute inset-0 w-full h-full object-cover"
+        src={reel.video_url}
+        poster={reel.thumbnail_url}
+        loop
+        playsInline
+        muted
+        preload="metadata"
+        onDoubleClick={handleDoubleTap}
+        onClick={handlePlay}
+      />
+      
+      {/* Play Button Overlay (shown when auto-play is blocked) */}
+      {!isPlaying && (
+        <motion.button
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center z-15 bg-black/20"
+        >
+          <motion.div
+            whileTap={{ scale: 0.9 }}
+            className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
+          >
+            <Play className="w-10 h-10 text-white fill-white ml-1" />
+          </motion.div>
+        </motion.button>
+      )}
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/90 pointer-events-none" />
+
+      {/* Double Tap Heart Animation */}
+      <AnimatePresence>
+        {showHeart && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+          >
+            <Heart className="w-24 h-24 text-secondary fill-secondary" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Right Side Actions */}
+      <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-10">
+        {/* Profile */}
+        <motion.div
+          whileTap={{ scale: 0.9 }}
+          className="relative"
     <div className="relative h-full w-full flex items-stretch justify-center bg-[#0a0a0a] overflow-hidden">
       {/* Container that handles the layout */}
       <div className={`flex-1 w-full h-full flex ${showComments ? 'flex-row' : 'flex-col'} items-center justify-center relative bg-black md:px-12 overflow-hidden transition-all duration-300`}>
@@ -382,10 +446,36 @@ const Reels = () => {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOfflineMode, setShowOfflineMode] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  
+  // Pagination states for infinite loading
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  
   const [globalMuted, setGlobalMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
 
+  // Reusable fetch function with pagination
+  const fetchReels = async (pageNumber: number = 1) => {
+    try {
+      console.log('Fetching reels from TikTok API, page:', pageNumber);
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
+      const response = await fetch(`${apiUrl}/tiktok/trending?page=${pageNumber}`);
+      console.log('TikTok API response status:', response.status);
+      
+      if (!response.ok) throw new Error('Failed to fetch reels');
+      
+      const data = await response.json();
+      console.log('TikTok API response data:', data);
+      
+      if (data.videos && data.videos.length > 0) {
+        console.log('Setting reels data:', data.videos.length, 'videos');
+        setReels((prev) => [...prev, ...data.videos]);
+      } else {
+        setHasMore(false);
+        console.log('No more videos to load');
   useEffect(() => {
     const fetchReels = async () => {
       try {
@@ -400,7 +490,42 @@ const Reels = () => {
       } finally {
         setLoading(false);
       }
+    } catch (error) {
+      console.error('Failed to fetch reels:', error);
+    }
+  };
+
+  // Smart video preloading - preload next and previous videos
+  useEffect(() => {
+    if (!reels.length) return;
+
+    // Preload next video (full preload for instant playback)
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < reels.length) {
+      const nextVideo = document.createElement('video');
+      nextVideo.src = reels[nextIndex].video_url;
+      nextVideo.preload = 'auto';
+      console.log('Preloading next video:', reels[nextIndex].video_url);
+    }
+
+    // Preload previous video (metadata preload for quick access)
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      const prevVideo = document.createElement('video');
+      prevVideo.src = reels[prevIndex].video_url;
+      prevVideo.preload = 'metadata';
+      console.log('Preloading previous video:', reels[prevIndex].video_url);
+    }
+  }, [currentIndex, reels]);
+
+  // Initial load
+  useEffect(() => {
+    const load = async () => {
+      await fetchReels(1);
+      setLoading(false);
     };
+
+    load();
     fetchReels();
   }, []);
 
@@ -417,6 +542,14 @@ const Reels = () => {
 
     if (info.offset.y < -verticalThreshold && currentIndex < reels.length - 1) {
       setCurrentIndex((prev) => prev + 1);
+
+      // Load more reels when near end (3 reels from the end)
+      if (currentIndex >= reels.length - 3 && hasMore && !loadingMore) {
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchReels(nextPage).finally(() => setLoadingMore(false));
+      }
     } else if (info.offset.y > verticalThreshold && currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
@@ -449,6 +582,52 @@ const Reels = () => {
   }
 
   return (
+    <Layout hidePlayer>
+      <div className="h-[calc(100vh-80px)] relative overflow-hidden">
+
+
+        {/* Reels Container */}
+        <motion.div
+          ref={containerRef}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.1}
+          dragSnapToOrigin={false}
+          onDragEnd={handleDragEnd}
+          style={{ y }}
+          className="h-full w-full cursor-grab active:cursor-grabbing touch-none"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -100 }}
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <ReelCard
+                reel={reels[currentIndex]}
+                isActive={true}
+                onNext={() => currentIndex < reels.length - 1 && setCurrentIndex(prev => prev + 1)}
+                onPrev={() => currentIndex > 0 && setCurrentIndex(prev => prev - 1)}
+                currentIndex={currentIndex}
+                reelsLength={reels.length}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Loading More Indicator */}
+        {loadingMore && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground">
+            Loading more reels...
+          </div>
+        )}
+
+
+        {/* Swipe Hint */}
+        {currentIndex === 0 && !showOfflineMode && (
     <Layout hidePlayer hideRightPanel>
       <div className="h-[100dvh] w-full relative overflow-hidden bg-black flex justify-center items-center">
         <div className="h-full w-full relative flex items-center justify-center">
