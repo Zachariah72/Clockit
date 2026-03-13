@@ -48,8 +48,19 @@ const toggleLike = async (req, res) => {
   }
 };
 
+// Get all likes for the current user
+const getUserLikes = async (req, res) => {
+  try {
+    const likes = await Like.find({ userId: req.user.id });
+    res.json(likes);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getLikes,
   checkLike,
-  toggleLike
+  toggleLike,
+  getUserLikes
 };

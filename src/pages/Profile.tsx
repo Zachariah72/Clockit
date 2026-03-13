@@ -32,6 +32,8 @@ import {
   Edit,
   Clock
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Settings, Edit2, Music, Camera, Heart, Flame, Users, Grid3X3, BarChart3, Bookmark, FileText, Loader2, LogIn, Eye, Image, UserPlus, UserCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -103,8 +105,8 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-  // Check if viewing own profile
-  const isOwnProfile = !userId || (user?.id && userId === user.id);
+  // Check if viewing own profile (including 'me' as shortcut for current user)
+  const isOwnProfile = !userId || userId === 'me' || (user?.id && userId === user.id);
 
   // Handle dark mode toggle
   useEffect(() => {
@@ -367,6 +369,12 @@ const Profile = () => {
                   </Badge>
                 </motion.div>
               )}
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">Profile</h1>
             </div>
             <div className="flex items-center gap-2">
               <Button 

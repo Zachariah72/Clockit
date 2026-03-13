@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle } from "lucide-react";
+import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { StoryCircle } from "@/components/stories/StoryCircle";
@@ -244,49 +244,22 @@ const Stories = () => {
           className="sticky top-0 z-20 glass-card rounded-b-3xl"
         >
           <div className="flex items-center justify-between p-4">
-            <h1 className="text-2xl font-bold text-foreground">Stories</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">Stories</h1>
+            </div>
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <Button
-                  variant="glow"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Create</span>
-                </Button>
-
-                <AnimatePresence>
-                  {isCreateMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute right-0 top-12 w-64 space-y-2 z-50"
-                    >
-                      {createOptions.map((option, index) => {
-                        const Icon = option.icon;
-                        return (
-                          <motion.button
-                            key={option.label}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            onClick={option.action}
-                            className="flex items-center gap-3 w-full bg-background/95 backdrop-blur-sm border border-border rounded-2xl p-3 shadow-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div className={`p-2 rounded-full bg-muted ${option.color}`}>
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <span className="text-sm font-medium">{option.label}</span>
-                          </motion.button>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <Button
+                variant="glow"
+                size="sm"
+                className="gap-2"
+                onClick={() => setIsCameraOpen(true)}
+              >
+                <Camera className="w-4 h-4" />
+                <span>Create Story</span>
+              </Button>
             </div>
           </div>
         </motion.header>
@@ -528,6 +501,7 @@ const Stories = () => {
         <StoryViewer
           isOpen={isStoryViewerOpen}
           onClose={() => setIsStoryViewerOpen(false)}
+          stories={stories}
         />
       </div>
     </Layout>

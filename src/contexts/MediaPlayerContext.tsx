@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useSpotifyPlayer } from '@/hooks/useSpotifyPlayer';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  toggleMusicLike, 
-  recordListeningHistory, 
+import {
+  toggleMusicLike,
+  recordListeningHistory,
   getListeningHistory,
-  getFollowedArtists 
+  getFollowedArtists,
+  getUserLikes
 } from '@/services/api';
 
 interface BluetoothDevice {
@@ -47,6 +48,9 @@ interface MediaPlayerState {
   likedTrackIDs: string[];
   recentlyPlayed: Track[];
   cachedTracks: Set<string>;
+  playbackRate: number;
+  completedLessons: string[];
+  lessonBookmarks: Record<string, number>;
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
@@ -57,6 +61,7 @@ interface MediaPlayerContextType extends MediaPlayerState {
   previous: () => void;
   seekTo: (time: number) => void;
   setVolume: (volume: number) => void;
+  setPlaybackRate: (rate: number) => void;
   toggleMute: () => void;
   playTrack: (track: Track, playlist?: Track[], index?: number) => void;
   addToQueue: (track: Track) => void;
@@ -71,6 +76,7 @@ interface MediaPlayerContextType extends MediaPlayerState {
   toggleLike: (trackId: string) => void;
   isLiked: (trackId: string) => boolean;
   clearHistory: () => void;
+  toggleLessonComplete: (lessonId: string) => void;
 }
 
 const MediaPlayerContext = createContext<MediaPlayerContextType | undefined>(undefined);
@@ -108,6 +114,9 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     likedTrackIDs: JSON.parse(localStorage.getItem('likedTrackIDs') || '[]'),
     recentlyPlayed: JSON.parse(localStorage.getItem('recentlyPlayed') || '[]'),
     cachedTracks: new Set<string>(),
+    playbackRate: 1,
+    completedLessons: JSON.parse(localStorage.getItem('completedLessons') || '[]'),
+    lessonBookmarks: JSON.parse(localStorage.getItem('lesson_bookmarks') || '{}'),
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -130,6 +139,10 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     localStorage.setItem('recentlyPlayed', JSON.stringify(state.recentlyPlayed));
   }, [state.recentlyPlayed]);
 
+  useEffect(() => {
+    localStorage.setItem('completedLessons', JSON.stringify(state.completedLessons));
+  }, [state.completedLessons]);
+
   // Sync with Backend on Mount
   useEffect(() => {
     const syncWithBackend = async () => {
@@ -150,15 +163,22 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
             url: item.metadata.url,
             source: item.source
           }));
-          
-          setState(prev => ({ 
-            ...prev, 
-            recentlyPlayed: formattedHistory 
+
+          setState(prev => ({
+            ...prev,
+            recentlyPlayed: formattedHistory
           }));
         }
 
-        // Fetch Likes (Optional: If we have a GET /likes/music)
-        // For now, toggleLike handles persistence.
+        // Fetch Likes
+        const backendLikes = await getUserLikes();
+        if (backendLikes && Array.isArray(backendLikes)) {
+          const likedIDs = backendLikes.map((l: any) => l.contentId);
+          setState(prev => ({
+            ...prev,
+            likedTrackIDs: [...new Set([...prev.likedTrackIDs, ...likedIDs])]
+          }));
+        }
       } catch (err) {
         console.error('Failed to sync with backend:', err);
       }
@@ -187,7 +207,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
           console.error('Failed to record history to backend:', err);
         }
       };
-      
+
       record();
     }
   }, [state.currentTrack?.id, state.isPlaying]);
@@ -232,12 +252,30 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     };
   }, []);
 
-  // Update audio volume
+  // Save progress periodically for Learn lessons
+  useEffect(() => {
+    if (state.currentTrack && audioRef.current && state.currentTrack.artist === "Clockit Learn" && state.isPlaying) {
+      const interval = setInterval(() => {
+        const currentTime = audioRef.current?.currentTime || 0;
+        if (currentTime > 1) { // Only bookmark after 1 second
+          setState(prev => {
+            const nextBookmarks = { ...prev.lessonBookmarks, [state.currentTrack!.id]: currentTime };
+            localStorage.setItem('lesson_bookmarks', JSON.stringify(nextBookmarks));
+            return { ...prev, lessonBookmarks: nextBookmarks };
+          });
+        }
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [state.currentTrack, state.isPlaying]);
+
+  // Update audio volume and rate
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = state.isMuted ? 0 : state.volume;
+      audioRef.current.playbackRate = state.playbackRate;
     }
-  }, [state.volume, state.isMuted]);
+  }, [state.volume, state.isMuted, state.playbackRate]);
 
   // Sync Spotify player state
   useEffect(() => {
@@ -441,6 +479,10 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     setState(prev => ({ ...prev, volume: clampedVolume }));
   };
 
+  const setPlaybackRate = (rate: number) => {
+    setState(prev => ({ ...prev, playbackRate: rate }));
+  };
+
   const toggleMute = () => {
     setState(prev => ({ ...prev, isMuted: !prev.isMuted }));
   };
@@ -477,7 +519,17 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       // Auto-play after loading
       audioRef.current.addEventListener('canplay', () => {
         if (audioRef.current) {
-          audioRef.current.play();
+          // Apply playback rate
+          audioRef.current.playbackRate = state.playbackRate;
+          
+          // Resume from bookmark if it's a learn track
+          if (track.artist === "Clockit Learn" && state.lessonBookmarks[track.id]) {
+            audioRef.current.currentTime = state.lessonBookmarks[track.id];
+          }
+          
+          audioRef.current.play().catch(error => {
+            console.error('Playback error:', error);
+          });
           setState(prev => ({ ...prev, isPlaying: true }));
         }
       }, { once: true });
@@ -572,10 +624,10 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     // 2. Backend Sync
     if (auth.user) {
       try {
-        const track = state.currentTrack?.id === trackId 
-          ? state.currentTrack 
+        const track = state.currentTrack?.id === trackId
+          ? state.currentTrack
           : state.playlist.find(t => t.id === trackId);
-        
+
         await toggleMusicLike(trackId, track ? {
           title: track.title,
           artist: track.artist,
@@ -596,100 +648,111 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     setState(prev => ({ ...prev, recentlyPlayed: [] }));
   };
 
-// Media Session integration for mobile media controls
-useEffect(() => {
-  if ('mediaSession' in navigator && state.currentTrack) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: state.currentTrack.title,
-      artist: state.currentTrack.artist,
-      album: state.currentTrack.album || 'Clockit',
-      artwork: state.currentTrack.artwork ? [
-        { src: state.currentTrack.artwork, sizes: '512x512', type: 'image/png' }
-      ] : []
-    });
+  const toggleLessonComplete = (lessonId: string) => {
+    setState(prev => ({
+      ...prev,
+      completedLessons: prev.completedLessons.includes(lessonId)
+        ? prev.completedLessons.filter(id => id !== lessonId)
+        : [...prev.completedLessons, lessonId]
+    }));
+  };
 
-    // Set up action handlers
-    navigator.mediaSession.setActionHandler('play', play);
-    navigator.mediaSession.setActionHandler('pause', pause);
-    navigator.mediaSession.setActionHandler('nexttrack', () => {
-      // Only call next if there are actually more tracks to play
-      if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
-        next();
-      }
-      // If no more tracks, do nothing to prevent navigation
-    });
-    navigator.mediaSession.setActionHandler('previoustrack', previous);
-    navigator.mediaSession.setActionHandler('seekto', (details) => {
-      if (details.seekTime) {
-        seekTo(details.seekTime);
-      }
-    });
+  // Media Session integration for mobile media controls
+  useEffect(() => {
+    if ('mediaSession' in navigator && state.currentTrack) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: state.currentTrack.title,
+        artist: state.currentTrack.artist,
+        album: state.currentTrack.album || 'Clockit',
+        artwork: state.currentTrack.artwork ? [
+          { src: state.currentTrack.artwork, sizes: '512x512', type: 'image/png' }
+        ] : []
+      });
 
-    // Update playback state
-    navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+      // Set up action handlers
+      navigator.mediaSession.setActionHandler('play', play);
+      navigator.mediaSession.setActionHandler('pause', pause);
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        // Only call next if there are actually more tracks to play
+        if (state.playlist.length > 0 && (state.repeatMode === 'all' || state.currentIndex < state.playlist.length - 1)) {
+          next();
+        }
+        // If no more tracks, do nothing to prevent navigation
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', previous);
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime) {
+          seekTo(details.seekTime);
+        }
+      });
 
-    // Set position state if duration is available
-    if (state.currentTrack.duration && state.currentTrack.duration > 0) {
-      try {
-        const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
-        navigator.mediaSession.setPositionState({
-          duration: state.currentTrack.duration,
-          playbackRate: 1,
-          position: clampedPosition
-        });
-      } catch (error) {
-        console.warn('Failed to set media session position state:', error);
+      // Update playback state
+      navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+
+      // Set position state if duration is available
+      if (state.currentTrack.duration && state.currentTrack.duration > 0) {
+        try {
+          const clampedPosition = Math.max(0, Math.min(state.currentTime, state.currentTrack.duration));
+          navigator.mediaSession.setPositionState({
+            duration: state.currentTrack.duration,
+            playbackRate: 1,
+            position: clampedPosition
+          });
+        } catch (error) {
+          console.warn('Failed to set media session position state:', error);
+        }
       }
     }
-  }
-}, [state.currentTrack, state.isPlaying, state.currentTime]);
+  }, [state.currentTrack, state.isPlaying, state.currentTime]);
 
-// Legacy media session hook for additional features
-useMediaSession({
-  mediaData: state.currentTrack ? {
-    title: state.currentTrack.title,
-    artist: state.currentTrack.artist,
-    album: state.currentTrack.album,
-    artwork: state.currentTrack.artwork,
-    duration: state.currentTrack.duration,
-    currentTime: state.currentTime,
-    isPlaying: state.isPlaying,
-  } : null,
-  onPlay: play,
-  onPause: pause,
-  onNext: next,
-  onPrevious: previous,
-  onSeek: seekTo,
-});
+  // Legacy media session hook for additional features
+  useMediaSession({
+    mediaData: state.currentTrack ? {
+      title: state.currentTrack.title,
+      artist: state.currentTrack.artist,
+      album: state.currentTrack.album,
+      artwork: state.currentTrack.artwork,
+      duration: state.currentTrack.duration,
+      currentTime: state.currentTime,
+      isPlaying: state.isPlaying,
+    } : null,
+    onPlay: play,
+    onPause: pause,
+    onNext: next,
+    onPrevious: previous,
+    onSeek: seekTo,
+  });
 
-const contextValue: MediaPlayerContextType = {
-  ...state,
-  play,
-  pause,
-  stop,
-  next,
-  previous,
-  seekTo,
-  setVolume,
-  toggleMute,
-  playTrack,
-  addToQueue,
-  removeFromQueue,
-  toggleShuffle,
-  setRepeatMode,
-  connectBluetoothDevice,
-  disconnectDevice,
-  toggleOfflineMode,
-  cacheTrack,
-  isTrackCached,
-  toggleLike,
-  isLiked,
-  clearHistory,
-};
+  const contextValue: MediaPlayerContextType = {
+    ...state,
+    play,
+    pause,
+    stop,
+    next,
+    previous,
+    seekTo,
+    setVolume,
+    toggleMute,
+    playTrack,
+    addToQueue,
+    removeFromQueue,
+    toggleShuffle,
+    setRepeatMode,
+    connectBluetoothDevice,
+    disconnectDevice,
+    toggleOfflineMode,
+    cacheTrack,
+    isTrackCached,
+    toggleLike,
+    isLiked,
+    clearHistory,
+    setPlaybackRate,
+    toggleLessonComplete,
+  };
 
-return (
-  <MediaPlayerContext.Provider value={contextValue}>
-    {children}
-  </MediaPlayerContext.Provider>
-);
+  return (
+    <MediaPlayerContext.Provider value={contextValue}>
+      {children}
+    </MediaPlayerContext.Provider>
+  );
 };

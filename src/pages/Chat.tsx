@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { 
   Send, ArrowLeft, MoreVertical, Phone, PhoneOff, Video, Search, Users, 
   Plus, Image, Music, File, X, Clock, PhoneCall, PhoneMissed, PhoneIncoming, 
@@ -283,7 +284,12 @@ const ChatList = ({
         className="sticky top-0 z-20 glass-card rounded-b-3xl p-3 sm:p-4"
       >
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Messages</h1>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Messages</h1>
+          </div>
           <div className="flex items-center gap-2">
             <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
               <DialogTrigger asChild>
@@ -1000,6 +1006,7 @@ const CallHistoryView = ({
 };
 
 const Chat = () => {
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
