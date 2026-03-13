@@ -1,4 +1,6 @@
 const Like = require('../models/Like');
+const Video = require('../models/Video');
+const Comment = require('../models/Comment');
 
 // Get likes for content
 const getLikes = async (req, res) => {
@@ -36,10 +38,27 @@ const toggleLike = async (req, res) => {
 
     if (existingLike) {
       await Like.findOneAndDelete({ userId, contentId, contentType });
+      
+      // Update stats in the original model
+      if (contentType === 'video') {
+        await Video.findByIdAndUpdate(contentId, { $inc: { 'stats.likeCount': -1 } });
+      } else if (contentType === 'comment') {
+        // Comment model doesn't have a likeCount field in some versions, but let's be safe
+        await Comment.findByIdAndUpdate(contentId, { $inc: { likeCount: -1 } }).catch(() => {});
+      }
+
       return res.json({ liked: false, message: 'Unliked successfully' });
     } else {
       const newLike = new Like({ userId, contentId, contentType });
       await newLike.save();
+
+      // Update stats in the original model
+      if (contentType === 'video') {
+        await Video.findByIdAndUpdate(contentId, { $inc: { 'stats.likeCount': 1 } });
+      } else if (contentType === 'comment') {
+        await Comment.findByIdAndUpdate(contentId, { $inc: { likeCount: 1 } }).catch(() => {});
+      }
+
       return res.json({ liked: true, message: 'Liked successfully' });
     }
   } catch (err) {
