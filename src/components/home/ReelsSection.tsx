@@ -47,7 +47,7 @@ export const ReelsSection = () => {
       try {
         const data = await api.getPublic<any>('/tiktok/trending');
         if (data && data.videos && data.videos.length > 0) {
-          setReels(data.videos.slice(0, 6)); // showing up to 6 reels
+          setReels(data.videos.slice(0, 10)); // up to 10 reels for carousel
         } else {
           setReels(FALLBACK_REELS);
         }
@@ -76,8 +76,8 @@ export const ReelsSection = () => {
 
       <div className="flex overflow-x-auto px-6 gap-4 hide-scrollbar snap-x">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex-none w-40 h-64 snap-center relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 animate-pulse">
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex-none w-[calc(50vw-1.5rem)] md:w-40 aspect-[9/16] snap-center relative rounded-[15px] overflow-hidden bg-white/5 border border-white/10 animate-pulse">
             </div>
           ))
         ) : (
@@ -87,7 +87,7 @@ export const ReelsSection = () => {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex-none w-40 h-64 snap-center relative rounded-2xl overflow-hidden cursor-pointer group"
+              className="flex-none w-[calc(50vw-1.5rem)] md:w-40 aspect-[9/16] relative snap-center rounded-[15px] overflow-hidden cursor-pointer group"
               onClick={() => handleReelClick(reel)}
               tabIndex={0}
               role="button"
@@ -99,6 +99,9 @@ export const ReelsSection = () => {
                 alt={reel.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${reel.id || index}/300/500`;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
               

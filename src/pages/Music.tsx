@@ -5,7 +5,7 @@ import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText,
+  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText, User,
   Globe, Brain, Briefcase, BookOpen, Mic2, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -892,6 +892,12 @@ const Music: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
+                    <User className="w-5 h-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/notifications')}>
+                    <Bell className="w-5 h-5" />
+                  </Button>
                   {/* Search → Discover mode */}
                   <Button variant="ghost" size="icon" className="touch-manipulation"
                     onClick={() => setActiveMode("discover")}>

@@ -19,16 +19,10 @@ export const Sidebar = () => {
     <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[260px] border-r border-white/5 bg-black/95 backdrop-blur-xl p-6 z-50">
       {/* Logo */}
       <div className="mb-10 px-2">
-        <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5b6cf9] via-[#a259ff] to-[#d936d0] flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
-            <span className="font-sans font-black text-white text-xl">C</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="font-sans font-bold text-2xl tracking-tight text-white group-hover:text-primary transition-colors">
-              Clockit
-            </span>
-            <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Music & Blaze</span>
-          </div>
+        <div className="flex items-center cursor-pointer">
+          <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">
+            Clockit
+          </span>
         </div>
       </div>
 

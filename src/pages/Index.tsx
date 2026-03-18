@@ -14,7 +14,7 @@ import { MobileSuggestions } from '@/components/home/MobileSuggestions';
 import { CommunitySection } from "@/components/home/CommunitySection";
 import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
-import { Bell, Plus, Radio, PencilLine, Camera, Film } from "lucide-react";
+import { Bell, Plus, Radio, PencilLine, Camera, Film, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroMusicImage from '@/assets/hero-music.jpg';
 import { getUserPlaylists, getNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/api';
@@ -213,17 +213,25 @@ const HomePage = () => {
                 <span className="font-sans font-bold text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#5b6cf9] via-[#a259ff] to-[#d936d0]">
                   Clockit
                 </span>
-                <button
-                  onClick={() => setIsNotificationsOpen(true)}
-                  className="relative p-2 text-white bg-white/10 hover:bg-white/20 transition-colors rounded-full backdrop-blur-md border border-white/10"
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-black">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="p-2 text-white bg-white/10 hover:bg-white/20 transition-colors rounded-full backdrop-blur-md border border-white/10"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsNotificationsOpen(true)}
+                    className="relative p-2 text-white bg-white/10 hover:bg-white/20 transition-colors rounded-full backdrop-blur-md border border-white/10"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-black">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Stories (Snappy) */}
