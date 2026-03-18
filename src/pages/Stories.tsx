@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getStories, uploadStoryMedia, createStory } from '@/services/api';
 import { Camera, ImagePlus, Sparkles, Flame, X, RotateCcw, Zap, Heart, Smile, Star, Film, Radio, FileText, Circle, Users, UserPlus, Plus, RefreshCw, Eye, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
@@ -125,33 +126,19 @@ const Stories = () => {
   const fetchStories = async () => {
     setIsLoadingStories(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.log('No auth token, skipping stories fetch');
-        setIsLoadingStories(false);
-        return;
-      }
-
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/stories`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await getStories();
+      if (data) {
         setStories(data);
-      } else if (response.status === 401) {
+      }
+    } catch (error: any) {
+      if (error.response && error.response.status === 401) {
         console.log('Unauthorized, clearing token');
         localStorage.removeItem('auth_token');
         toast.error("Please log in to view stories");
       } else {
-        console.error('Failed to fetch stories');
+        console.error('Failed to fetch stories:', error);
+        toast.error("Failed to fetch stories");
       }
-    } catch (error) {
-      console.error('Error fetching stories:', error);
     } finally {
       setIsLoadingStories(false);
     }
@@ -163,47 +150,29 @@ const Stories = () => {
   };
 
   const sendSnapAsStory = async (imageData: string, file: File) => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      toast.error("Please log in to post stories");
-      return;
-    }
-
     setIsSending(true);
     try {
-      // For now, use a placeholder URL since data URLs are too large
-      // In production, you'd upload the file and get a URL back
-      const placeholderUrl = `https://via.placeholder.com/400x600/7c3aed/ffffff?text=Story+${Date.now()}`;
+      // Step 1: Upload the actual file instead of using a placeholder
+      const uploadRes = await uploadStoryMedia(file);
+      const mediaUrl = uploadRes.mediaUrl;
 
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/stories`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      // Step 2: Create the story entry
+      const response = await createStory({
           content: caption || "Captured with Clockit 📸",
-          mediaUrl: placeholderUrl, // Use placeholder instead of large data URL
+          mediaUrl,
           type: 'image',
           isPrivate: false
-        })
       });
 
-      if (response.ok) {
+      if (response) {
         toast.success("Story posted! ✨");
-        // Save to snap history for cross-page access (use placeholder for display)
-        const updatedHistory = [placeholderUrl, ...snapHistory.slice(0, 9)];
+        // Save to snap history for cross-page access
+        const updatedHistory = [mediaUrl, ...snapHistory.slice(0, 9)];
         setSnapHistory(updatedHistory);
         localStorage.setItem('snapHistory', JSON.stringify(updatedHistory));
         // Refresh stories to show the new one
         fetchStories();
         setCaption("");
-      } else if (response.status === 401) {
-        localStorage.removeItem('auth_token');
-        toast.error("Session expired. Please log in again.");
-      } else {
-        toast.error("Failed to post story");
       }
     } catch (error) {
       console.error('Error posting story:', error);
@@ -483,6 +452,9 @@ const Stories = () => {
                         src={story.mediaUrl}
                         alt="Story content"
                         className="w-full rounded-lg object-cover max-h-64"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${story._id}/400/600`;
+                        }}
                       />
                     </div>
                   )}

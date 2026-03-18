@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getStories, uploadStoryMedia, createStory } from '@/services/api';
 import { ArrowLeft, Send, RotateCcw, Zap, Download, Share2, Heart, MessageCircle, Eye, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,20 +76,9 @@ const Snap = () => {
   const fetchStories = async () => {
     setIsLoadingStories(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/stories`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await getStories();
+      if (data) {
         setStories(data);
-      } else {
-        console.error('Failed to fetch stories');
       }
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -102,28 +92,22 @@ const Snap = () => {
 
     setIsSending(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      // Step 1: Upload the actual file instead of using a placeholder or data URL
+      const uploadRes = await uploadStoryMedia(snapFile);
+      const mediaUrl = uploadRes.mediaUrl;
 
-      // First, upload the image (you might need to implement file upload)
-      // For now, we'll use the data URL directly
-      const response = await fetch('/api/stories', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      // Step 2: Create the story entry
+      const response = await createStory({
           content: caption,
-          mediaUrl: currentSnap, // In real app, this would be uploaded file URL
+          mediaUrl,
           type: 'image',
           isPrivate: false
-        })
       });
 
-      if (response.ok) {
+      if (response) {
         toast.success("Snap sent to your story! ✨");
         // Save to snap history for cross-page access
-        const updatedHistory = [currentSnap, ...snapHistory.slice(0, 9)];
+        const updatedHistory = [mediaUrl, ...snapHistory.slice(0, 9)];
         setSnapHistory(updatedHistory);
         localStorage.setItem('snapHistory', JSON.stringify(updatedHistory));
         // Refresh stories
@@ -275,6 +259,9 @@ const Snap = () => {
                                 src={story.mediaUrl}
                                 alt="Story content"
                                 className="w-full rounded-lg object-cover max-h-48"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${story._id}/400/600`;
+                                }}
                               />
                             </div>
                           )}

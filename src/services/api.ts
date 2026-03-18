@@ -171,6 +171,16 @@ export const getStories = async () => {
   return api.get<any[]>('/stories');
 };
 
+export const createStory = async (data: any) => {
+  return api.post<any>('/stories', data);
+};
+
+export const uploadStoryMedia = async (file: File) => {
+  const formData = new FormData();
+  formData.append('media', file);
+  return api.post<{ mediaUrl: string; filename: string }>('/stories/upload', formData);
+};
+
 // Artist follow API functions
 export const followArtist = async (artistId: string, artistName: string, artistImage: string = '') => {
   return api.post('/artists/follow/follow', { artistId, artistName, artistImage });
