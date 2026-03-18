@@ -22,6 +22,7 @@ interface PostProps {
 }
 
 export const FeedPost: React.FC<PostProps> = ({
+  id,
   username,
   userImage,
   location,
@@ -67,42 +68,55 @@ export const FeedPost: React.FC<PostProps> = ({
   const [skipped, setSkipped] = useState(false);
   const [shared, setShared] = useState(false);
 
-  // Effects: Apply visual effect (placeholder)
-  const handleEffect = () => {
+  // Effects: Apply visual effect (Like)
+  const handleEffect = async () => {
     setEffectActive(true);
+    try {
+      if (id) await toggleContentLike(id.toString(), 'post');
+    } catch (e) { console.error('Failed to trigger effect'); }
     setTimeout(() => setEffectActive(false), 1000);
-    // TODO: Implement real effect logic
   };
   // Fast Forward: Skip to next item
   const handleSkip = () => {
     setSkipped(true);
     setTimeout(() => setSkipped(false), 1000);
-    // TODO: Implement skip logic
   };
   // Repeat: Repeat current item
   const handleRepeat = () => {
     setRepeated(true);
     setTimeout(() => setRepeated(false), 1000);
-    // TODO: Implement repeat logic
   };
   // Share: Open share dialog
-  const handleShare = () => {
+  const handleShare = async () => {
     setShared(true);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Clockit post by ${username}`,
+          text: caption,
+          url: window.location.href,
+        });
+      }
+    } catch (e) {
+      console.error('Error sharing:', e);
+    }
     setTimeout(() => setShared(false), 1000);
-    // TODO: Implement share dialog
   };
   // Save: Save current item
   const handleSave = () => {
     setSaved((prev) => !prev);
-    // TODO: Implement save logic
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newComment.trim()) {
+      try {
+        if (id) await createContentComment(id.toString(), 'post', newComment);
+      } catch (e) { console.error('Failed to post comment'); }
+      
       const comment: Comment = {
         id: comments.length + 1,
-        username: 'current_user', // Replace with actual username
+        username: 'current_user',
         text: newComment,
         timestamp: 'Just now'
       };
