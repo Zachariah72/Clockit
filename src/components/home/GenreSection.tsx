@@ -21,7 +21,10 @@ export const GenreSection = () => {
           <h2 className="text-2xl font-bold text-white">Vibes & Genres</h2>
           <p className="text-cream-100/60 text-sm">Explore the sounds of the continent</p>
         </div>
-        <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+        <button 
+          className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+          onClick={() => navigate('/search')}
+        >
           <ArrowRight size={20} className="text-cream-100/60" />
         </button>
       </div>
@@ -35,7 +38,7 @@ export const GenreSection = () => {
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
             className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
-            onClick={() => navigate(`/music?genre=${encodeURIComponent(genre.name)}`)}
+            onClick={() => navigate('/search', { state: { genre: genre.name } })}
           >
             <img 
               src={genre.image} 

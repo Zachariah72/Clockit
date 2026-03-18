@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MoreHorizontal, ChevronDown, ChevronUp, Send, MousePointerClick, FastForward, Repeat2, Share2, Save } from 'lucide-react';
+import { toggleContentLike, createContentComment } from '@/services/api';
 
 interface Comment {
   id: number;

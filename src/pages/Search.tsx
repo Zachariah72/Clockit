@@ -4,13 +4,14 @@ import { ArrowLeft, Search as SearchIcon, Music, User, Users, Film, Hash, X, Use
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { profileApi } from "@/services/profileApi";
 import { toast } from "sonner";
 
 const Search = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -185,6 +186,13 @@ const Search = () => {
 
     return () => clearTimeout(debounceTimer);
   }, [query]);
+
+  // Handle deep-linking from other pages
+  useEffect(() => {
+    if (location.state?.genre) {
+      setQuery(location.state.genre);
+    }
+  }, [location.state]);
 
   return (
     <Layout>

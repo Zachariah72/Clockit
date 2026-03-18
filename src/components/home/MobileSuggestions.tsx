@@ -1,4 +1,8 @@
 import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSuggestedUsers, toggleFollowUser } from '@/services/api';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const SUGGESTIONS = [
     { id: 1, name: 'Dayo Emmanuel', handle: '@dayo_music', image: 'https://picsum.photos/seed/dayo/100/100', subtitle: 'Followed by wizkid' },
@@ -9,6 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export const MobileSuggestions = () => {
+    const { user, profile } = useAuth();
     return (
         <div className="lg:hidden mb-8 px-4 md:px-0">
             {/* Current User Profile Block */}
@@ -16,15 +21,15 @@ export const MobileSuggestions = () => {
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#2962FF] to-[#FF00D4] p-[2px]">
                         <img
-                            src="https://picsum.photos/seed/user/100/100"
+                            src={profile?.avatar || "https://picsum.photos/seed/user/100/100"}
                             alt="Profile"
                             className="w-full h-full rounded-full border-2 border-cocoa-950 object-cover"
                             referrerPolicy="no-referrer"
                         />
                     </div>
                     <div className="text-sm">
-                        <div className="font-bold text-white">emmanuel_jimoh</div>
-                        <div className="text-cream-100/60">Emmanuel Jimoh</div>
+                        <div className="font-bold text-white">{user?.username || 'Guest'}</div>
+                        <div className="text-cream-100/60">{profile?.fullName || 'Welcome to Clockit'}</div>
                     </div>
                 </div>
                 <button className="text-xs font-bold text-[#9500FF] hover:text-white transition-colors">Switch</button>

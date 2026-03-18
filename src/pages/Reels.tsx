@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, CloudOff, Play, ChevronUp, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Reel {
@@ -415,6 +415,7 @@ const Reels = () => {
   const [showOfflineMode, setShowOfflineMode] = useState(false);
   const [globalMuted, setGlobalMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
   const y = useMotionValue(0);
 
   useEffect(() => {
@@ -434,6 +435,15 @@ const Reels = () => {
     };
     fetchReels();
   }, []);
+
+  useEffect(() => {
+    if (reels.length > 0 && location.state?.reelId) {
+      const idx = reels.findIndex(r => r.id === location.state.reelId || r.video_id === location.state.reelId);
+      if (idx !== -1) {
+        setCurrentIndex(idx);
+      }
+    }
+  }, [reels, location.state]);
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const verticalThreshold = 30;

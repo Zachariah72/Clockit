@@ -166,6 +166,11 @@ class ApiService {
 
 export const api = new ApiService(API_BASE_URL);
 
+// Stories API functions
+export const getStories = async () => {
+  return api.get<any[]>('/stories');
+};
+
 // Artist follow API functions
 export const followArtist = async (artistId: string, artistName: string, artistImage: string = '') => {
   return api.post('/artists/follow/follow', { artistId, artistName, artistImage });
@@ -217,6 +222,26 @@ export const searchMusic = async (query: string) => {
 };
 
 // Playlist API functions
+// ==========================================
+// USERS API
+// ==========================================
+
+export const getSuggestedUsers = async () => {
+  return api.get<any[]>('/users/suggestions');
+};
+
+export const toggleFollowUser = async (userId: string) => {
+  return api.post<{ action: string }>(`/users/${userId}/follow`);
+};
+
+export const toggleContentLike = async (contentId: string, contentType: string) => {
+  return api.post<{ liked: boolean, message: string }>('/likes/toggle', { contentId, contentType });
+};
+
+export const createContentComment = async (contentId: string, contentType: string, text: string) => {
+  return api.post<any>('/comments', { contentId, contentType, text });
+};
+
 export const getUserPlaylists = async () => {
   return api.get<any[]>('/playlists');
 };
@@ -278,6 +303,22 @@ export const updateGroupPlayback = async (groupId: string, data: { currentTrack:
 
 export const getFeaturedPodcasts = async () => {
   return api.get('/podcasts/featured');
+};
+
+// ==========================================
+// NOTIFICATIONS API
+// ==========================================
+
+export const getNotifications = async () => {
+  return api.get<any[]>('/notifications');
+};
+
+export const markNotificationRead = async (id: string) => {
+  return api.put<{ success: boolean }>(`/notifications/${id}/read`);
+};
+
+export const markAllNotificationsRead = async () => {
+  return api.put<{ success: boolean }>('/notifications/read-all');
 };
 
 export const getPodcastCategories = async () => {

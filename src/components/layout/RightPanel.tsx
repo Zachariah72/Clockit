@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSuggestedUsers, toggleFollowUser } from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 
 const SUGGESTIONS = [
   { id: 1, name: 'Dayo Emmanuel', handle: '@dayo_music', image: 'https://picsum.photos/seed/dayo/100/100', subtitle: 'Followed by wizkid' },
@@ -9,11 +12,27 @@ const SUGGESTIONS = [
 ];
 
 export const RightPanel = () => {
-  const [followed, setFollowed] = useState<{ [id: number]: boolean }>({});
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const [suggestions, setSuggestions] = useState<any[]>(SUGGESTIONS);
+  const [followed, setFollowed] = useState<{ [id: string]: boolean }>({});
 
-  const handleFollow = (id: number) => {
-    setFollowed((prev) => ({ ...prev, [id]: true }));
-    // TODO: Add API call to follow user here
+  useEffect(() => {
+    if (user) {
+      getSuggestedUsers().then(data => {
+        if (data && data.length > 0) setSuggestions(data);
+      }).catch(console.error);
+    }
+  }, [user]);
+
+  const handleFollow = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await toggleFollowUser(id);
+      setFollowed((prev) => ({ ...prev, [id]: res.action === 'followed' }));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -22,15 +41,15 @@ export const RightPanel = () => {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#2962FF] to-[#FF00D4] p-[2px]">
             <img
-              src="https://picsum.photos/seed/user/100/100"
+              src={profile?.avatar || "https://picsum.photos/seed/user/100/100"}
               alt="Profile"
               className="w-full h-full rounded-full border-2 border-cocoa-950 object-cover"
               referrerPolicy="no-referrer"
             />
           </div>
           <div className="text-sm">
-            <div className="font-bold text-white">emmanuel_jimoh</div>
-            <div className="text-cream-100/60">Emmanuel Jimoh</div>
+            <div className="font-bold text-white">{user?.username || 'Guest'}</div>
+            <div className="text-cream-100/60">{profile?.fullName || 'Welcome to Clockit'}</div>
           </div>
         </div>
         <button className="text-xs font-bold text-[#9500FF] hover:text-white transition-colors">Switch</button>
@@ -42,8 +61,8 @@ export const RightPanel = () => {
       </div>
 
       <div className="space-y-4">
-        {SUGGESTIONS.map((user) => (
-          <div key={user.id} className="flex items-center justify-between group">
+        {suggestions.map((user) => (
+          <div key={user.id} className="flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/profile/${user.id || user.name}`)}>
             <div className="flex items-center gap-3">
               <img
                 src={user.image}
@@ -59,7 +78,7 @@ export const RightPanel = () => {
             <button
               className={`text-xs font-bold px-3 py-1 rounded transition-colors ${followed[user.id] ? 'bg-green-600 text-white cursor-default' : 'text-[#9500FF] hover:text-white bg-white/0 hover:bg-[#9500FF]/10'}`}
               disabled={!!followed[user.id]}
-              onClick={() => handleFollow(user.id)}
+              onClick={(e) => handleFollow(user.id, e)}
             >
               {followed[user.id] ? 'Following' : 'Follow'}
             </button>

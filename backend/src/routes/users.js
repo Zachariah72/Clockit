@@ -104,4 +104,63 @@ router.put('/safety', auth, async (req, res) => {
   }
 });
 
+// Get user suggestions to follow
+router.get('/suggestions', auth, async (req, res) => {
+  try {
+    const Follow = require('../models/Follow');
+    const following = await Follow.find({ follower: req.user.id }).select('following');
+    const followingIds = following.map(f => f.following);
+    followingIds.push(req.user.id);
+    
+    const suggested = await User.find({ _id: { $nin: followingIds } })
+      .select('username displayName profileImage avatar_url')
+      .limit(5);
+      
+    res.json(suggested.map(u => ({
+      id: u._id,
+      name: u.displayName || u.username,
+      handle: `@${u.username}`,
+      image: u.profileImage || u.avatar_url || 'https://picsum.photos/seed/user/100/100',
+      subtitle: 'Suggested for you'
+    })));
+  } catch (err) {
+    console.error("Suggestions error", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Follow a user
+router.post('/:id/follow', auth, async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    if (targetUserId === req.user.id) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+    
+    const Follow = require('../models/Follow');
+    const existingFollow = await Follow.findOne({ follower: req.user.id, following: targetUserId });
+    
+    if (existingFollow) {
+      await Follow.findByIdAndDelete(existingFollow._id);
+      return res.json({ action: 'unfollowed' });
+    } else {
+      const follow = new Follow({ follower: req.user.id, following: targetUserId });
+      await follow.save();
+      
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        userId: targetUserId,
+        senderId: req.user.id,
+        type: 'follow',
+        message: 'started following you',
+        targetUrl: `/profile/${req.user.id}`
+      });
+      
+      return res.json({ action: 'followed' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

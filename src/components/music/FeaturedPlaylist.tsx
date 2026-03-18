@@ -35,7 +35,8 @@ export const FeaturedPlaylist = ({
       <motion.div
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.98 }}
-        className="relative rounded-2xl overflow-hidden group"
+        onClick={onClick}
+        className="relative rounded-2xl overflow-hidden group cursor-pointer"
         style={{ width: 520, height: 200, minWidth: 520, minHeight: 200 }}
       >
         <img
