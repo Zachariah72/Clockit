@@ -78,7 +78,7 @@ export const ReelsSection = () => {
       <div className="flex md:grid md:grid-cols-3 overflow-x-auto md:overflow-visible px-6 gap-4 md:gap-3 hide-scrollbar snap-x md:snap-none">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] snap-center md:snap-align-none relative rounded-2xl overflow-hidden transform-gpu bg-white/5 border border-white/10 animate-pulse">
+            <div key={i} className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] snap-center md:snap-align-none relative rounded-[15px] overflow-hidden transform-gpu bg-white/5 border border-white/10 animate-pulse">
             </div>
           ))
         ) : (
@@ -88,7 +88,7 @@ export const ReelsSection = () => {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] relative snap-center md:snap-align-none rounded-2xl overflow-hidden transform-gpu cursor-pointer group"
+              className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] relative snap-center md:snap-align-none rounded-[15px] overflow-hidden transform-gpu cursor-pointer group border border-white/10"
               onClick={() => handleReelClick(reel)}
               tabIndex={0}
               role="button"
@@ -98,7 +98,7 @@ export const ReelsSection = () => {
               <img 
                 src={reel.thumbnail_url || 'https://picsum.photos/seed/reel/300/500'} 
                 alt={reel.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 rounded-[15px]"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${reel.id || index}/300/500`;
