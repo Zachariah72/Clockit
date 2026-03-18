@@ -36,7 +36,7 @@ export const FeaturedPlaylist = ({
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.98 }}
         onClick={onClick}
-        className="relative rounded-2xl overflow-hidden group cursor-pointer w-full h-48 md:h-56"
+        className="relative rounded-2xl overflow-hidden group cursor-pointer w-full h-48 md:w-[520px] md:min-w-[520px] md:h-[200px] md:min-h-[200px]"
       >
         <img
           src={image}
@@ -59,7 +59,7 @@ export const FeaturedPlaylist = ({
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative rounded-2xl overflow-hidden cursor-pointer group w-full h-40 md:h-48"
+      className="relative rounded-2xl overflow-hidden cursor-pointer group w-full h-40 md:w-[250px] md:min-w-[250px] md:h-[200px] md:min-h-[200px] md:mr-[12px]"
     >
       <img
         src={image}

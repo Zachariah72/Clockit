@@ -47,7 +47,8 @@ export const ReelsSection = () => {
       try {
         const data = await api.getPublic<any>('/tiktok/trending');
         if (data && data.videos && data.videos.length > 0) {
-          setReels(data.videos.slice(0, 10)); // up to 10 reels for carousel
+          // Send 3 reals for MD grid, let Mobile get up to 10
+          setReels(data.videos.slice(0, 10));
         } else {
           setReels(FALLBACK_REELS);
         }
@@ -74,10 +75,10 @@ export const ReelsSection = () => {
         </div>
       </div>
 
-      <div className="flex overflow-x-auto px-6 gap-4 hide-scrollbar snap-x">
+      <div className="flex md:grid md:grid-cols-3 overflow-x-auto md:overflow-visible px-6 gap-4 md:gap-3 hide-scrollbar snap-x md:snap-none">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex-none w-[calc(50vw-1.5rem)] md:w-40 aspect-[9/16] snap-center relative rounded-[15px] overflow-hidden bg-white/5 border border-white/10 animate-pulse">
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] snap-center md:snap-align-none relative rounded-[15px] overflow-hidden bg-white/5 border border-white/10 animate-pulse">
             </div>
           ))
         ) : (
@@ -87,7 +88,7 @@ export const ReelsSection = () => {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex-none w-[calc(50vw-1.5rem)] md:w-40 aspect-[9/16] relative snap-center rounded-[15px] overflow-hidden cursor-pointer group"
+              className="flex-none md:flex-initial w-[calc(50vw-1.5rem)] md:w-full aspect-[9/16] relative snap-center md:snap-align-none rounded-[15px] overflow-hidden cursor-pointer group"
               onClick={() => handleReelClick(reel)}
               tabIndex={0}
               role="button"
@@ -125,6 +126,15 @@ export const ReelsSection = () => {
           ))
         )}
       </div>
+      
+      {/* Hide overflow items on desktop via CSS */}
+      <style>{`
+        @media (min-width: 768px) {
+          .flex.md\\:grid > div:nth-child(n+4) {
+            display: none;
+          }
+        }
+      `}</style>
     </section>
   );
 };
