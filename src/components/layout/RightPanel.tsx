@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSuggestedUsers, toggleFollowUser } from '@/services/api';
+import { getSuggestedUsers, toggleFollowUser, getDiscoverUsers } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 
 const SUGGESTIONS = [
@@ -18,15 +18,23 @@ export const RightPanel = () => {
   const [followed, setFollowed] = useState<{ [id: string]: boolean }>({});
 
   useEffect(() => {
-    if (user) {
-      getSuggestedUsers().then(data => {
+    const fetchSuggestions = async () => {
+      try {
+        const data = user ? await getSuggestedUsers() : await getDiscoverUsers();
         if (data && data.length > 0) setSuggestions(data);
-      }).catch(console.error);
-    }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSuggestions();
   }, [user]);
 
   const handleFollow = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
     try {
       const res = await toggleFollowUser(id);
       setFollowed((prev) => ({ ...prev, [id]: res.action === 'followed' }));
@@ -52,7 +60,12 @@ export const RightPanel = () => {
             <div className="text-cream-100/60">{profile?.fullName || 'Welcome to Clockit'}</div>
           </div>
         </div>
-        <button className="text-xs font-bold text-[#9500FF] hover:text-white transition-colors">Switch</button>
+        <button 
+          onClick={() => navigate('/auth')}
+          className="text-xs font-bold text-[#9500FF] hover:text-white transition-colors"
+        >
+          {user ? 'Switch' : 'Sign In'}
+        </button>
       </div>
 
       <div className="flex items-center justify-between mb-4">

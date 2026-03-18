@@ -230,6 +230,10 @@ export const getSuggestedUsers = async () => {
   return api.get<any[]>('/users/suggestions');
 };
 
+export const getDiscoverUsers = async () => {
+  return api.get<any[]>('/users/discover');
+};
+
 export const toggleFollowUser = async (userId: string) => {
   return api.post<{ action: string }>(`/users/${userId}/follow`);
 };

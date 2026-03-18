@@ -104,7 +104,28 @@ router.put('/safety', auth, async (req, res) => {
   }
 });
 
-// Get user suggestions to follow
+// Get random public users to follow (for guests)
+router.get('/discover', async (req, res) => {
+  try {
+    const suggested = await User.find({ isPublic: true })
+      .select('username displayName profileImage avatar_url followerCount')
+      .sort({ followerCount: -1, createdAt: -1 })
+      .limit(5);
+      
+    res.json(suggested.map(u => ({
+      id: u._id,
+      name: u.displayName || u.username,
+      handle: `@${u.username}`,
+      image: u.profileImage || u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`,
+      subtitle: 'Suggested for you'
+    })));
+  } catch (err) {
+    console.error("Discover users error", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user suggestions to follow (for authenticated users)
 router.get('/suggestions', auth, async (req, res) => {
   try {
     const Follow = require('../models/Follow');
