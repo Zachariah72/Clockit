@@ -213,25 +213,23 @@ const Stories = () => {
     }
   };
 
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+
+  // Fetch previous gallery content (mock: replace with real API call)
+  const fetchGallery = async () => {
+    // Example: fetch from backend or local storage
+    // Replace with real API call as needed
+    setGalleryItems([
+      { url: '/sample1.jpg', type: 'image' },
+      { url: '/sample2.jpg', type: 'image' },
+      { url: '/sample3.mp4', type: 'video' },
+    ]);
+  };
+
   const selectFromGallery = () => {
-    // Create file input for offline media
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,video/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            // Automatically send gallery image to stories
-            sendSnapAsStory(event.target.result as string, file);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
+    fetchGallery();
+    setIsGalleryOpen(true);
   };
 
   return (
@@ -321,6 +319,54 @@ const Stories = () => {
                 <span className="text-xs sm:text-sm">Effects</span>
               </Button>
             </div>
+            {/* Gallery Modal - move outside grid for correct rendering */}
+            {isGalleryOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                <div className="bg-background rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto relative">
+                  <button className="absolute top-3 right-3 text-2xl" onClick={() => setIsGalleryOpen(false)}>&times;</button>
+                  <h4 className="text-lg font-bold mb-4">Your Gallery</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {galleryItems.length === 0 ? (
+                      <div className="col-span-3 text-center text-muted-foreground">No previous content found.</div>
+                    ) : (
+                      galleryItems.map((item, idx) => (
+                        <div key={idx} className="rounded-lg overflow-hidden border border-border bg-muted cursor-pointer hover:scale-105 transition-transform">
+                          {item.type === 'image' ? (
+                            <img src={item.url} alt="Gallery" className="w-full h-24 object-cover" />
+                          ) : (
+                            <video src={item.url} controls className="w-full h-24 object-cover" />
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="mt-6 text-center">
+                    <Button onClick={() => {
+                      setIsGalleryOpen(false);
+                      // fallback to old upload
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*,video/*';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              sendSnapAsStory(event.target.result as string, file);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }}>
+                      Upload New
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.section>
 
