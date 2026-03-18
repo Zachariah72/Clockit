@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const SUGGESTIONS = [
   { id: 1, name: 'Dayo Emmanuel', handle: '@dayo_music', image: 'https://picsum.photos/seed/dayo/100/100', subtitle: 'Followed by wizkid' },
@@ -9,6 +9,13 @@ const SUGGESTIONS = [
 ];
 
 export const RightPanel = () => {
+  const [followed, setFollowed] = useState<{ [id: number]: boolean }>({});
+
+  const handleFollow = (id: number) => {
+    setFollowed((prev) => ({ ...prev, [id]: true }));
+    // TODO: Add API call to follow user here
+  };
+
   return (
     <div className="hidden lg:block w-[320px] pl-8 py-8 fixed right-0 top-0 bottom-0 pr-4">
       <div className="flex items-center justify-between mb-8">
@@ -49,7 +56,13 @@ export const RightPanel = () => {
                 <div className="text-cream-100/40 truncate max-w-[140px]">{user.subtitle}</div>
               </div>
             </div>
-            <button className="text-xs font-bold text-[#9500FF] hover:text-white transition-colors">Follow</button>
+            <button
+              className={`text-xs font-bold px-3 py-1 rounded transition-colors ${followed[user.id] ? 'bg-green-600 text-white cursor-default' : 'text-[#9500FF] hover:text-white bg-white/0 hover:bg-[#9500FF]/10'}`}
+              disabled={!!followed[user.id]}
+              onClick={() => handleFollow(user.id)}
+            >
+              {followed[user.id] ? 'Following' : 'Follow'}
+            </button>
           </div>
         ))}
       </div>

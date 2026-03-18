@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Search, Bell, Plus, TrendingUp, Clock, Music, User, Check, X, Hash, Film, Radio, Video, ImagePlus, Users } from "lucide-react";
+import { PencilLine, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { StoryCreator } from "@/components/stories/StoryCreator";
 import { SongCard } from "@/components/music/SongCard";
 import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
 import { Layout } from "@/components/layout/Layout";
+import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
 import { getApiUrl } from "@/utils/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
@@ -36,12 +38,17 @@ const featuredPlaylists = [
 ];
 
 const Index = () => {
+      const { playTrack } = useMediaPlayer();
     // --- FIX: Add missing handler functions ---
-    const handleStoryClick = () => {};
-    const handleSeeAllPlaylists = () => {};
-    const handlePlaylistClick = (playlistId: string) => {};
-    const handleStoryViewed = () => {};
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const handleSeeAllPlaylists = () => {
+        navigate('/music?tab=playlists');
+    };
+    const handlePlaylistClick = (playlistId: string) => {
+        navigate(`/music?playlist=${playlistId}`);
+    };
+  const handleStoryClick = () => {};
+  const handleStoryViewed = () => {};
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
@@ -111,32 +118,27 @@ useEffect(() => {
   fetchStories();
 }, []);
 
-const handleStorySubmit = async (FormData: any) => {
+const handleStorySubmit = async (media: File, type: 'image' | 'video') => {
   try {
     const token = localStorage.getItem('auth_token');
     const apiUrl = getApiUrl();
-    console.log('Uploading to:', `${apiUrl}/stories/upload`);
-    
+    // Upload media
+    const formData = new FormData();
+    formData.append('media', media);
     const uploadResponse = await fetch(`${apiUrl}/stories/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
       },
-      body: FormData
+      body: formData
     });
-    
-    console.log('Upload response status:', uploadResponse.status);
-    
     if (!uploadResponse.ok) {
       const errorData = await uploadResponse.json();
       console.error('Upload error:', errorData);
       throw new Error('Failed to upload media');
     }
-    
     const uploadData = await uploadResponse.json();
-    console.log('Upload successful, data:', uploadData);
-    
-    // Step 2: Create the story
+    // Create story
     const createResponse = await fetch(`${apiUrl}/stories`, {
       method: 'POST',
       headers: {
@@ -146,37 +148,28 @@ const handleStorySubmit = async (FormData: any) => {
       body: JSON.stringify({
         content: '',
         mediaUrl: uploadData.mediaUrl,
-        type: 'image',
+        type,
         isPrivate: false
       })
     });
-    
-    console.log('Create story response status:', createResponse.status);
-    
     if (!createResponse.ok) {
       const errorData = await createResponse.json();
       console.error('Create story error:', errorData);
       throw new Error('Failed to create story');
     }
-    
     const newStory = await createResponse.json();
-    console.log('Story created, data:', newStory);
-    
-    // Update the stories list with the new story
-    // Format: id, username, image, hasUnseenStory (matching StoriesRow interface)
     setStories(prev => [{
       id: newStory._id,
       username: 'You',
       image: newStory.mediaUrl,
       hasUnseenStory: true
     }, ...prev]);
-    
     alert('Story created successfully!');
   } catch (error) {
-      console.error('Error creating story:', error);
-      alert('Failed to create story. Please try again.');
-    }
-  };
+    console.error('Error creating story:', error);
+    alert('Failed to create story. Please try again.');
+  }
+};
 
   const handleCreateStory = () => {
     setIsStoryCreatorOpen(true);
@@ -319,136 +312,52 @@ const handleStorySubmit = async (FormData: any) => {
               >
                 <Plus className="w-5 h-5" />
               </Button>
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative touch-manipulation"
-                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  )}
-                </Button>
-
-                {/* Notifications Dropdown */}
-                {isNotificationsOpen && (
-                  <motion.div
-                    ref={notificationRef}
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute top-12 right-4 w-72 xs:w-80 sm:w-88 md:w-96 lg:w-[28rem] max-w-[calc(100vw-2rem)] bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg z-50"
+              {/* FAB Dropdown menu */}
+              {isFabOpen && (
+                <div className="absolute top-16 right-16 bg-white dark:bg-black rounded-xl shadow-lg p-6 flex flex-col gap-6 z-50">
+                  <button
+                    className="flex items-center gap-3 text-lg font-semibold text-foreground hover:text-primary transition"
+                    onClick={() => { setIsFabOpen(false); navigate('/post'); }}
                   >
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold">Notifications</h3>
-                        {unreadCount > 0 && (
-                          <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
-                            <Check className="w-3 h-3 mr-1" />
-                            Mark all read
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 max-h-48 xs:max-h-52 sm:max-h-64 md:max-h-80 lg:max-h-[28rem] overflow-y-auto">
-                        {notifications.map((notification) => (
-                          <motion.div
-                            key={notification.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className={`p-3 rounded-xl cursor-pointer transition-colors ${
-                              notification.isRead
-                                ? 'bg-muted/30'
-                                : 'bg-primary/10 border border-primary/20'
-                            }`}
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            {/* notification.message is no longer shown */}
-                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                            {!notification.isRead && (
-                              <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                            )}
-                          </motion.div>
-                        ))}
-                      </div>
-
-                      {notifications.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No notifications yet
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* FAB Dropdown Menu */}
-              <AnimatePresence>
-                {isFabOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    className="absolute top-16 right-4 w-64 bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg z-50 overflow-hidden"
+                    <PencilLine className="w-6 h-6" />
+                    Post
+                  </button>
+                  <button
+                    className="flex items-center gap-3 text-lg font-semibold text-foreground hover:text-primary transition"
+                    onClick={() => { setIsFabOpen(false); setIsStoryCreatorOpen(true); }}
                   >
-                    <div className="p-3 space-y-1">
-                      <h4 className="text-xs font-semibold text-muted-foreground px-2 py-1">CREATE</h4>
-                      <button
-                        onClick={() => {
-                          setIsFabOpen(false);
-                          navigate('/stories');
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center">
-                          <ImagePlus className="w-5 h-5 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Stories</p>
-                          <p className="text-xs text-muted-foreground">Share a story</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsFabOpen(false);
-                          navigate('/reels');
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                          <Video className="w-5 h-5 text-purple-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Reels</p>
-                          <p className="text-xs text-muted-foreground">Create a new reel</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsFabOpen(false);
-                          navigate('/post');
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
-                          <Plus className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Post</p>
-                          <p className="text-xs text-muted-foreground">Create a new post</p>
-                        </div>
-                      </button>
-                    </div>
-                  </motion.div>
+                    <Camera className="w-6 h-6" />
+                    Stories
+                  </button>
+                  <button
+                    className="flex items-center gap-3 text-lg font-semibold text-foreground hover:text-primary transition"
+                    onClick={() => { setIsFabOpen(false); navigate('/reels'); }}
+                  >
+                    <Film className="w-6 h-6" />
+                    Reels
+                  </button>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative touch-manipulation"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
-              </AnimatePresence>
-              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/live'}>
-                <Radio className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => window.location.href = '/profile'}>
-                <User className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="touch-manipulation"
+                onClick={() => navigate('/live')}
+                aria-label="Go Live"
+                style={{ display: 'inline-flex' }}
+              >
+                <Radio className="w-5 h-5 text-red-500" />
               </Button>
             </div>
           </div>
@@ -518,7 +427,9 @@ const handleStorySubmit = async (FormData: any) => {
               See all
             </Button>
           </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2">
+          <div className="flex overflow-x-auto scrollbar-hide pb-2">
+            {/* Custom minimal gap between cards */}
+            <style>{`.playlist-card:not(:last-child) { margin-right: 0px; }`}</style>
             {featuredPlaylists.map((playlist) => (
               <FeaturedPlaylist
                 key={playlist.id}
@@ -527,6 +438,7 @@ const handleStorySubmit = async (FormData: any) => {
                 image={playlist.image}
                 songCount={playlist.songCount}
                 onClick={() => handlePlaylistClick(playlist.id)}
+                className="playlist-card"
               />
             ))}
           </div>
@@ -545,7 +457,7 @@ const handleStorySubmit = async (FormData: any) => {
         <StoryCreator
           isOpen={isStoryCreatorOpen}
           onClose={() => setIsStoryCreatorOpen(false)}
-          onSubmit={handleStorySubmit}
+          onStoryCreated={(media, type) => handleStorySubmit(media, type)}
         />
 
         {/* Search Dialog */}

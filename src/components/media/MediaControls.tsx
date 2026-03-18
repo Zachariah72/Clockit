@@ -164,6 +164,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
           size="lg"
           onClick={isPlaying ? pause : play}
           className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          data-autoplay
         >
           {isPlaying ? (
             <Pause className="w-6 h-6" />

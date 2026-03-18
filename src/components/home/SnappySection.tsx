@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const STORIES = [
   { id: 'me', name: 'My Snap', img: 'https://picsum.photos/seed/me/100/100', isUser: true },
@@ -12,6 +13,18 @@ const STORIES = [
 ];
 
 export const SnappySection = () => {
+  const navigate = useNavigate();
+
+  const handleStoryClick = (story: typeof STORIES[number]) => {
+    if (story.isUser) {
+      navigate('/snap');
+    } else {
+      // For demo: navigate to /profile/:id for artists, or /stories/:id for others
+      // Here, let's use /profile/:id for all except My Snap
+      navigate(`/profile/${story.id}`);
+    }
+  };
+
   return (
     <section className="mb-6">
       <div className="flex items-center justify-between px-4 md:px-0 mb-4">
@@ -28,7 +41,12 @@ export const SnappySection = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
-            className="flex flex-col items-center gap-2 flex-shrink-0"
+            className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
+            onClick={() => handleStoryClick(story)}
+            tabIndex={0}
+            role="button"
+            aria-label={`Open ${story.name}`}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleStoryClick(story); }}
           >
             <div className={`relative p-[3px] rounded-full ${story.hasNew ? 'bg-gradient-to-tr from-clay-500 via-pink-500 to-yellow-500' : 'bg-white/10'}`}>
               <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-cocoa-950">

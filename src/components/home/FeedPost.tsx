@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { MoreHorizontal, ChevronDown, ChevronUp, Send, MousePointerClick, FastForward, Repeat2, Share2, Save } from 'lucide-react';
 
 interface Comment {
   id: number;
@@ -24,14 +24,10 @@ export const FeedPost: React.FC<PostProps> = ({
   username,
   userImage,
   location,
-  image,
   caption,
-  timeAgo
+  timeAgo,
 }) => {
-  // Lightweight auto-advancing image slider for homepage visual
   const sliderImages = [
-    image,
-    // Add more image URLs here for the slider
     'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
@@ -63,12 +59,42 @@ export const FeedPost: React.FC<PostProps> = ({
     }
   ]);
 
-  // Define action handlers
-  const handleClick = () => alert('Click action!');
-  const handleSkip = () => alert('Skip action!');
-  const handleEcho = () => alert('Echo action!');
-  const handleRelay = () => alert('Relay action!');
-  const handleBave = () => alert('Bave action!');
+  // Action states
+  const [effectActive, setEffectActive] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [repeated, setRepeated] = useState(false);
+  const [skipped, setSkipped] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  // Effects: Apply visual effect (placeholder)
+  const handleEffect = () => {
+    setEffectActive(true);
+    setTimeout(() => setEffectActive(false), 1000);
+    // TODO: Implement real effect logic
+  };
+  // Fast Forward: Skip to next item
+  const handleSkip = () => {
+    setSkipped(true);
+    setTimeout(() => setSkipped(false), 1000);
+    // TODO: Implement skip logic
+  };
+  // Repeat: Repeat current item
+  const handleRepeat = () => {
+    setRepeated(true);
+    setTimeout(() => setRepeated(false), 1000);
+    // TODO: Implement repeat logic
+  };
+  // Share: Open share dialog
+  const handleShare = () => {
+    setShared(true);
+    setTimeout(() => setShared(false), 1000);
+    // TODO: Implement share dialog
+  };
+  // Save: Save current item
+  const handleSave = () => {
+    setSaved((prev) => !prev);
+    // TODO: Implement save logic
+  };
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,37 +150,42 @@ export const FeedPost: React.FC<PostProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons - Click, Skip, Echo, Relay, Bave */}
+      {/* Action Buttons - Click, Skip, Echo, Relay, Save */}
       <div className="flex items-center gap-3 mb-4 bg-gradient-to-r from-[#1a0022] to-[#2a0033] p-3 rounded-xl overflow-x-auto scrollbar-hide snap-x md:justify-center">
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
-          onClick={handleClick}
+          className={`text-white font-semibold rounded px-4 py-2 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent flex items-center justify-center ${effectActive ? 'bg-green-700' : 'hover:bg-blue-900'}`}
+          onClick={handleEffect}
+          title="Effects"
         >
-          Click
+          <MousePointerClick className="w-5 h-5" />
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
+          className={`text-white font-semibold rounded px-4 py-2 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent flex items-center justify-center ${skipped ? 'bg-yellow-700' : 'hover:bg-gray-800'}`}
           onClick={handleSkip}
+          title="Fast Forward"
         >
-          Skip
+          <FastForward className="w-5 h-5" />
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
-          onClick={handleEcho}
+          className={`text-white font-semibold rounded px-4 py-2 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent flex items-center justify-center ${repeated ? 'bg-blue-700' : 'hover:bg-blue-900'}`}
+          onClick={handleRepeat}
+          title="Repeat"
         >
-          Echo
+          <Repeat2 className="w-5 h-5" />
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-blue-900 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
-          onClick={handleRelay}
+          className={`text-white font-semibold rounded px-4 py-2 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent flex items-center justify-center ${shared ? 'bg-purple-700' : 'hover:bg-blue-900'}`}
+          onClick={handleShare}
+          title="Share"
         >
-          Relay
+          <Share2 className="w-5 h-5" />
         </button>
         <button
-          className="text-white font-semibold rounded px-4 py-2 hover:bg-gray-800 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent"
-          onClick={handleBave}
+          className={`text-white font-semibold rounded px-4 py-2 transition-colors flex-shrink-0 snap-start bg-white/5 md:bg-transparent flex items-center justify-center ${saved ? 'bg-pink-700' : 'hover:bg-gray-800'}`}
+          onClick={handleSave}
+          title={saved ? 'Saved' : 'Save'}
         >
-          Bave
+          <Save className="w-5 h-5" />
         </button>
       </div>
 

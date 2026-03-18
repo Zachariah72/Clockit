@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   return {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
     server: {
       host: "::",
       port: 8080,
@@ -253,10 +258,6 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
-    },
+    // resolve block moved to top, remove duplicate here
   };
 });

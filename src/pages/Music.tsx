@@ -72,8 +72,9 @@ const moodModes = [
 ];
 
 const genres = [
-  "All", "Pop", "Hip-Hop/Rap", "R&B/Soul", "Rock", "Electronic/EDM", "Jazz",
-  "Blues", "Classical", "Gospel", "Reggae/Dancehall", "Afrobeat/Afropop/Amapiano",
+  "All", "Amapiano", "Afrobeats", "Alte", "Highlife", "Gengetone", "Kizomba",
+  "Pop", "Hip-Hop/Rap", "R&B/Soul", "Rock", "Electronic/EDM", "Jazz",
+  "Blues", "Classical", "Gospel", "Reggae/Dancehall",
   "Latin", "Country", "Folk", "Indie", "K-Pop/J-Pop/C-Pop",
   "Bollywood/Indian Classical & Pop", "Arabic/Middle Eastern", "Caribbean",
   "Lo-Fi", "Instrumental", "Soundtracks/Scores", "Experimental/Alternative",
@@ -81,6 +82,10 @@ const genres = [
 
 // ───────────────────────────────────────────────────────────────────────────
 const Music: React.FC = () => {
+  // Top-level fallback message for debugging
+  if (typeof window !== 'undefined') {
+    window.musicPageLoaded = true;
+  }
   const { user } = useAuth();
   const { currentTrack, play, pause, isPlaying, recentlyPlayed, likedTrackIDs, playTrack, lessonBookmarks, completedLessons } = useMediaPlayer();
   const { toast } = useToast();
@@ -98,6 +103,11 @@ const Music: React.FC = () => {
     const mode = searchParams.get("mode");
     if (mode === "learn") {
       setActiveMode("learn");
+    }
+    const genreParam = searchParams.get("genre");
+    if (genreParam && genres.includes(genreParam)) {
+      setSelectedGenre(genreParam);
+      setActiveMode("library");
     }
   }, [searchParams]);
 
@@ -117,6 +127,21 @@ const Music: React.FC = () => {
 
   // ── Missing state variables ──────────────────────────────────────────────
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Select playlist from query param
+  useEffect(() => {
+    const playlistId = searchParams.get('playlist');
+    if (playlistId && playlists.length > 0) {
+      const p = playlists.find((pl: any) => pl.id === playlistId);
+      if (p) {
+        setSelectedPlaylist(p);
+        // Auto-play first song
+        if (p.songs && p.songs.length > 0 && typeof playTrack === 'function') {
+          playTrack(p.songs[0], p.songs, 0);
+        }
+      }
+    }
+  }, [searchParams, playlists]);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
@@ -409,12 +434,15 @@ const Music: React.FC = () => {
   // ── Fetch real data from Backend ──────────────────────────────────────────
   useEffect(() => {
     const loadInitData = async () => {
+      let loadedSongs = null;
+      let loadedPlaylists = null;
+      let loadedGroups = null;
       try {
-        // Load initial "Discover" content (Trending/Chill)
+        // Try to load real data
         const tracks = await searchMusic("trending chill");
-        if (Array.isArray(tracks)) {
-          setAllSongs(tracks.map((t: any) => ({
-            id: t.id.toString(),
+        if (Array.isArray(tracks) && tracks.length > 0) {
+          loadedSongs = tracks.map((t: any) => ({
+            id: t.id?.toString() || t._id?.toString() || Math.random().toString(),
             title: t.title,
             artist: t.artist?.name || t.artist || "Unknown",
             albumArt: t.albumArt || t.artwork_url || album1,
@@ -422,37 +450,48 @@ const Music: React.FC = () => {
             genre: t.genre || "Chill",
             mood: t.mood || "Chill",
             trackUrl: t.trackUrl || t.stream_url || "",
-          })));
+          }));
+        } else {
+          loadedSongs = recentSongs;
         }
 
-        // Load user playlists
         const up = await getUserPlaylists();
-        if (Array.isArray(up)) {
-          setPlaylists(up.map((p: any) => ({
-            id: p._id,
+        if (Array.isArray(up) && up.length > 0) {
+          loadedPlaylists = up.map((p: any) => ({
+            id: p._id || p.id,
             title: p.name,
             description: p.description,
             image: p.coverImage || album1,
             songCount: p.tracks?.length || 0,
             songs: p.tracks?.map((t: any) => ({
-              id: t.trackId,
-              title: t.metadata?.title || "Unknown",
-              artist: t.metadata?.artist || "Unknown",
-              albumArt: t.metadata?.artwork || album1,
-              trackUrl: t.metadata?.url || "",
+              id: t.trackId || t.id,
+              title: t.metadata?.title || t.title || "Unknown",
+              artist: t.metadata?.artist || t.artist || "Unknown",
+              albumArt: t.metadata?.artwork || t.albumArt || album1,
+              trackUrl: t.metadata?.url || t.trackUrl || "",
               source: t.source
             })) || []
-          })));
+          }));
+        } else {
+          loadedPlaylists = featuredPlaylistsMock;
         }
 
-        // Load Joined Groups
         const groups = await discoverPublicGroups();
-        if (Array.isArray(groups)) {
-          setActiveGroups(groups.slice(0, 5));
+        if (Array.isArray(groups) && groups.length > 0) {
+          loadedGroups = groups.slice(0, 5);
+        } else {
+          loadedGroups = [];
         }
       } catch (err) {
         console.error("Error loading music data:", err);
+        loadedSongs = recentSongs;
+        loadedPlaylists = featuredPlaylistsMock;
+        loadedGroups = [];
       }
+      // Always set fallback if any are empty
+      setAllSongs(Array.isArray(loadedSongs) && loadedSongs.length > 0 ? loadedSongs : recentSongs);
+      setPlaylists(Array.isArray(loadedPlaylists) && loadedPlaylists.length > 0 ? loadedPlaylists : featuredPlaylistsMock);
+      setActiveGroups(Array.isArray(loadedGroups) ? loadedGroups : []);
     };
     loadInitData();
   }, []);
@@ -937,23 +976,20 @@ const Music: React.FC = () => {
                       See all
                     </Button>
                   </div>
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory scroll-smooth">
-                    {featuredPlaylistsMock.map(pl => (
-                      <div key={pl.id} className="snap-start flex-shrink-0 w-[360px]">
-                        <FeaturedPlaylist
-                          title={pl.title}
-                          description={pl.description}
-                          image={pl.image}
-                          songCount={pl.songCount}
-                          onClick={() => {
-                            const playlistSongs = filteredSongs.length > 0
-                              ? filteredSongs
-                              : allSongs.slice(0, pl.songCount);
-
-                            if (playlistSongs.length > 0) {
+                  <div className="flex flex-col space-y-6 px-4 pb-2 md:flex-row md:space-y-0 md:gap-4 md:overflow-x-auto md:scrollbar-hide md:snap-x md:snap-mandatory md:scroll-smooth">
+                    {featuredPlaylistsMock.length > 0 ? (
+                      featuredPlaylistsMock.map(pl => (
+                        <div key={pl.id} className="w-full md:w-[360px] flex-shrink-0 snap-start">
+                          <FeaturedPlaylist
+                            title={pl.title}
+                            description={pl.description}
+                            image={pl.image}
+                            songCount={pl.songCount}
+                            hidePlayButton={pl.title === "Trending Now"}
+                            onClick={() => {
                               setSelectedPlaylist({
                                 ...pl,
-                                songs: playlistSongs.map((song: any) => ({
+                                songs: recentSongs.map(song => ({
                                   id: song.id,
                                   title: song.title,
                                   artist: song.artist,
@@ -962,58 +998,16 @@ const Music: React.FC = () => {
                                   trackUrl: song.trackUrl
                                 }))
                               });
-                            } else {
-                              setSelectedPlaylist(pl);
-                            }
-                          }}
-                          onPlay={(e) => {
-                            e.stopPropagation();
-
-                            const playlistSongs = filteredSongs.length > 0
-                              ? filteredSongs
-                              : allSongs.slice(0, pl.songCount);
-
-                            if (playlistSongs.length > 0) {
-                              const formattedPlaylist = playlistSongs.map((song: any) => {
-                                let durationInSeconds = 180;
-
-                                if (typeof song.duration === 'string') {
-                                  const parts = song.duration.split(':');
-                                  if (parts.length === 2) {
-                                    const mins = parseInt(parts[0], 10);
-                                    const secs = parseInt(parts[1], 10);
-                                    if (!isNaN(mins) && !isNaN(secs)) {
-                                      durationInSeconds = mins * 60 + secs;
-                                    }
-                                  }
-                                } else if (typeof song.duration === 'number') {
-                                  durationInSeconds = song.duration;
-                                }
-
-                                return {
-                                  id: song.id,
-                                  title: song.title,
-                                  artist: song.artist,
-                                  album: pl.title,
-                                  duration: durationInSeconds,
-                                  url: song.trackUrl,
-                                  artwork: song.albumArt,
-                                };
-                              });
-
-                              // Play the first track from the formatted playlist
-                              if (formattedPlaylist.length > 0) {
-                                playTrack(formattedPlaylist[0], formattedPlaylist, 0);
-                                toast({
-                                  title: "Now Playing",
-                                  description: `${pl.title} - ${formattedPlaylist[0].title}`,
-                                });
-                              }
-                            }
-                          }}
-                        />
+                            }}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="w-full text-center text-muted-foreground py-12">
+                        No playlists available. Please check back later.<br />
+                        <Button variant="default" className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </motion.section>
 
@@ -1033,26 +1027,33 @@ const Music: React.FC = () => {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {displayedRecentSongs.slice(0, 4).map((song, index) => (
-                      <motion.div
-                        key={song.id}
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.25 + index * 0.07 }}
-                      >
-                        <SongCard
-                          title={song.title} artist={song.artist} albumArt={song.albumArt}
-                          duration={song.duration}
-                          isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
-                          onClick={() => { /* Stay on current mode when playing */ }}
-                          trackUrl={song.trackUrl}
-                          playlist={displayedRecentSongs.map(s => ({
-                            id: s.id, title: s.title, artist: s.artist,
-                            album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
-                          }))}
-                          currentIndex={index}
-                        />
-                      </motion.div>
-                    ))}
+                    {displayedRecentSongs.length > 0 ? (
+                      displayedRecentSongs.slice(0, 4).map((song, index) => (
+                        <motion.div
+                          key={song.id}
+                          initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.25 + index * 0.07 }}
+                        >
+                          <SongCard
+                            title={song.title} artist={song.artist} albumArt={song.albumArt}
+                            duration={song.duration}
+                            isPlaying={currentTrack?.title === song.title && currentTrack?.artist === song.artist}
+                            onClick={() => { /* Stay on current mode when playing */ }}
+                            trackUrl={song.trackUrl}
+                            playlist={displayedRecentSongs.map(s => ({
+                              id: s.id, title: s.title, artist: s.artist,
+                              album: "Recently Played", duration: 180, url: s.trackUrl || "", artwork: s.albumArt,
+                            }))}
+                            currentIndex={index}
+                          />
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="w-full text-center text-muted-foreground py-12">
+                        No recently played songs found.<br />
+                        <Button variant="default" className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
+                      </div>
+                    )}
                   </div>
                 </motion.section>
 
@@ -1152,7 +1153,59 @@ const Music: React.FC = () => {
                     {genres.map(genre => (
                       <button
                         key={genre}
-                        onClick={() => setSelectedGenre(genre)}
+                        onClick={async () => {
+                          setSelectedGenre(genre);
+                          if (genre === "All") {
+                            // Optionally reload all songs or trending
+                            const tracks = await searchMusic("trending chill");
+                            if (Array.isArray(tracks)) {
+                              setAllSongs(tracks.map((t: any) => ({
+                                id: t.id.toString(),
+                                title: t.title,
+                                artist: t.artist?.name || t.artist || "Unknown",
+                                albumArt: t.albumArt || t.artwork_url || album1,
+                                duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+                                genre: t.genre || "Chill",
+                                mood: t.mood || "Chill",
+                                trackUrl: t.trackUrl || t.stream_url || "",
+                              })));
+                            }
+                          } else {
+                            // Fetch songs for the selected genre
+                            const tracks = await searchMusic(genre);
+                            if (Array.isArray(tracks)) {
+                              const mapped = tracks.map((t: any) => ({
+                                id: t.id.toString(),
+                                title: t.title,
+                                artist: t.artist?.name || t.artist || "Unknown",
+                                albumArt: t.albumArt || t.artwork_url || album1,
+                                duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+                                genre: t.genre || genre,
+                                mood: t.mood || "",
+                                trackUrl: t.trackUrl || t.stream_url || "",
+                              }));
+                              // Convert all mapped tracks to Track shape
+                              const tracksForPlayer = mapped.map(t => ({
+                                id: t.id,
+                                title: t.title,
+                                artist: t.artist,
+                                album: "Clockit",
+                                duration: typeof t.duration === 'string' ? (parseInt(t.duration.split(":")[0]) * 60 + parseInt(t.duration.split(":")[1])) : t.duration,
+                                url: t.trackUrl,
+                                artwork: t.albumArt,
+                              }));
+                              setAllSongs(tracksForPlayer);
+                              if (tracksForPlayer.length > 0) {
+                                playTrack(tracksForPlayer[0], tracksForPlayer, 0);
+                                setShowFullPlayer(true);
+                                setTimeout(() => {
+                                  const audio = document.querySelector('audio');
+                                  if (audio) (audio as HTMLAudioElement).play().catch(() => {});
+                                }, 300);
+                              }
+                            }
+                          }
+                        }}
                         className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 font-medium transition-all duration-200 snap-start ${selectedGenre === genre
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -1456,11 +1509,10 @@ const Music: React.FC = () => {
           <div className="pb-36" />
         </div>
       )}
-
       {/* ══════════════ OVERLAYS ══════════════ */}
       <FullPlayer open={showFullPlayer} onOpenChange={setShowFullPlayer} />
     </Layout>
   );
-};
+}
 
 export default Music;

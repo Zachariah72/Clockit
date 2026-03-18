@@ -54,6 +54,7 @@ interface MediaPlayerState {
 }
 
 interface MediaPlayerContextType extends MediaPlayerState {
+  audioRef: React.RefObject<HTMLAudioElement>;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -513,26 +514,30 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
       spotifyPlayer.play([track.spotifyUri]);
     } else if (audioRef.current) {
       // Play local track
-      audioRef.current.src = track.url;
-      audioRef.current.load();
+      const audio = audioRef.current;
+      audio.src = track.url;
+      audio.load();
 
-      // Auto-play after loading
-      audioRef.current.addEventListener('canplay', () => {
-        if (audioRef.current) {
-          // Apply playback rate
-          audioRef.current.playbackRate = state.playbackRate;
-          
-          // Resume from bookmark if it's a learn track
+      // Remove any previous canplay listeners
+      const canplayHandler = () => {
+        if (audio) {
+          audio.playbackRate = state.playbackRate;
           if (track.artist === "Clockit Learn" && state.lessonBookmarks[track.id]) {
-            audioRef.current.currentTime = state.lessonBookmarks[track.id];
+            audio.currentTime = state.lessonBookmarks[track.id];
           }
-          
-          audioRef.current.play().catch(error => {
+          audio.play().catch(error => {
             console.error('Playback error:', error);
           });
           setState(prev => ({ ...prev, isPlaying: true }));
         }
-      }, { once: true });
+        audio.removeEventListener('canplay', canplayHandler);
+      };
+      audio.removeEventListener('canplay', canplayHandler);
+      audio.addEventListener('canplay', canplayHandler);
+      // If already loaded, play immediately
+      if (audio.readyState >= 3) {
+        canplayHandler();
+      }
     }
   };
 
@@ -748,6 +753,7 @@ export const MediaPlayerProvider: React.FC<MediaPlayerProviderProps> = ({ childr
     clearHistory,
     setPlaybackRate,
     toggleLessonComplete,
+    audioRef,
   };
 
   return (

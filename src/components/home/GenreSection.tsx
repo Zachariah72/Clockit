@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Music2, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const GENRES = [
   { id: '1', name: 'Amapiano', color: 'from-purple-500 to-indigo-500', image: 'https://picsum.photos/seed/amapiano/200/200' },
@@ -12,6 +13,7 @@ const GENRES = [
 ];
 
 export const GenreSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-6 px-6">
       <div className="flex items-center justify-between mb-6">
@@ -33,6 +35,7 @@ export const GenreSection = () => {
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
             className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
+            onClick={() => navigate(`/music?genre=${encodeURIComponent(genre.name)}`)}
           >
             <img 
               src={genre.image} 

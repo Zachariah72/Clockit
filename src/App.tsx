@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 // removed duplicate useRef import
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import Music from "./pages/Music";
+
+const queryClient = new QueryClient();
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { MediaPlayerProvider, useMediaPlayer } from "@/contexts/MediaPlayerContext";
@@ -16,33 +19,8 @@ import { useState, useEffect, useRef } from 'react';
 import heroMusicImage from '@/assets/hero-music.jpg';
 
 // Import pages from Zach's version
-import Index from "./pages/Index";
-import Stories from "./pages/Stories";
-import Music from "./pages/Music";
-import Groups from "./pages/Groups";
-import Profile from "./pages/Profile";
-import Reels from "./pages/Reels";
-import { Live } from "./pages/Live";
-import Chat from "./pages/Chat";
-import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import Settings from "./pages/Settings";
-import DownloadedMusic from "./pages/DownloadedMusic";
-import Podcasts from "./pages/Podcasts";
-import OfflineReels from "./pages/OfflineReels";
-import Appearance from "./pages/Appearance";
-import Search from "./pages/Search";
-import CameraTest from "./pages/CameraTest";
-import Snap from "./pages/Snap";
-import NotFound from "./pages/NotFound";
-import Notifications from "./pages/Notifications";
-import Post from "./pages/Post";
-import Discover from "./pages/Discover";
-
-// Import your homepage components
-import { Hero } from '@/components/home/Hero';
-import { FeaturedPlaylist } from './components/home/FeaturedPlaylists';
-import { CommunitySection } from '@/components/home/CommunitySection';
+  // Feed post navigation state and handlers removed
+  // ...existing code...
 import { SnappySection } from '@/components/home/SnappySection';
 import { ReelsSection } from '@/components/home/ReelsSection';
 import { GenreSection } from '@/components/home/GenreSection';
@@ -52,21 +30,75 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { FeedPost } from '@/components/home/FeedPost';
 import { MobileSuggestions } from '@/components/home/MobileSuggestions';
-import { NotificationCenter, type Notification } from '@/components/notifications/NotificationCenter';
-import { Plus, Bell } from 'lucide-react';
+import { Bell, Plus, Music as MusicIcon, Settings, Search } from "lucide-react";
+import { CommunitySection } from "./components/home/CommunitySection";
+import { FeaturedPlaylist } from "./components/music/FeaturedPlaylist";
+import { NotificationCenter } from "./components/notifications/NotificationCenter";
+import Appearance from "./pages/Appearance";
+import Auth from "./pages/Auth";
+import CameraTest from "./pages/CameraTest";
+import Chat from "./pages/Chat";
+import Discover from "./pages/Discover";
+import DownloadedMusic from "./pages/DownloadedMusic";
+import Groups from "./pages/Groups";
+import { Live } from "./pages/Live";
+import NotFound from "./pages/NotFound";
+import Notifications from "./pages/Notifications";
+import OfflineReels from "./pages/OfflineReels";
+import Onboarding from "./pages/Onboarding";
+import Podcasts from "./pages/Podcasts";
+import Post from "./pages/Post";
+import Profile from "./pages/Profile";
+import Reels from "./pages/Reels";
+import Snap from "./pages/Snap";
+import Stories from "./pages/Stories";
 
-const queryClient = new QueryClient();
 
-// Sample trending tracks
+const FEED_POSTS = [
+  {
+    id: 1,
+    username: 'wizkidayo',
+    userImage: 'https://picsum.photos/seed/wizkid/100/100',
+    location: 'Lagos, Nigeria',
+    image: 'https://picsum.photos/seed/concert/600/600',
+    likes: 45230,
+    caption: 'Made in Lagos. The energy was unmatched last night! 🦅🇳🇬 #Starboy',
+    comments: 1240,
+    timeAgo: '2h'
+  },
+  {
+    id: 2,
+    username: 'tyla',
+    userImage: 'https://picsum.photos/seed/tyla/100/100',
+    location: 'Johannesburg, SA',
+    image: 'https://picsum.photos/seed/dance/600/600',
+    likes: 89400,
+    caption: 'Water remix dropping soon... 💦🇿🇦',
+    comments: 3500,
+    timeAgo: '5h'
+  },
+  {
+    id: 3,
+    username: 'blackcoffee',
+    userImage: 'https://picsum.photos/seed/coffee/100/100',
+    location: 'Ibiza',
+    image: 'https://picsum.photos/seed/dj/600/600',
+    likes: 22100,
+    caption: 'House music is a spiritual thing. see you next week.',
+    comments: 890,
+    timeAgo: '1d'
+  }
+];
+
 const TRENDING_TRACKS = [
   {
     id: '1',
     title: 'Essence',
-    artist: 'WizKid ft. Tems',
+    artist: 'Wizkid ft. Tems',
     album: 'Made in Lagos',
     coverUrl: 'https://picsum.photos/seed/wizkid/300/300',
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    duration: 240,
+    duration: 180,
   },
   {
     id: '2',
@@ -118,7 +150,15 @@ const HomePage = () => {
 
   // Notification State
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: "new_release" | "follow" | "like" | "mention" | "system";
+    message: string;
+    isRead: boolean;
+    time: string;
+    sender: { name: string; avatar: string };
+    targetUrl: string;
+  }>>([
     {
       id: "1",
       type: "new_release",
@@ -228,42 +268,6 @@ const HomePage = () => {
       setActiveTab(tab);
     }
   };
-
-  const FEED_POSTS = [
-    {
-      id: 1,
-      username: 'wizkidayo',
-      userImage: 'https://picsum.photos/seed/wizkid/100/100',
-      location: 'Lagos, Nigeria',
-      image: 'https://picsum.photos/seed/concert/600/600',
-      likes: 45230,
-      caption: 'Made in Lagos. The energy was unmatched last night! 🦅🇳🇬 #Starboy',
-      comments: 1240,
-      timeAgo: '2h'
-    },
-    {
-      id: 2,
-      username: 'tyla',
-      userImage: 'https://picsum.photos/seed/tyla/100/100',
-      location: 'Johannesburg, SA',
-      image: 'https://picsum.photos/seed/dance/600/600',
-      likes: 89400,
-      caption: 'Water remix dropping soon... 💦🇿🇦',
-      comments: 3500,
-      timeAgo: '5h'
-    },
-    {
-      id: 3,
-      username: 'blackcoffee',
-      userImage: 'https://picsum.photos/seed/coffee/100/100',
-      location: 'Ibiza',
-      image: 'https://picsum.photos/seed/dj/600/600',
-      likes: 22100,
-      caption: 'House music is a spiritual thing. see you next week.',
-      comments: 890,
-      timeAgo: '1d'
-    }
-  ];
 
   return (
     <div className="min-h-screen text-cream-50 bg-black">

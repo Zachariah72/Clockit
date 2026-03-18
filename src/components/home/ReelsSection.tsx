@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Play, Heart, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const REELS = [
   { 
@@ -27,6 +28,13 @@ const REELS = [
 ];
 
 export const ReelsSection = () => {
+  const navigate = useNavigate();
+
+  const handleReelClick = (reel: typeof REELS[number]) => {
+    // Navigate to /reels?id=REEL_ID (or use hash or param as needed)
+    navigate(`/reels?id=${reel.id}`);
+  };
+
   return (
     <section className="py-6">
       <div className="px-6 mb-4 flex justify-between items-end">
@@ -44,6 +52,11 @@ export const ReelsSection = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
             className="flex-none w-40 h-64 snap-center relative rounded-2xl overflow-hidden cursor-pointer group"
+            onClick={() => handleReelClick(reel)}
+            tabIndex={0}
+            role="button"
+            aria-label={`Open reel: ${reel.title}`}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleReelClick(reel); }}
           >
             <img 
               src={reel.thumbnail} 

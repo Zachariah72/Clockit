@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Camera, Music, Film, MessageCircle, User } from 'lucide-react';
+import { Home, Camera, Music, Film, MessageCircle, User, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { icon: Camera, label: 'Snappy', to: '/stories' },
   { icon: Music, label: 'Music', to: '/music' },
   { icon: Film, label: 'Reels', to: '/reels' },
+  { icon: Radio, label: 'Live', to: '/live' },
   { icon: MessageCircle, label: 'Chat', to: '/chat' },
   { icon: User, label: 'Profile', to: '/profile' },
 ];
