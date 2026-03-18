@@ -6,7 +6,7 @@ const Story = require('../models/Story');
 const getFeed = async (req, res) => {
   try {
     // For now, get all videos and stories, in real app, personalize based on follows, interests, etc.
-    const videos = await Video.find({ isDraft: false }).populate('userId', 'username').sort({ createdAt: -1 }).limit(20);
+    const videos = await Video.find({ isPublic: true }).populate('userId', 'username').sort({ createdAt: -1 }).limit(20);
     const stories = await Story.find({ expiresAt: { $gt: new Date() }, isPrivate: false }).populate('userId', 'username').sort({ createdAt: -1 }).limit(20);
     const feed = [...videos, ...stories].sort((a, b) => b.createdAt - a.createdAt);
     res.json(feed);

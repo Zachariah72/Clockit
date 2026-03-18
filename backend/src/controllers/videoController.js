@@ -26,29 +26,52 @@ const getVideoById = async (req, res) => {
 // Create video
 const createVideo = async (req, res) => {
   try {
-    const { title, description, url, thumbnail, duration, isDraft, duetOf, stitchOf, filters, speed, voiceEffects, captions, hashtags, mentions, autoCaptions } = req.body;
+    const { 
+      title, 
+      description, 
+      url, 
+      thumbnail, 
+      duration, 
+      isPublic = true,
+      musicTitle,
+      musicAuthor
+    } = req.body;
+
     const video = new Video({
-      userId: req.user.id,
-      title,
-      description,
-      url,
-      thumbnail,
-      duration,
-      isDraft,
-      duetOf,
-      stitchOf,
-      filters,
-      speed,
-      voiceEffects,
-      captions,
-      hashtags,
-      mentions,
-      autoCaptions
+      title: title || 'Untitled Video',
+      description: description || '',
+      videoUrl: url,
+      thumbnailUrl: thumbnail || null,
+      duration: duration || 0,
+      
+      author: {
+        username: req.user.username,
+        displayName: req.user.displayName || req.user.username,
+        avatarUrl: req.user.avatarUrl || null,
+        userId: req.user.id
+      },
+      
+      stats: {
+        playCount: 0,
+        likeCount: 0,
+        commentCount: 0,
+        shareCount: 0
+      },
+      
+      music: {
+        title: musicTitle || 'Original Sound',
+        author: musicAuthor || req.user.username || 'Unknown'
+      },
+      
+      uploadedBy: req.user.id,
+      isPublic: isPublic
     });
+
     await video.save();
     res.status(201).json(video);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Create video error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -97,13 +120,13 @@ const toggleLikeVideo = async (req, res) => {
   try {
     const existingLike = await Like.findOne({ userId: req.user.id, contentId: req.params.id, contentType: 'video' });
     if (existingLike) {
-      await existingLike.remove();
-      await Video.findByIdAndUpdate(req.params.id, { $inc: { likes: -1 } });
+      await existingLike.deleteOne();
+      await Video.findByIdAndUpdate(req.params.id, { $inc: { 'stats.likeCount': -1 } });
       res.json({ message: 'Unliked' });
     } else {
       const like = new Like({ userId: req.user.id, contentId: req.params.id, contentType: 'video' });
       await like.save();
-      await Video.findByIdAndUpdate(req.params.id, { $inc: { likes: 1 } });
+      await Video.findByIdAndUpdate(req.params.id, { $inc: { 'stats.likeCount': 1 } });
       res.json({ message: 'Liked' });
     }
   } catch (err) {

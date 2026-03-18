@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
 const Like = require('../models/Like');
+const Video = require('../models/Video');
 
 // Create comment
 const createComment = async (req, res) => {
@@ -12,6 +13,12 @@ const createComment = async (req, res) => {
       text
     });
     await comment.save();
+
+    // If it's a video/reel, increment the commentCount in the Video model
+    if (contentType === 'video') {
+      await Video.findByIdAndUpdate(contentId, { $inc: { 'stats.commentCount': 1 } });
+    }
+
     await comment.populate('userId', 'username');
     res.status(201).json(comment);
   } catch (err) {
@@ -52,7 +59,16 @@ const deleteComment = async (req, res) => {
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
     if (comment.userId.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    await comment.remove();
+    const contentId = comment.contentId;
+    const contentType = comment.contentType;
+
+    await comment.deleteOne();
+
+    // If it's a video/reel, decrement the commentCount in the Video model
+    if (contentType === 'video') {
+      await Video.findByIdAndUpdate(contentId, { $inc: { 'stats.commentCount': -1 } });
+    }
+
     res.json({ message: 'Comment deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

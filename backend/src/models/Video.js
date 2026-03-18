@@ -12,6 +12,7 @@ const videoSchema = new mongoose.Schema({
     username: { type: String, required: true },
     displayName: { type: String },
     avatarUrl: { type: String },
+    follower_count: { type: Number, default: 0 },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   

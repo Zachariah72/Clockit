@@ -60,9 +60,33 @@ const getOptimizedUrl = (publicId, transformations = {}) => {
   return cloudinary.url(publicId, defaultTransformations);
 };
 
+/**
+ * Upload a video to Cloudinary
+ * @param {string} filePath - Path to the file or base64 data
+ * @param {object} options - Cloudinary upload options
+ * @returns {Promise<object>} - Cloudinary upload result
+ */
+const uploadVideo = async (filePath, options = {}) => {
+  try {
+    const defaultOptions = {
+      resource_type: 'video',
+      folder: 'clockit/reels',
+      chunk_size: 6000000, // 6MB chunks for large files
+      ...options,
+    };
+
+    const result = await cloudinary.uploader.upload(filePath, defaultOptions);
+    return result;
+  } catch (error) {
+    console.error('Cloudinary video upload error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   cloudinary,
   uploadImage,
+  uploadVideo,
   deleteImage,
   getOptimizedUrl,
 };

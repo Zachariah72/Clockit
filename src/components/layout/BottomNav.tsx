@@ -1,7 +1,8 @@
 import { Home, Music, Users, MessageCircle, Film, Camera, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect, useCallback } from "react";
 
 interface BottomNavProps {
   hide?: boolean;
@@ -18,14 +19,58 @@ const navItems = [
 
 export const BottomNav = ({ hide = false }: BottomNavProps) => {
   const location = useLocation();
+  const isReels = location.pathname === '/reels';
+  const [navVisible, setNavVisible] = useState(true);
+
+  // Auto-hide logic when on reels page
+  const showNav = useCallback(() => {
+    setNavVisible(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isReels) {
+      setNavVisible(true);
+      return;
+    }
+    // Hide after 3s of inactivity
+    const timer = setTimeout(() => setNavVisible(false), 3000);
+    return () => clearTimeout(timer);
+  }, [isReels]);
+
+  // Re-show on any touch or scroll while on reels
+  useEffect(() => {
+    if (!isReels) return;
+    const handleActivity = () => {
+      setNavVisible(true);
+      // Hide again after 3s
+      clearTimeout((window as any).__navTimer);
+      (window as any).__navTimer = setTimeout(() => setNavVisible(false), 3000);
+    };
+    window.addEventListener('touchstart', handleActivity, { passive: true });
+    window.addEventListener('touchmove', handleActivity, { passive: true });
+    window.addEventListener('scroll', handleActivity, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('touchmove', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      clearTimeout((window as any).__navTimer);
+    };
+  }, [isReels]);
 
   if (hide) return null;
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-2 py-3"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
-    >
+    <AnimatePresence>
+      {(!isReels || navVisible) && (
+        <motion.nav
+          key="bottom-nav"
+          initial={isReels ? { y: 80 } : { y: 0 }}
+          animate={{ y: 0 }}
+          exit={isReels ? { y: 80 } : { y: 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/10 px-2 py-3"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
+        >
       <div className="flex items-center justify-between max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -57,6 +102,8 @@ export const BottomNav = ({ hide = false }: BottomNavProps) => {
           );
         })}
       </div>
-    </nav>
+        </motion.nav>
+      )}
+    </AnimatePresence>
   );
 };
