@@ -2,6 +2,7 @@ const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
 const Follow = require('../models/Follow');
+const UserPresence = require('../models/UserPresence');
 
 // Get conversations for a user
 const getConversations = async (req, res) => {
@@ -33,7 +34,15 @@ const getConversations = async (req, res) => {
         lastMessage: conv.lastMessage?.content || 'No messages yet',
         lastMessageTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt || conv.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         unreadCount,
-        isOnline: false // TODO: Implement online status
+      };
+      
+      const otherUserId = otherParticipant?._id?.toString() || '';
+      const presence = await UserPresence.findOne({ userId: otherUserId });
+      
+      return {
+        ...formattedConv,
+        isOnline: presence ? presence.status === 'online' : false,
+        lastSeen: presence ? presence.lastSeen?.toISOString() : null
       };
     });
 

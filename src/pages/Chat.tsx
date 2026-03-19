@@ -13,7 +13,9 @@ import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { CallInterface } from "@/components/CallInterface";
+import { useChatPresence } from "@/hooks/useChatPresence";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { getApiUrl } from "@/utils/api";
@@ -194,23 +196,7 @@ const mockConversations: Conversation[] = [
   },
 ];
 
-const mockMessages: { [key: string]: Omit<Message, '_id'>[] } = {
-  "1": [
-    { id: "m1", content: "Hey! How are you?", senderId: "other", created_at: "10:30 AM", is_read: true },
-    { id: "m2", content: "I'm good! Just finished a workout", senderId: "me", created_at: "10:32 AM", is_read: true },
-    { id: "m3", content: "Nice! I saw your story", senderId: "other", created_at: "10:33 AM", is_read: true },
-    { id: "m4", content: "Did you see the new reel I posted?", senderId: "other", created_at: "10:35 AM", is_read: false },
-  ],
-  "2": [
-    { id: "m5", content: "That concert was insane!", senderId: "other", created_at: "9:00 PM", is_read: true },
-    { id: "m6", content: "I know right! Best night ever 🎸", senderId: "me", created_at: "9:05 PM", is_read: true },
-  ],
-  "3": [
-    { id: "m7", content: "Hey, you free this weekend?", senderId: "other", created_at: "3:00 PM", is_read: true },
-    { id: "m8", content: "Yeah! What's the plan?", senderId: "me", created_at: "3:15 PM", is_read: true },
-    { id: "m9", content: "Let's meet up this weekend", senderId: "other", created_at: "3:20 PM", is_read: false },
-  ],
-};
+/* Mock messages removed - use real API data only */
 
 const ChatList = ({
   conversations,
@@ -641,19 +627,23 @@ const ChatView = ({
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">{conversation.username}</h2>
             <p className={`text-xs flex items-center gap-1 ${
-              conversation.isOnline 
+              presence.typing 
                 ? "text-green-500" 
-                : "text-muted-foreground"
+                : presence.isOnline 
+                  ? "text-green-500" 
+                  : "text-muted-foreground"
             }`}>
-              {conversation.isOnline ? (
+              {presence.typing ? (
+                "typing..."
+              ) : presence.isOnline ? (
                 <>
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  Online
+                  online
                 </>
               ) : (
                 <>
                   <CircleDashed className="w-3 h-3" />
-                  Last seen {formatLastSeen(null)}
+                  last seen {formatLastSeen(presence.lastSeen)}
                 </>
               )}
             </p>
@@ -728,11 +718,11 @@ const ChatView = ({
                     </p>
                 </div>
               ) : (
-                <div
-                  className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
+<div
+                  className={`max-w-[75%] p-3 relative z-10 shadow-lg ${
                     isOutgoing(message)
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-br-sm"
-                      : "bg-muted/80 text-foreground rounded-bl-sm"
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-2xl rounded-br-sm"
+                      : "bg-card shadow-md border border-border/50 backdrop-blur-sm text-foreground rounded-2xl rounded-bl-sm"
                   }`}
                 >
                   <p className="text-sm leading-relaxed break-words">{message.content}</p>
@@ -1016,7 +1006,7 @@ const Chat = () => {
   const { user } = useAuth();
 
   // Fetch conversations from API
-  const fetchConversations = async () => {
+const fetchConversations = async () => {
     if (!user) return;
 
     try {
@@ -1026,7 +1016,8 @@ const Chat = () => {
         return;
       }
 
-      const response = await fetch('/api/messages/conversations', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/messages/conversations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

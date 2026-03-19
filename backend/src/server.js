@@ -185,6 +185,8 @@ io.on('connection', async (socket) => {
       { upsert: true, new: true }
     );
     socket.broadcast.emit('user_offline', { userId: socket.userId });
+    socket.broadcast.emit('last_seen', { userId: socket.userId, time: new Date().toISOString() });
+    socket.emit('presence_update', { users: [] });
   });
 
   // Handle messaging events
@@ -485,6 +487,36 @@ io.on('connection', async (socket) => {
   socket.on('live_reaction', (data) => {
     const { streamId, reaction } = data;
     socket.to(`live_${streamId}`).emit('live_reaction_received', { from: socket.userId, reaction });
+  });
+
+  // Typing indicators
+  socket.on('typing', (data) => {
+    const { to } = data;
+    if (to) {
+      io.to(to).emit('typing', { from: socket.userId });
+    }
+  });
+
+  socket.on('stop_typing', (data) => {
+    const { to } = data;
+    if (to) {
+      io.to(to).emit('stop_typing', { from: socket.userId });
+    }
+  });
+
+  // Presence query
+  socket.on('get_presence', async (data) => {
+    const { userId } = data;
+    try {
+      const presence = await UserPresence.findOne({ userId });
+      socket.emit('presence_update', {
+        userId,
+        isOnline: presence ? presence.status === 'online' : false,
+        lastSeen: presence ? presence.lastSeen : null
+      });
+    } catch (error) {
+      console.error('Error getting presence:', error);
+    }
   });
 });
 
