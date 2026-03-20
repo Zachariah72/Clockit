@@ -52,9 +52,12 @@ const userSchema = new mongoose.Schema({
     accent: String
   },
 
-  // Premium features
+// Premium features
   isPremium: { type: Boolean, default: false },
   premiumExpiresAt: Date,
+
+  // E2EE Chat
+  publicKey: { type: String, default: null },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
