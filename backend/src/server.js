@@ -123,7 +123,10 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/live', require('./routes/live'));
+
 app.use('/api/verification', require('./routes/verification'));
+app.use('/api/notifications', require('./routes/notifications'));
+
 
 // Socket.IO authentication middleware - use JWT token like REST API
 io.use((socket, next) => {

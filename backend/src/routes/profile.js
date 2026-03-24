@@ -73,7 +73,7 @@ router.get('/:userId/stories', profileController.getStories);
 router.get('/:userId/reels', profileController.getReels);
 
 // Public E2EE public key - comes before general /:userId
-router.get('/:userId/publickey', profileController.getPublicKey);
+
 
 // Parameterized route for other users' profiles - MUST be last
 router.get('/:userId', profileController.getProfile);
@@ -104,7 +104,10 @@ router.use((err, req, res, next) => {
 });
 
 // E2EE set own public key (authenticated)
-router.patch('/publickey', auth, profileController.setPublicKey);
+
+
+
+
 
 // Social features (authenticated)
 router.post('/:userId/follow', profileController.toggleFollow);
