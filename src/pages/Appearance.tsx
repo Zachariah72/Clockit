@@ -14,17 +14,6 @@ const Appearance = () => {
 
   const themes = [
     {
-      id: "light",
-      name: "Light",
-      description: "Clean and bright interface",
-      icon: Sun,
-      preview: {
-        background: "bg-white",
-        text: "text-gray-900",
-        accent: "bg-blue-500"
-      }
-    },
-    {
       id: "dark",
       name: "Dark",
       description: "Easy on the eyes in low light",
@@ -122,24 +111,21 @@ const Appearance = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   onClick={() => handleThemeSelect(themeOption.id)}
-                  className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:bg-muted/50"
-                  }`}
+                  className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:bg-muted/50"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${
-                        themeOption.id === "black"
-                          ? "bg-black"
-                          : themeOption.id === "teal"
+                      <div className={`p-3 rounded-xl ${themeOption.id === "black"
+                        ? "bg-black"
+                        : themeOption.id === "teal"
                           ? "bg-[#3B9797]"
                           : "bg-primary"
-                      }`}>
-                        <Icon className={`w-6 h-6 ${
-                          themeOption.id === "black" ? "text-black" : "text-primary-foreground"
-                        }`} />
+                        }`}>
+                        <Icon className={`w-6 h-6 ${themeOption.id === "black" ? "text-black" : "text-primary-foreground"
+                          }`} />
                       </div>
 
                       <div>
@@ -187,7 +173,6 @@ const Appearance = () => {
           >
             <h3 className="font-semibold text-foreground mb-2">Theme Information</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p><strong>Light:</strong> Standard light theme with high contrast</p>
               <p><strong>Dark:</strong> Dark theme optimized for low-light environments</p>
               <p><strong>Monochrome:</strong> Pure black theme - everything becomes black (#000000)</p>
               <p><strong>Ocean Teal:</strong> Teal accent theme with #3B9797 color</p>

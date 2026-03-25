@@ -1,31 +1,43 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, Shuffle, Play, ListMusic, Heart, Clock,
   Music as MusicIcon, TrendingUp, Moon, Zap, Smile,
   Frown, Dumbbell, Star, Plus, Users, Radio, ArrowLeft,
-  Check, X, Hash, Film, Video
+  Bell, Check, X, Hash, Film, Video, PlayCircle, FileText,
+  Globe, Brain, Briefcase, BookOpen, Mic2, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogTrigger, DialogDescription
 } from "@/components/ui/dialog";
 import { Layout } from "@/components/layout/Layout";
 import { SongCard } from "@/components/music/SongCard";
-import { FeaturedPlaylist } from "@/components/music/FeaturedPlaylist";
+import { FeaturedPlaylist } from "@/components/home/FeaturedPlaylists";
 import MusicSearch from "@/components/music/MusicSearch";
 import MusicDiscovery from "@/components/music/MusicDiscovery";
 import { MediaControls } from "@/components/media/MediaControls";
 import { FullPlayer } from "@/components/music/FullPlayer";
+import { NotificationCenter, type Notification } from "@/components/notifications/NotificationCenter";
 import { useMediaPlayer } from "@/contexts/MediaPlayerContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
-import { getApiUrl } from "@/utils/api";
+import {
+  getListeningHistory,
+  getUserPlaylists,
+  getJoinedGroups,
+  searchMusic,
+  createPlaylist,
+  joinListeningGroup,
+  discoverPublicGroups
+} from "@/services/api";
 import heroMusic from "@/assets/hero-music.jpg";
 import album1 from "@/assets/album-1.jpg";
 import album2 from "@/assets/album-2.jpg";
@@ -43,9 +55,7 @@ const recentSongs = [
 ];
 
 const featuredPlaylistsMock = [
-  { id: "1", title: "Chill Vibes", description: "Relax and unwind with these smooth beats", image: album2, songCount: 45 },
-  { id: "2", title: "Night Drive", description: "Perfect for late night cruising", image: album3, songCount: 32 },
-  { id: "3", title: "Energy Boost", description: "Get pumped with high energy tracks", image: album1, songCount: 28 },
+  { id: "1", title: "Trending Now", description: "The hottest tracks right now", image: album3, songCount: 50 },
 ];
 
 // ─── Mood & Genre config ────────────────────────────────────────────────────
@@ -70,13 +80,26 @@ const genres = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
-const Music = () => {
+const Music: React.FC = () => {
+  const { user } = useAuth();
+  const { currentTrack, play, pause, isPlaying, recentlyPlayed, likedTrackIDs, playTrack, lessonBookmarks, completedLessons } = useMediaPlayer();
+  const { toast } = useToast();
+
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // ── Active mode ───────────────────────────────────────────────────────────
-  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover">("foryou");
+  const [activeMode, setActiveMode] = useState<"foryou" | "library" | "discover" | "learn">("foryou");
   const [libraryTab, setLibraryTab] = useState<"all" | "playlists" | "liked">("all");
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    if (mode === "learn") {
+      setActiveMode("learn");
+    }
+  }, [searchParams]);
 
   // ── Music/player state (from original Music.tsx) ─────────────────────────
   const [allSongs, setAllSongs] = useState<any[]>([]);
@@ -92,64 +115,218 @@ const Music = () => {
   const [showFullPlayer, setShowFullPlayer] = useState(false);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ── Social/Home state (from original Index.tsx) ───────────────────────────
-  const { currentTrack, recentlyPlayed, likedTrackIDs } = useMediaPlayer();
+  // ── Missing state variables ──────────────────────────────────────────────
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // ── Hero Carousel state ──────────────────────────────────────────────────
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const heroBanners = [
+  const [notifications, setNotifications] = useState<Notification[]>([
     {
-      id: "discover",
-      title: "Discover New Sounds",
-      subtitle: "Fresh drops every week",
-      tag: "Trending Now",
-      icon: TrendingUp,
-      image: heroMusic,
-      gradient: "from-cyan-950/90 via-cyan-900/40 to-transparent"
+      id: "1",
+      type: "new_release",
+      message: "New album \"Midnight Waves\" by Synthwave is now available!",
+      isRead: false,
+      time: "2m ago",
+      sender: { name: "Synthwave", avatar: album1 },
+      targetUrl: "/music"
     },
     {
-      id: "groups",
-      title: "Join Listening Groups",
-      subtitle: "Experience music together",
-      tag: "Live Now",
-      icon: Radio,
-      image: album3,
-      gradient: "from-purple-900/90 via-purple-900/40 to-transparent"
+      id: "2",
+      type: "follow",
+      message: "DJ Beats started following you",
+      isRead: false,
+      time: "15m ago",
+      sender: { name: "DJ Beats", avatar: avatar1 },
+      targetUrl: "/profile/dj-beats"
+    },
+    {
+      id: "3",
+      type: "like",
+      message: "Someone liked your playlist \"Chill Mix\"",
+      isRead: true,
+      time: "1h ago",
+      sender: { name: "Sarah J", avatar: avatar2 },
+      targetUrl: "/music"
+    },
+    {
+      id: "4",
+      type: "mention",
+      message: "MusicLover mentioned you in a comment",
+      isRead: false,
+      time: "2h ago",
+      sender: { name: "MusicLover", avatar: avatar3 },
+      targetUrl: "/chat"
+    },
+  ]);
+
+  const [disciplines] = useState([
+    { id: "languages", title: "Languages", icon: Globe, color: "from-blue-500 to-cyan-500", image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=200&q=80" },
+    { id: "personal-dev", title: "Personal Development", icon: Brain, color: "from-purple-500 to-indigo-500", image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=200&q=80" },
+    { id: "business", title: "Business & Finance", icon: Briefcase, color: "from-emerald-500 to-teal-500", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&q=80" },
+    { id: "history", title: "History & Philosophy", icon: BookOpen, color: "from-amber-500 to-orange-500", image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=200&q=80" },
+    { id: "career", title: "Career & Communication", icon: Mic2, color: "from-red-500 to-pink-500", image: "https://images.unsplash.com/photo-1552581234-26160f608093?w=200&q=80" },
+    { id: "wellness", title: "Wellness & Mental Clarity", icon: Activity, color: "from-cyan-500 to-blue-500", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=200&q=80" },
+  ]);
+
+  const [activeGroups, setActiveGroups] = useState<any[]>([]);
+
+  const learningPaths = [
+    {
+      id: "french-basics",
+      disciplineId: "languages",
+      title: "French for Beginners",
+      subtitle: "Master essential conversation in 30 days",
+      image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+      level: "Beginner",
+      modules: [
+        { id: "fr-m1", title: "The Basics", lessons: ["fr-l1", "fr-l2"] },
+        { id: "fr-m2", title: "Daily Life", lessons: ["fr-l3"] }
+      ]
+    },
+    {
+      id: "stoic-resilience",
+      disciplineId: "history",
+      title: "Stoic Resilience",
+      subtitle: "Wisdom from Marcus Aurelius & Seneca",
+      image: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80",
+      level: "Intermediate",
+      modules: [
+        { id: "st-m1", title: "Core Principles", lessons: ["st-l1"] }
+      ]
+    },
+    {
+      id: "deep-focus",
+      disciplineId: "productivity",
+      title: "Deep Focus Mastery",
+      subtitle: "Elite productivity for the digital age",
+      image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&q=80",
+      level: "Intermediate",
+      modules: [
+        { id: "df-m1", title: "The Deep Work Method", lessons: ["df-l1"] }
+      ]
+    },
+    {
+      id: "personal-finance",
+      disciplineId: "business",
+      title: "Wealth Mastery",
+      subtitle: "Thinking like a 1% investor",
+      image: "https://images.unsplash.com/photo-1565514020179-026b92b84bb6?w=800&q=80",
+      level: "Advanced",
+      modules: [
+        { id: "fn-m1", title: "Mindset", lessons: ["fn-l1"] }
+      ]
     }
   ];
 
+  const lessons = {
+    "fr-l1": { id: "fr-l1", title: "Pronunciation 101", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 320, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+    "fr-l2": { id: "fr-l2", title: "Greetings & Polite Phrases", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 450, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+    "fr-l3": { id: "fr-l3", title: "Ordering Coffee", artist: "Clockit Learn", album: "French Basics", artwork: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80", duration: 380, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+    "st-l1": { id: "st-l1", title: "Control & Perspective", artist: "Clockit Learn", album: "Stoic Resilience", artwork: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=400&q=80", duration: 600, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+    "df-l1": { id: "df-l1", title: "Eliminating Friction", artist: "Clockit Learn", album: "Deep Focus Mastery", artwork: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&q=80", duration: 420, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+    "fn-l1": { id: "fn-l1", title: "Compound Interest", artist: "Clockit Learn", album: "Wealth Mastery", artwork: "https://images.unsplash.com/photo-1565514020179-026b92b84bb6?w=400&q=80", duration: 520, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  };
+
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      await joinListeningGroup(groupId);
+      navigate(`/groups/${groupId}`);
+    } catch (err) {
+      console.error("Failed to join group:", err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // ── Notification Actions ──────────────────────────────────────────────────
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteAll = () => {
+    setNotifications([]);
+  };
+  // ── Hero Carousel state ──────────────────────────────────────────────────
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  // Content for the hero carousel
+  const heroSlides = useMemo(() => [
+    {
+      image: heroMusic,
+      title: "Trending Music",
+      subtitle: "The hottest tracks right now",
+      label: "50 songs"
+    },
+    {
+      image: album1,
+      title: "Listening Groups",
+      subtitle: "Listen together with friends",
+      label: "Join now"
+    },
+    {
+      image: album2,
+      title: "Clockit Learn",
+      subtitle: "Master skills with audio lessons",
+      label: "Start learning"
+    }
+  ], []);
+  // Ref to store timeout id
+  const heroTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Debug: log heroSlides and currentHeroIndex
   useEffect(() => {
-    if (activeMode !== "foryou") return;
-    const interval = setInterval(() => {
-      setCurrentHeroIndex(prev => (prev + 1) % heroBanners.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [activeMode, heroBanners.length]);
+    console.log("[DEBUG] heroSlides:", heroSlides);
+  }, [heroSlides]);
+  useEffect(() => {
+    console.log("[DEBUG] currentHeroIndex:", currentHeroIndex);
+  }, [currentHeroIndex]);
 
-  // ── Computed ──────────────────────────────────────────────────────────────
-  const filteredSongs = allSongs.filter(song => {
-    const matchesSearch = !debouncedSearchQuery.trim() ||
-      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
-    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
-    return matchesSearch && matchesGenre && matchesMood;
-  });
+  // Auto-slide effect for hero carousel using setTimeout (avoids closure issues)
+  useEffect(() => {
+    console.log("[DEBUG] useEffect: activeMode=", activeMode, "currentHeroIndex=", currentHeroIndex, "heroSlides.length=", heroSlides.length);
+    if (activeMode !== "foryou") {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+      return;
+    }
+    if (heroTimeoutRef.current) clearTimeout(heroTimeoutRef.current);
+    function scheduleNext() {
+      heroTimeoutRef.current = setTimeout(() => {
+        setCurrentHeroIndex(prev => {
+          const next = (prev + 1) % heroSlides.length;
+          console.log("[DEBUG] Advancing hero slide:", prev, "->", next);
+          return next;
+        });
+      }, 4000);
+    }
+    scheduleNext();
+    return () => {
+      if (heroTimeoutRef.current) {
+        clearTimeout(heroTimeoutRef.current);
+        heroTimeoutRef.current = null;
+      }
+    };
+  }, [activeMode, currentHeroIndex, heroSlides.length]);
 
-  const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
-  
-  const displayedRecentSongs = recentlyPlayed.length > 0 
-    ? recentlyPlayed.map(t => ({
-        id: t.id,
-        title: t.title,
-        artist: t.artist,
-        albumArt: t.artwork || album1,
-        duration: formatDuration(t.duration * 1000),
-        trackUrl: t.url
-      }))
-    : recentSongs;
+  // Reset timeout when user manually changes slide
+  const handleHeroIndicatorClick = (i: number) => {
+    setCurrentHeroIndex(i);
+    if (heroTimeoutRef.current) {
+      clearTimeout(heroTimeoutRef.current);
+      heroTimeoutRef.current = null;
+    }
+  };
+
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatDuration = (ms: number) => {
@@ -158,6 +335,28 @@ const Music = () => {
     const s = total % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
+
+  // ── Computed ──────────────────────────────────────────────────────────────
+  const likedSongs = allSongs.filter(song => likedTrackIDs.includes(song.id));
+
+  const displayedRecentSongs = recentlyPlayed.length > 0
+    ? recentlyPlayed.map(t => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      albumArt: t.artwork || album1,
+      duration: formatDuration(t.duration * 1000),
+      trackUrl: t.url
+    }))
+    : recentSongs;
+  const filteredSongs = allSongs.filter(song => {
+    const matchesSearch = !debouncedSearchQuery.trim() ||
+      song.title?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      song.artist?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+    const matchesGenre = selectedGenre === "All" || song.genre === selectedGenre;
+    const matchesMood = selectedMood === "All" || song.mood === selectedMood;
+    return matchesSearch && matchesGenre && matchesMood;
+  });
 
   const getApiBaseUrl = () =>
     import.meta.env.PROD ? "https://clockit-gvm2.onrender.com" : "";
@@ -185,36 +384,128 @@ const Music = () => {
 
   useEffect(() => { resetHideTimer(); }, [selectedPlaylist]);
 
-  // ── Fetch tracks from SoundCloud ──────────────────────────────────────────
+  // ── Notification click-outside ────────────────────────────────────────────
   useEffect(() => {
-    const fetchTracks = async () => {
-      try {
-        const apiBase = getApiBaseUrl();
-        const res = await fetch(`${apiBase}/api/soundcloud/search?q=chill&limit=20`);
-        if (!res.ok) { setAllSongs([]); return; }
-        const tracks = await res.json();
-        if (!Array.isArray(tracks) || tracks.length === 0) { setAllSongs([]); return; }
-        setAllSongs(
-          tracks
-            .filter((t: any) => t && t.id && t.title && t.artist)
-            .map((t: any) => ({
-              id: t.id.toString(),
-              title: t.title,
-              artist: typeof t.artist === "string" ? t.artist : t.artist?.name || "Unknown Artist",
-              albumArt: t.albumArt || t.artwork_url || album1,
-              duration: t.duration ? formatDuration(t.duration) : "3:00",
-              genre: t.genre || "Chill",
-              mood: t.mood || "Chill",
-              trackUrl: t.stream_url ? `${apiBase}${t.stream_url}` : "",
-            }))
-        );
-      } catch (err) {
-        console.error("Error fetching tracks:", err);
-        setAllSongs([]);
+    const handler = (e: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
       }
     };
-    fetchTracks();
+    if (isNotificationsOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isNotificationsOpen]);
+
+  // ── FAB click-outside ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (isFabOpen && !target.closest("[data-fab]")) setIsFabOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isFabOpen]);
+
+
+  // ── Fetch real data from Backend ──────────────────────────────────────────
+  useEffect(() => {
+    const loadInitData = async () => {
+      try {
+        // Load initial "Discover" content (Trending/Chill)
+        const tracks = await searchMusic("trending chill");
+        if (Array.isArray(tracks)) {
+          setAllSongs(tracks.map((t: any) => ({
+            id: t.id.toString(),
+            title: t.title,
+            artist: t.artist?.name || t.artist || "Unknown",
+            albumArt: t.albumArt || t.artwork_url || album1,
+            duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+            genre: t.genre || "Chill",
+            mood: t.mood || "Chill",
+            trackUrl: t.trackUrl || t.stream_url || "",
+          })));
+        }
+
+        // Load user playlists
+        const up = await getUserPlaylists();
+        if (Array.isArray(up)) {
+          setPlaylists(up.map((p: any) => ({
+            id: p._id,
+            title: p.name,
+            description: p.description,
+            image: p.coverImage || album1,
+            songCount: p.tracks?.length || 0,
+            songs: p.tracks?.map((t: any) => ({
+              id: t.trackId,
+              title: t.metadata?.title || "Unknown",
+              artist: t.metadata?.artist || "Unknown",
+              albumArt: t.metadata?.artwork || album1,
+              trackUrl: t.metadata?.url || "",
+              source: t.source
+            })) || []
+          })));
+        }
+
+        // Load Joined Groups
+        const groups = await discoverPublicGroups();
+        if (Array.isArray(groups)) {
+          setActiveGroups(groups.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Error loading music data:", err);
+      }
+    };
+    loadInitData();
   }, []);
+
+  // ── Live Search effect ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) return;
+
+    const performSearch = async () => {
+      try {
+        const results = await searchMusic(debouncedSearchQuery);
+        if (Array.isArray(results)) {
+          setAllSongs(results.map((t: any) => ({
+            id: t.id.toString(),
+            title: t.title,
+            artist: t.artist?.name || t.artist || "Unknown",
+            albumArt: t.albumArt || t.artwork_url || album1,
+            duration: t.duration ? formatDuration(t.duration * 1000) : "3:00",
+            genre: t.genre || "Pop",
+            mood: t.mood || "Party",
+            trackUrl: t.trackUrl || t.stream_url || "",
+          })));
+        }
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
+    };
+    performSearch();
+  }, [debouncedSearchQuery]);
+
+  // ── Handle Playlist Creation ──────────────────────────────────────────────
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim()) return;
+    try {
+      const p = await createPlaylist({
+        name: newPlaylistName,
+        description: newPlaylistDescription,
+      });
+      setPlaylists(prev => [...prev, {
+        id: p._id,
+        title: p.name,
+        description: p.description,
+        image: album1,
+        songCount: 0,
+        songs: []
+      }]);
+      setIsCreatePlaylistOpen(false);
+      setNewPlaylistName("");
+      setNewPlaylistDescription("");
+    } catch (err) {
+      console.error("Failed to create playlist:", err);
+    }
+  };
 
   // ── Derive playlists from allSongs ────────────────────────────────────────
   useEffect(() => {
@@ -263,10 +554,224 @@ const Music = () => {
   };
   const handleBackToMusic = () => setSelectedPlaylist(null);
 
+  // ── LearnView ─────────────────────────────────────────────────────────────
+  const LearnView = () => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="px-4 mt-6"
+    >
+      <div className="grid grid-cols-2 gap-4">
+        {disciplines.map((discipline, index) => (
+          <motion.div
+            key={discipline.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            onClick={() => setSelectedDiscipline(discipline.id)}
+            className="relative h-24 rounded-2xl overflow-hidden cursor-pointer group"
+          >
+            <img
+              src={discipline.image}
+              alt={discipline.title}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              referrerPolicy="no-referrer"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${discipline.color} opacity-80 mix-blend-multiply transition-opacity group-hover:opacity-90`} />
+            <div className="absolute inset-0 flex items-center justify-between p-4 mix-blend-plus-lighter">
+              <span className="font-bold text-lg text-white leading-tight break-words max-w-[80%] pr-2 shadow-black drop-shadow-md">{discipline.title}</span>
+              <MusicIcon size={16} className="text-white/80 shrink-0" />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {(() => {
+        const lastLessonId = Object.keys(lessonBookmarks || {}).sort((a, b) => (lessonBookmarks[b] || 0) - (lessonBookmarks[a] || 0))[0];
+        const lastLesson = lastLessonId ? Object.values(lessons).find(l => l.id === lastLessonId) : null;
+        const lastPath = lastLesson ? learningPaths.find(p => p.modules.some(m => m.lessons.includes(lastLessonId))) : null;
+
+        return (
+          <div className="mt-8 p-6 rounded-3xl bg-muted/30 border border-border/50 text-center">
+            <h4 className="text-lg font-bold text-foreground mb-2">Continue Learning</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              {lastLesson ? `Resume "${lastLesson.title}"` : 'Pick up where you left off'}
+            </p>
+            <Button
+              variant="default"
+              className="w-full rounded-full gap-2"
+              onClick={() => {
+                if (lastPath) {
+                  setSelectedDiscipline(lastPath.disciplineId);
+                  setSelectedPath(lastPath.id);
+                } else {
+                  setSelectedDiscipline("history");
+                  setSelectedPath("stoic-resilience");
+                }
+              }}
+            >
+              <Play className="w-4 h-4" /> Resume Now
+            </Button>
+          </div>
+        );
+      })()}
+    </motion.div>
+  );
+
+  const PathListView = ({ disciplineId }: { disciplineId: string }) => {
+    const paths = learningPaths.filter(p => p.disciplineId === disciplineId);
+
+    if (paths.length === 0) {
+      return (
+        <div className="px-4 mt-6">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedDiscipline(null)} className="mb-6 gap-2 hover:bg-white/5 rounded-full">
+            <ArrowLeft className="w-4 h-4" /> Back to Disciplines
+          </Button>
+          <div className="p-12 text-center glass-card rounded-[2.5rem] border-dashed border-2 border-white/10">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Play className="w-6 h-6 text-primary opacity-50" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Coming Soon</h3>
+            <p className="text-muted-foreground max-w-xs mx-auto">
+              Learning Paths for "{disciplines.find(d => d.id === disciplineId)?.title}" are being curated for Phase 2.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-4 mt-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedDiscipline(null)} className="rounded-full hover:bg-white/5">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h2 className="text-xl font-bold text-foreground">{disciplines.find(d => d.id === disciplineId)?.title}</h2>
+        </div>
+        <div className="space-y-4">
+          {paths.map((path, index) => (
+            <motion.div
+              key={path.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              onClick={() => setSelectedPath(path.id)}
+              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-muted/30 group cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-4 p-4">
+                <img src={path.image} alt={path.title} className="w-20 h-20 rounded-2xl object-cover shadow-lg" />
+                <div className="flex-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary mb-1 block">{path.level}</span>
+                  <h3 className="text-lg font-bold text-foreground leading-tight">{path.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{path.subtitle}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Play className="w-4 h-4 fill-current" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const PathDetailView = ({ pathId }: { pathId: string }) => {
+    const path = learningPaths.find(p => p.id === pathId);
+    if (!path) return null;
+
+    const { playTrack, completedLessons } = useMediaPlayer();
+
+    return (
+      <div className="min-h-screen pb-32">
+        {/* Header */}
+        <div className="relative h-64 w-full">
+          <img src={path.image} alt={path.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute top-4 left-4">
+            <Button variant="glass" size="icon" onClick={() => setSelectedPath(null)} className="rounded-full">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </div>
+          <div className="absolute bottom-6 left-6 right-6">
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-2 block">{path.level} Path</span>
+            <h2 className="text-3xl font-black text-foreground leading-tight">{path.title}</h2>
+            <p className="text-sm text-white/70 mt-2">{path.subtitle}</p>
+          </div>
+        </div>
+
+        {/* Modules & Lessons */}
+        <div className="px-6 mt-8 space-y-10">
+          {path.modules.map((module, mIdx) => (
+            <div key={module.id} className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                  {mIdx + 1}
+                </div>
+                <h3 className="text-lg font-bold text-foreground/90">{module.title}</h3>
+              </div>
+              <div className="space-y-3 pl-2">
+                {module.lessons.map((lessonId, lIdx) => {
+                  const lesson = (lessons as any)[lessonId];
+                  if (!lesson) return null;
+                  const isDone = completedLessons.includes(lessonId);
+
+                  return (
+                    <motion.div
+                      key={lessonId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: lIdx * 0.05 }}
+                      onClick={() => {
+                        const formattedLesson = {
+                          id: lesson.id,
+                          title: lesson.title,
+                          artist: lesson.artist,
+                          album: lesson.album,
+                          duration: lesson.duration,
+                          url: lesson.url,
+                          artwork: lesson.artwork
+                        };
+                        playTrack(formattedLesson);
+                      }}
+                      className="group flex items-center gap-4 p-4 rounded-[1.5rem] bg-white/5 border border-white/5 hover:bg-white/10 active:scale-[0.99] transition-all cursor-pointer"
+                    >
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          <img src={lesson.artwork} alt={lesson.title} className="w-full h-full object-cover" />
+                        </div>
+                        {isDone && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-background flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-bold leading-tight ${isDone ? 'text-muted-foreground' : 'text-foreground'}`}>
+                          {lesson.title}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider font-semibold">
+                          Lesson {lIdx + 1} • {Math.floor(lesson.duration / 60)} min
+                        </p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                        <PlayCircle className="w-5 h-5" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // ── PlaylistView ──────────────────────────────────────────────────────────
   const PlaylistView = ({ playlist }: { playlist: any }) => (
     <Layout hideBottomNav={!showBottomNav}>
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="min-h-screen bg-black overflow-x-hidden">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -326,7 +831,7 @@ const Music = () => {
       {selectedPlaylist ? (
         <PlaylistView playlist={selectedPlaylist} />
       ) : (
-        <div className="min-h-screen bg-background transition-colors duration-500 overflow-x-hidden">
+        <div className="min-h-screen bg-black transition-colors duration-500 overflow-x-hidden">
 
           {/* ══════════════════════ HEADER ══════════════════════ */}
           <motion.header
@@ -338,9 +843,14 @@ const Music = () => {
 
               {/* Row 1 — Title + Icons */}
               <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h1 className="text-2xl font-bold text-gradient">Clockit</h1>
-                  <p className="text-xs text-muted-foreground">Music & Discover</p>
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gradient">Clockit</h1>
+                    <p className="text-xs text-muted-foreground">Music & Discover</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   {/* Search → Discover mode */}
@@ -357,6 +867,7 @@ const Music = () => {
                   { key: "foryou", label: "For You" },
                   { key: "library", label: "Library" },
                   { key: "discover", label: "Discover" },
+                  { key: "learn", label: "Learn" },
                 ].map(mode => (
                   <button
                     key={mode.key}
@@ -385,73 +896,34 @@ const Music = () => {
                 transition={{ duration: 0.25 }}
               >
 
-                {/* Hero Carousel */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  className="px-4 mt-6"
-                >
-                  <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden shadow-2xl">
-                    <AnimatePresence mode="wait">
-                      {heroBanners.map((banner, index) => index === currentHeroIndex && (
-                        <motion.div
-                          key={banner.id}
-                          initial={{ x: 300, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          exit={{ x: -300, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                          className="absolute inset-0"
-                        >
-                          <img
-                            src={banner.image}
-                            alt={banner.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className={`absolute inset-0 bg-gradient-to-r ${banner.gradient}`} />
-                          <div className="absolute bottom-5 left-5 right-5">
-                            <motion.span
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.2 }}
-                              className="text-[10px] uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold flex items-center gap-1 w-fit mb-2"
-                            >
-                              {(() => {
-                                const Icon = banner.icon;
-                                return Icon ? <Icon className="w-3 h-3" /> : null;
-                              })()}
-                              {banner.tag}
-                            </motion.span>
-                            <motion.h2
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.3 }}
-                              className="text-2xl font-black text-white leading-tight"
-                            >
-                              {banner.title}
-                            </motion.h2>
-                            <motion.p
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.4 }}
-                              className="text-sm text-white/70 mt-1 font-medium"
-                            >
-                              {banner.subtitle}
-                            </motion.p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-
-                    {/* Indicators */}
-                    <div className="absolute bottom-3 right-5 flex gap-1.5 z-10">
-                      {heroBanners.map((_, i) => (
-                        <div
+                {/* Hero Carousel - Image Only, No Play Button */}
+                <div className="mb-8 px-4 md:px-0">
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden shadow-lg select-none">
+                    <img
+                      src={heroSlides[currentHeroIndex].image}
+                      alt={heroSlides[currentHeroIndex].title}
+                      className="w-full h-full object-cover transition-all duration-700 pointer-events-none"
+                    />
+                    {/* Overlay text */}
+                    <div className="absolute left-6 bottom-8 text-left pointer-events-none">
+                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">{heroSlides[currentHeroIndex].title}</h2>
+                      <p className="text-sm text-white/80 drop-shadow">{heroSlides[currentHeroIndex].subtitle}</p>
+                      <span className="text-xs text-white/60">{heroSlides[currentHeroIndex].label}</span>
+                    </div>
+                    {/* Carousel indicators */}
+                    <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+                      {heroSlides.map((_, i) => (
+                        <button
                           key={i}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "w-6 bg-primary" : "w-1.5 bg-white/30"}`}
+                          className={`h-2 w-6 rounded-full transition-all duration-300 ${i === currentHeroIndex ? "bg-primary" : "bg-white/30 w-2"}`}
+                          onClick={() => handleHeroIndicatorClick(i)}
+                          tabIndex={-1}
+                          aria-label={`Go to slide ${i + 1}`}
                         />
                       ))}
                     </div>
                   </div>
-                </motion.section>
+                </div>
 
                 {/* Featured Playlists */}
                 <motion.section
@@ -467,45 +939,79 @@ const Music = () => {
                   </div>
                   <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory scroll-smooth">
                     {featuredPlaylistsMock.map(pl => (
-                      <div key={pl.id} className="snap-start flex-shrink-0 w-[200px]">
+                      <div key={pl.id} className="snap-start flex-shrink-0 w-[360px]">
                         <FeaturedPlaylist
-                          title={pl.title} description={pl.description}
-                          image={pl.image} songCount={pl.songCount}
-                          onClick={() => handleFeaturedPlaylistClick(pl.id)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </motion.section>
+                          title={pl.title}
+                          description={pl.description}
+                          image={pl.image}
+                          songCount={pl.songCount}
+                          onClick={() => {
+                            const playlistSongs = filteredSongs.length > 0
+                              ? filteredSongs
+                              : allSongs.slice(0, pl.songCount);
 
-                {/* Listening Groups */}
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  className="px-4 mt-7"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Radio className="w-5 h-5 text-primary" /> Listening Groups
-                    </h3>
-                    <Button variant="ghost" size="sm" className="text-primary gap-1"
-                      onClick={() => navigate("/groups")}>
-                      <Plus className="w-4 h-4" /> Create
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { name: "Chill Session", members: 3, status: "Now playing", color: "bg-primary/20", textColor: "text-primary" },
-                      { name: "Workout Mix", members: 5, status: "Paused", color: "bg-secondary/20", textColor: "text-secondary" },
-                    ].map(group => (
-                      <div key={group.name} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
-                        <div className={`w-10 h-10 ${group.color} rounded-full flex items-center justify-center`}>
-                          <Users className={`w-5 h-5 ${group.textColor}`} />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{group.name}</p>
-                          <p className="text-sm text-muted-foreground">{group.members} members • {group.status}</p>
-                        </div>
-                        <Button variant="outline" size="sm">Join</Button>
+                            if (playlistSongs.length > 0) {
+                              setSelectedPlaylist({
+                                ...pl,
+                                songs: playlistSongs.map((song: any) => ({
+                                  id: song.id,
+                                  title: song.title,
+                                  artist: song.artist,
+                                  albumArt: song.albumArt,
+                                  duration: song.duration,
+                                  trackUrl: song.trackUrl
+                                }))
+                              });
+                            } else {
+                              setSelectedPlaylist(pl);
+                            }
+                          }}
+                          onPlay={(e) => {
+                            e.stopPropagation();
+
+                            const playlistSongs = filteredSongs.length > 0
+                              ? filteredSongs
+                              : allSongs.slice(0, pl.songCount);
+
+                            if (playlistSongs.length > 0) {
+                              const formattedPlaylist = playlistSongs.map((song: any) => {
+                                let durationInSeconds = 180;
+
+                                if (typeof song.duration === 'string') {
+                                  const parts = song.duration.split(':');
+                                  if (parts.length === 2) {
+                                    const mins = parseInt(parts[0], 10);
+                                    const secs = parseInt(parts[1], 10);
+                                    if (!isNaN(mins) && !isNaN(secs)) {
+                                      durationInSeconds = mins * 60 + secs;
+                                    }
+                                  }
+                                } else if (typeof song.duration === 'number') {
+                                  durationInSeconds = song.duration;
+                                }
+
+                                return {
+                                  id: song.id,
+                                  title: song.title,
+                                  artist: song.artist,
+                                  album: pl.title,
+                                  duration: durationInSeconds,
+                                  url: song.trackUrl,
+                                  artwork: song.albumArt,
+                                };
+                              });
+
+                              // Play the first track from the formatted playlist
+                              if (formattedPlaylist.length > 0) {
+                                playTrack(formattedPlaylist[0], formattedPlaylist, 0);
+                                toast({
+                                  title: "Now Playing",
+                                  description: `${pl.title} - ${formattedPlaylist[0].title}`,
+                                });
+                              }
+                            }
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -513,7 +1019,7 @@ const Music = () => {
 
                 {/* Recently Played */}
                 <motion.section
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                   className="px-4 mt-7"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -531,7 +1037,7 @@ const Music = () => {
                       <motion.div
                         key={song.id}
                         initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.07 }}
+                        transition={{ delay: 0.25 + index * 0.07 }}
                       >
                         <SongCard
                           title={song.title} artist={song.artist} albumArt={song.albumArt}
@@ -547,6 +1053,42 @@ const Music = () => {
                         />
                       </motion.div>
                     ))}
+                  </div>
+                </motion.section>
+
+                {/* Listening Groups */}
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                  className="px-4 mt-7"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Radio className="w-5 h-5 text-primary" /> Listening Groups
+                    </h3>
+                    <Button variant="ghost" size="sm" className="text-primary gap-1"
+                      onClick={() => navigate("/groups")}>
+                      <Plus className="w-4 h-4" /> Create
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {activeGroups.length > 0 ? (
+                      activeGroups.map(group => (
+                        <div key={group._id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
+                          <div className={`w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center`}>
+                            <Users className={`w-5 h-5 text-primary`} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground">{group.name}</p>
+                            <p className="text-sm text-muted-foreground">{group.members?.length || 0} members • {group.isPublic ? 'Public' : 'Private'}</p>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => handleJoinGroup(group._id)}>Join</Button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 rounded-xl border border-dashed text-center">
+                        <p className="text-sm text-muted-foreground">No active groups found. Create one to start listening together!</p>
+                      </div>
+                    )}
                   </div>
                 </motion.section>
 
@@ -730,10 +1272,7 @@ const Music = () => {
                             </div>
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" onClick={() => setIsCreatePlaylistOpen(false)}>Cancel</Button>
-                              <Button onClick={() => {
-                                console.log("Create playlist:", newPlaylistName, newPlaylistDescription);
-                                setNewPlaylistName(""); setNewPlaylistDescription(""); setIsCreatePlaylistOpen(false);
-                              }}>Create</Button>
+                              <Button onClick={handleCreatePlaylist}>Create</Button>
                             </div>
                           </div>
                         </DialogContent>
@@ -864,6 +1403,28 @@ const Music = () => {
                     </h3>
                     <MusicDiscovery />
                   </motion.section>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ══════════════════ LEARN MODE ═══════════════════ */}
+          <AnimatePresence mode="wait">
+            {activeMode === "learn" && (
+              <motion.div
+                key={selectedPath ? "path-detail" : selectedDiscipline ? "path-list" : "disciplines"}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="pb-32"
+              >
+                {selectedPath ? (
+                  <PathDetailView pathId={selectedPath} />
+                ) : selectedDiscipline ? (
+                  <PathListView disciplineId={selectedDiscipline} />
+                ) : (
+                  <LearnView />
                 )}
               </motion.div>
             )}

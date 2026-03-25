@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+
 // Seed genres (one-time or admin)
 router.post('/seed', async (req, res) => {
   const genreList = [
@@ -29,5 +30,7 @@ router.post('/seed', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+console.log("show all genres ")
 
 module.exports = router;

@@ -214,9 +214,8 @@ const Settings = () => {
     } else if (item.type === 'link') {
       // Handle specific links - show info or navigate to appropriate pages
       if (item.id === 'edit-profile') {
-        toast.info("Edit Profile - Feature loading...");
-        // Navigate only if profile page is working
-        navigate('/profile/me');
+        // Navigate to profile with edit query param to open edit modal
+        navigate('/profile/me?edit=true');
       } else if (item.id === 'change-email') {
         setEmailModalOpen(true);
       } else if (item.id === 'change-password') {

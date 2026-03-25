@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, Volume2, VolumeX, Filter, CloudOff, Play, ChevronUp, ChevronDown, Upload } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
+import { Heart, MessageCircle, Share2, Music2, Plus, Bookmark, CloudOff, Play, ChevronUp, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { UploadVideoModal } from "@/components/reels/UploadVideoModal";
+import { toast } from "sonner";
 
 interface Reel {
   id: string;
@@ -42,379 +41,425 @@ const formatCount = (num: number): string => {
   return num.toString();
 };
 
-const ReelCard = ({ reel, isActive, onNext, onPrev, currentIndex, reelsLength }: { reel: Reel; isActive: boolean; onNext?: () => void; onPrev?: () => void; currentIndex?: number; reelsLength?: number }) => {
+const ReelCard = ({
+  reel,
+  isActive,
+  onNext,
+  onPrev,
+  globalMuted,
+  setGlobalMuted,
+}: {
+  reel: Reel;
+  isActive: boolean;
+  onNext?: () => void;
+  onPrev?: () => void;
+  currentIndex?: number;
+  reelsLength?: number;
+  globalMuted: boolean;
+  setGlobalMuted: (muted: boolean) => void;
+}) => {
   const [isLiked, setIsLiked] = useState(reel.isLiked || false);
   const [isSaved, setIsSaved] = useState(reel.isSaved || false);
   const [likes, setLikes] = useState(reel.stats.like_count);
-  const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (isActive && videoRef.current) {
       videoRef.current.play().catch(() => {
-        // Auto-play might be blocked
-        console.log('Auto-play blocked');
+        console.log("Auto-play blocked");
       });
       setIsPlaying(true);
     } else if (!isActive && videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      if (videoRef.current.currentTime > 0) {
+        videoRef.current.currentTime = 0;
+      }
       setIsPlaying(false);
     }
   }, [isActive]);
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = isMuted;
+      videoRef.current.muted = globalMuted;
     }
-  }, [isMuted]);
-
-  // Cleanup to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-      }
-    };
-  }, []);
+  }, [globalMuted]);
 
   const handleDoubleTap = () => {
     if (!isLiked) {
-      setIsLiked(true);
-      setLikes((prev) => prev + 1);
+      handleLike();
     }
     setShowHeart(true);
     setTimeout(() => setShowHeart(false), 1000);
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLike = async () => {
+    // 1. Optimistic UI update
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
     setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    // 2. Real API call
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "https://your-backend.onrender.com";
+      const token = localStorage.getItem('token'); 
+      
+      const response = await fetch(`${apiUrl}/likes/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          contentId: reel.id || reel.video_id,
+          contentType: 'video'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle like');
+    } catch (err) {
+      console.error("Like failed:", err);
+      // Rollback on error
+      setIsLiked(!newIsLiked);
+      setLikes((prev) => (newIsLiked ? prev - 1 : prev + 1));
+      toast.error("Cloud sync failed. Reverting like.");
+    }
+  };
+
+  const handleSave = async () => {
+    // Optimistic Update
+    setIsSaved(!isSaved);
+    
+    try {
+       const apiUrl = import.meta.env.VITE_API_URL || "https://your-backend.onrender.com";
+       const token = localStorage.getItem('token');
+       
+       const response = await fetch(`${apiUrl}/profile/save`, {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`
+         },
+         body: JSON.stringify({
+           contentId: reel.id || reel.video_id,
+           contentType: 'reel',
+           contentModel: 'Video',
+           contentData: {
+             title: reel.title,
+             image: reel.thumbnail_url
+           }
+         })
+       });
+       
+       if(!response.ok) throw new Error('Failed to save content');
+       toast.success(isSaved ? "Removed from drafts" : "Saved to drafts");
+    } catch (err) {
+       setIsSaved(isSaved);
+       toast.error("Failed to update save status");
+    }
   };
 
   const handlePlay = async () => {
     if (videoRef.current) {
       try {
-        await videoRef.current.play();
-        setIsPlaying(true);
+        if (isPlaying) {
+          videoRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          await videoRef.current.play();
+          setIsPlaying(true);
+        }
       } catch (err) {
-        console.log('Play still blocked:', err);
+        console.log("Play toggle error:", err);
       }
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: reel.title,
+      text: `Check out this blaze by @${reel.author.username} on Clockit!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+    }
+  };
+
   return (
-    <div className="relative h-full w-full overflow-hidden bg-background">
-      {/* Video Background */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
-        src={reel.video_url}
-        poster={reel.thumbnail_url}
-        loop
-        playsInline
-        muted
-        preload="metadata"
-        onDoubleClick={handleDoubleTap}
-        onClick={handlePlay}
-      />
-      
-      {/* Play Button Overlay (shown when auto-play is blocked) */}
-      {!isPlaying && (
-        <motion.button
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          onClick={handlePlay}
-          className="absolute inset-0 flex items-center justify-center z-15 bg-black/20"
+    <div className="relative h-full w-full flex items-stretch justify-center bg-[#0a0a0a] overflow-hidden">
+      {/* Container that handles the layout */}
+      <div className={`flex-1 w-full h-full flex ${showComments ? 'flex-row' : 'flex-col'} items-center justify-center relative bg-black md:px-12 overflow-hidden transition-all duration-300`}>
+        
+        {/* Main Video Wrapper */}
+        <motion.div 
+          animate={{ height: showComments ? "50%" : "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="relative w-full md:max-w-[380px] lg:max-w-[420px] md:aspect-[9/16] shrink-0 md:my-auto"
         >
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center"
-          >
-            <Play className="w-10 h-10 text-white fill-white ml-1" />
-          </motion.div>
-        </motion.button>
-      )}
-      {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/90 pointer-events-none" />
 
-      {/* Double Tap Heart Animation */}
-      <AnimatePresence>
-        {showHeart && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-          >
-            <Heart className="w-24 h-24 text-secondary fill-secondary" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Inner Video Container WITH overflow-hidden */}
+          <div className="absolute inset-0 w-full h-full md:rounded-xl overflow-hidden md:border md:border-white/10 md:bg-black md:shadow-[0_0_80px_rgba(0,0,0,0.8)]">
 
-      {/* Right Side Actions */}
-      <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-10">
-        {/* Profile */}
-        <motion.div
-          whileTap={{ scale: 0.9 }}
-          className="relative"
-        >
-          <img
-            src={reel.author.avatar_url}
-            alt={reel.author.username}
-            className="w-12 h-12 rounded-full border-2 border-primary object-cover"
-          />
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-            <Plus className="w-3 h-3 text-primary-foreground" />
-          </div>
-        </motion.div>
+            {/* Video */}
+            <video
+              ref={videoRef}
+              className="absolute inset-0 w-full h-full object-cover"
+              src={reel.video_url}
+              poster={reel.thumbnail_url}
+              loop
+              playsInline
+              muted
+              onDoubleClick={handleDoubleTap}
+              onClick={handlePlay}
+              onEnded={() => onNext?.()}
+            />
 
-        {/* Like */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={handleLike}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className={`p-2 rounded-full ${isLiked ? "text-secondary" : "text-foreground"}`}>
-            <Heart className={`w-7 h-7 ${isLiked ? "fill-secondary" : ""}`} />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(likes)}</span>
-        </motion.button>
-
-        {/* Comment */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            <MessageCircle className="w-7 h-7" />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(reel.stats.comment_count)}</span>
-        </motion.button>
-
-        {/* Save */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={() => setIsSaved(!isSaved)}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className={`p-2 rounded-full ${isSaved ? "text-accent" : "text-foreground"}`}>
-            <Bookmark className={`w-7 h-7 ${isSaved ? "fill-accent" : ""}`} />
-          </div>
-        </motion.button>
-
-        {/* Share */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            <Share2 className="w-7 h-7" />
-          </div>
-          <span className="text-xs font-semibold text-foreground">{formatCount(reel.stats.share_count)}</span>
-        </motion.button>
-
-        {/* Mute */}
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={() => setIsMuted(!isMuted)}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="p-2 rounded-full text-foreground">
-            {isMuted ? (
-              <VolumeX className="w-7 h-7" />
-            ) : (
-              <Volume2 className="w-7 h-7" />
+            {/* Play Button Overlay */}
+            {!isPlaying && (
+              <motion.button
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                onClick={handlePlay}
+                className="absolute inset-0 flex items-center justify-center z-10 bg-black/20 pointer-events-none"
+              >
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center pointer-events-auto"
+                  onClick={handlePlay}
+                >
+                  <Play className="w-10 h-10 text-white fill-white ml-1" />
+                </motion.div>
+              </motion.button>
             )}
-          </div>
-        </motion.button>
 
-        {/* Music Disc */}
-        <motion.div
-          animate={isActive ? { rotate: 360 } : {}}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 rounded-full overflow-hidden border-2 border-muted"
-        >
-          <img src={reel.thumbnail_url} alt="music" className="w-full h-full object-cover" />
+            {/* Gradients */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
+
+            {/* Double Tap Heart */}
+            <AnimatePresence>
+              {showHeart && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1.2, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+                >
+                  <Heart className="w-24 h-24 md:w-32 md:h-32 text-red-500 fill-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Info Overlay */}
+            <div className="absolute bottom-6 left-4 right-16 z-10 pointer-events-none md:bottom-8 md:right-8 md:left-6">
+              <div className="pointer-events-auto max-w-[85%] md:max-w-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-white drop-shadow-md">@{reel.author.username}</span>
+                </div>
+                <p className="text-sm text-white/90 mb-3 line-clamp-2 drop-shadow-sm">{reel.title}</p>
+                <div className="flex items-center gap-2">
+                  <Music2 className="w-4 h-4 text-white" />
+                  <div className="overflow-hidden">
+                    <motion.p
+                      animate={isActive ? { x: [0, -100, 0] } : { x: 0 }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                      className="text-xs text-white whitespace-nowrap"
+                    >
+                      {reel.music.title} • {reel.music.author}
+                    </motion.p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+          </div> {/* End Inner Video Container */}
+
+          {/* Action Column */}
+          <div className="absolute right-2 bottom-[90px] md:-right-20 md:bottom-4 flex flex-col items-center gap-4 z-20 pointer-events-auto w-14 md:w-16">
+
+            {/* Author avatar */}
+            <motion.div whileTap={{ scale: 0.9 }} className="relative mb-2 flex flex-col items-center">
+              <div className="w-11 h-11 md:w-12 md:h-12 rounded-full border border-white/20 md:border-none overflow-hidden shadow-xl bg-zinc-800">
+                <img src={reel.author.avatar_url} alt={reel.author.username} className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-black">
+                <Plus className="w-3 h-3 text-white" />
+              </div>
+            </motion.div>
+
+            {/* Like */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center w-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
+                <Heart className={`w-6 h-6 md:w-6 md:h-6 transition-colors ${isLiked ? "text-red-500 fill-red-500" : "group-hover:text-red-400"}`} />
+              </div>
+              <span className="text-xs font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(likes)}</span>
+            </motion.button>
+
+            {/* Comment */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowComments(!showComments)} className="flex flex-col items-center w-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
+                <MessageCircle className="w-6 h-6 md:w-6 md:h-6 group-hover:text-blue-400 transition-colors" />
+              </div>
+              <span className="text-xs font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.comment_count)}</span>
+            </motion.button>
+
+            {/* Save */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave} className="flex flex-col items-center w-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
+                <Bookmark className={`w-6 h-6 md:w-6 md:h-6 transition-colors ${isSaved ? "text-yellow-400 fill-yellow-400" : "group-hover:text-yellow-300"}`} />
+              </div>
+              <span className="text-[10px] md:text-xs font-bold text-white mt-1">Saved</span>
+            </motion.button>
+
+            {/* Share */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center w-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
+                <Share2 className="w-6 h-6 md:w-6 md:h-6 group-hover:text-green-400 transition-colors" />
+              </div>
+              <span className="text-xs font-bold text-white mt-1 w-full text-center drop-shadow-lg">{formatCount(reel.stats.share_count)}</span>
+            </motion.button>
+
+            {/* Volume toggle */}
+            <motion.button whileTap={{ scale: 0.8 }} onClick={() => setGlobalMuted(!globalMuted)} className="flex flex-col items-center w-full group">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 hover:bg-black/60 md:hover:bg-zinc-700 backdrop-blur-xl flex items-center justify-center text-white border border-white/10 md:border-none transition-colors">
+                {globalMuted
+                  ? <VolumeX className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                  : <Volume2 className="w-5 h-5 text-white group-hover:text-white transition-colors" />}
+              </div>
+            </motion.button>
+            
+          </div>
+
         </motion.div>
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-col items-center gap-2">
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={onNext}
-            disabled={currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className={`p-2 rounded-full ${currentIndex !== undefined && reelsLength !== undefined && currentIndex >= reelsLength - 1 ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-              <ChevronUp className="w-7 h-7" />
-            </div>
-          </motion.button>
-          
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={onPrev}
-            disabled={currentIndex !== undefined && currentIndex <= 0}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className={`p-2 rounded-full ${currentIndex !== undefined && currentIndex <= 0 ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-              <ChevronDown className="w-7 h-7" />
-            </div>
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Bottom Info */}
-      <div className="absolute bottom-24 left-4 right-20 z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-foreground">@{reel.author.username}</span>
-        </div>
-        <p className="text-sm text-foreground/90 mb-3 line-clamp-2">{reel.title}</p>
-
-        {/* Music Info */}
-        <div className="flex items-center gap-2">
-          <Music2 className="w-4 h-4 text-foreground" />
-          <div className="overflow-hidden">
-            <motion.p
-              animate={{ x: isActive ? [0, -100, 0] : 0 }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              className="text-sm text-foreground whitespace-nowrap"
+        {/* Comments Overlay */}
+        <AnimatePresence>
+          {showComments && (
+            <motion.div
+              initial={{ y: "100%", x: 0 }}
+              animate={{ y: 0, x: 0 }}
+              exit={{ y: "100%", x: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute bottom-0 left-0 right-0 h-[50%] md:h-full md:relative md:w-[350px] lg:w-[450px] bg-[#121212] z-40 rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-white/10 flex flex-col shadow-2xl"
             >
-              {reel.music.title} • {reel.music.author}
-            </motion.p>
-          </div>
-        </div>
+              {/* Comment Header */}
+              <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
+                <h3 className="text-white font-bold text-sm">
+                  {formatCount(reel.stats.comment_count)} Comments
+                </h3>
+                <button 
+                  onClick={() => setShowComments(false)}
+                  className="text-white/60 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <ChevronDown className="w-5 h-5 md:hidden" />
+                  <span className="hidden md:block text-xs uppercase font-bold tracking-widest bg-white/10 px-2 py-1 rounded">Close</span>
+                </button>
+              </div>
+
+              {/* Comment List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                 {/* This would be mapped from real comments in a full implementation */}
+                 <div className="h-full flex flex-col items-center justify-center text-white/30 py-20">
+                   <MessageCircle className="w-12 h-12 mb-2 opacity-20" />
+                   <p className="text-sm italic">Comments synced to cloud...</p>
+                 </div>
+              </div>
+
+              {/* Comment Input */}
+              <div className="p-4 border-t border-white/10 bg-[#121212] shrink-0 pb-8 sm:pb-4">
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="text" 
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-white/5 rounded-full px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-primary border border-transparent focus:border-primary/50"
+                  />
+                  <button className="text-primary font-bold text-sm px-2 hover:text-primary/80 transition-colors">Post</button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );
 };
 
+
 const Reels = () => {
-  console.log('Reels component mounted');
-  const navigate = useNavigate();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showOfflineMode, setShowOfflineMode] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [globalMuted, setGlobalMuted] = useState(true);
   
-  // Pagination states for infinite loading
+  // Pagination & Fetching
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
-  const dragConstraints = { top: 0, bottom: 0 };
 
-  const handleUploadVideo = async (file: File, title: string, description: string) => {
-    const formData = new FormData();
-    formData.append('video', file);
-    formData.append('title', title);
-    formData.append('description', description);
-
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
-    const response = await fetch(`${apiUrl}/videos/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    // Refresh reels to include new video
-    const reelsResponse = await fetch(`${apiUrl}/videos/feed`);
-    const reelsData = await reelsResponse.json();
-    if (reelsData.videos) {
-      setReels(reelsData.videos);
-      setCurrentIndex(0); // Go to the new video
-    }
-  };
-
-  // Reusable fetch function with pagination
   const fetchReels = async (pageNumber: number = 1) => {
     try {
-      console.log('Fetching reels from TikTok API, page:', pageNumber);
       const apiUrl = import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com';
       const response = await fetch(`${apiUrl}/tiktok/trending?page=${pageNumber}`);
-      console.log('TikTok API response status:', response.status);
       
       if (!response.ok) throw new Error('Failed to fetch reels');
       
       const data = await response.json();
-      console.log('TikTok API response data:', data);
       
       if (data.videos && data.videos.length > 0) {
-        console.log('Setting reels data:', data.videos.length, 'videos');
-        setReels((prev) => [...prev, ...data.videos]);
+        setReels((prev) => pageNumber === 1 ? data.videos : [...prev, ...data.videos]);
       } else {
         setHasMore(false);
-        console.log('No more videos to load');
       }
     } catch (error) {
       console.error('Failed to fetch reels:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Smart video preloading - preload next and previous videos
+  // Smart Preloading
   useEffect(() => {
     if (!reels.length) return;
 
-    // Preload next video (full preload for instant playback)
+    // Preload next video
     const nextIndex = currentIndex + 1;
     if (nextIndex < reels.length) {
-      const nextVideo = document.createElement('video');
-      nextVideo.src = reels[nextIndex].video_url;
-      nextVideo.preload = 'auto';
-      console.log('Preloading next video:', reels[nextIndex].video_url);
-    }
-
-    // Preload previous video (metadata preload for quick access)
-    const prevIndex = currentIndex - 1;
-    if (prevIndex >= 0) {
-      const prevVideo = document.createElement('video');
-      prevVideo.src = reels[prevIndex].video_url;
-      prevVideo.preload = 'metadata';
-      console.log('Preloading previous video:', reels[prevIndex].video_url);
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'video';
+      link.href = reels[nextIndex].video_url;
+      document.head.appendChild(link);
+      console.log('Preloading next video stream...');
     }
   }, [currentIndex, reels]);
 
-  // Initial load
   useEffect(() => {
-    const load = async () => {
-      await fetchReels(1);
-      setLoading(false);
-    };
-
-    load();
+    fetchReels(1);
   }, []);
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const verticalThreshold = 30; // Lowered from 50 for easier swiping
-    const horizontalThreshold = 60;
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const verticalThreshold = 50;
 
-    // Check for horizontal swipe (left/right) for offline mode
-    if (Math.abs(info.offset.x) > horizontalThreshold && Math.abs(info.offset.x) > Math.abs(info.offset.y)) {
-      if (info.offset.x < -horizontalThreshold) {
-        // Swipe left - open offline mode
-        setShowOfflineMode(true);
-      }
-      return;
-    }
-
-    // Vertical swipes for reel navigation
     if (info.offset.y < -verticalThreshold && currentIndex < reels.length - 1) {
-      // Swipe up - next video
       setCurrentIndex((prev) => prev + 1);
 
-      // Load more reels when near end (3 reels from the end)
+      // Load more reels when near end
       if (currentIndex >= reels.length - 3 && hasMore && !loadingMore) {
         setLoadingMore(true);
         const nextPage = page + 1;
@@ -422,21 +467,17 @@ const Reels = () => {
         fetchReels(nextPage).finally(() => setLoadingMore(false));
       }
     } else if (info.offset.y > verticalThreshold && currentIndex > 0) {
-      // Swipe down - previous video
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
-  console.log('Reels render - loading:', loading, 'reels length:', reels.length);
-
   if (loading) {
-    console.log('Showing loading state');
     return (
-      <Layout hidePlayer>
-        <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+      <Layout hidePlayer hideRightPanel>
+        <div className="h-[100dvh] flex items-center justify-center bg-black">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading reels...</p>
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white/80 font-medium tracking-wide">Syncing Blazes...</p>
           </div>
         </div>
       </Layout>
@@ -444,32 +485,26 @@ const Reels = () => {
   }
 
   if (reels.length === 0) {
-    console.log('Showing empty state');
     return (
-      <Layout hidePlayer>
-        <div className="h-[calc(100vh-80px)] flex items-center justify-center">
-          <div className="text-center">
-            <CloudOff className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No reels available</p>
+      <Layout hidePlayer hideRightPanel>
+        <div className="h-[100dvh] flex items-center justify-center bg-black text-center p-8">
+          <div>
+            <CloudOff className="w-16 h-16 text-white/20 mx-auto mb-4" />
+            <p className="text-white/60">No blazes found. Be the first to upload!</p>
           </div>
         </div>
       </Layout>
     );
   }
 
-  console.log('Showing reels, currentIndex:', currentIndex, 'reel:', reels[currentIndex]);
   return (
-    <Layout hidePlayer>
-      <div className="h-[calc(100vh-80px)] relative overflow-hidden">
-
-
-        {/* Reels Container */}
+    <Layout hidePlayer hideRightPanel>
+      <div className="h-[100dvh] w-full relative overflow-hidden bg-black">
         <motion.div
           ref={containerRef}
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.1}
-          dragSnapToOrigin={false}
           onDragEnd={handleDragEnd}
           style={{ y }}
           className="h-full w-full cursor-grab active:cursor-grabbing touch-none"
@@ -477,107 +512,44 @@ const Reels = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, y: 100 }}
+              initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -100 }}
+              exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.3 }}
               className="h-full w-full"
             >
               <ReelCard
                 reel={reels[currentIndex]}
                 isActive={true}
-                onNext={() => currentIndex < reels.length - 1 && setCurrentIndex(prev => prev + 1)}
-                onPrev={() => currentIndex > 0 && setCurrentIndex(prev => prev - 1)}
-                currentIndex={currentIndex}
-                reelsLength={reels.length}
+                onNext={() => currentIndex < reels.length - 1 && setCurrentIndex((prev) => prev + 1)}
+                onPrev={() => currentIndex > 0 && setCurrentIndex((prev) => prev - 1)}
+                globalMuted={globalMuted}
+                setGlobalMuted={setGlobalMuted}
               />
             </motion.div>
           </AnimatePresence>
         </motion.div>
 
-        {/* Loading More Indicator */}
-        {loadingMore && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground">
-            Loading more reels...
-          </div>
-        )}
-
-
-        {/* Swipe Hint */}
-        {currentIndex === 0 && !showOfflineMode && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 text-sm text-muted-foreground z-20"
+        {/* Global Controls */}
+        <div className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 flex-col gap-4 z-50">
+          <button
+            onClick={() => currentIndex > 0 && setCurrentIndex(prev => prev - 1)}
+            disabled={currentIndex === 0}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${currentIndex === 0 ? 'bg-zinc-800/50 text-white/30 cursor-not-allowed' : 'bg-[#2f2f2f] text-white hover:bg-zinc-700'}`}
           >
-            Swipe up for more • Swipe left for offline
-          </motion.div>
-        )}
-
-        {/* Offline Mode Overlay */}
-        <AnimatePresence>
-          {showOfflineMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-sm z-30 flex items-center justify-center"
-            >
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="text-center p-8 max-w-sm mx-4"
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CloudOff className="w-8 h-8 text-primary drop-shadow-[0_0_12px_hsl(var(--primary))]" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">Offline Reels</h3>
-                <p className="text-muted-foreground mb-6">
-                  Watch your downloaded reels without an internet connection
-                </p>
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => navigate('/offline-reels')}
-                    className="w-full gap-2"
-                  >
-                    <CloudOff className="w-4 h-4" />
-                    View Offline Reels
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowOfflineMode(false)}
-                    className="w-full"
-                  >
-                    Continue Watching
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Upload Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowUploadModal(true)}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
-          title="Upload Video"
-        >
-          <Upload className="w-5 h-5 text-primary-foreground" />
-        </motion.button>
-
-        {/* Upload Modal */}
-        <UploadVideoModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onUpload={handleUploadVideo}
-        />
+            <ChevronUp className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => currentIndex < reels.length - 1 && setCurrentIndex(prev => prev + 1)}
+            disabled={currentIndex === reels.length - 1}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${currentIndex === reels.length - 1 ? 'bg-zinc-800/50 text-white/30 cursor-not-allowed' : 'bg-[#2f2f2f] text-white hover:bg-zinc-700'}`}
+          >
+            <ChevronDown className="w-6 h-6" />
+          </button>
+        </div>
       </div>
     </Layout>
   );
-
 };
 
 export default Reels;

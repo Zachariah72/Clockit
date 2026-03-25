@@ -8,6 +8,8 @@ interface FeaturedPlaylistProps {
   image: string;
   songCount: number;
   onClick?: () => void;
+  hidePlayButton?: boolean;  // Add this line
+  onPlay?: (e: React.MouseEvent) => void;  // Add this line
 }
 
 export const FeaturedPlaylist = ({
@@ -16,7 +18,17 @@ export const FeaturedPlaylist = ({
   image,
   songCount,
   onClick,
+  hidePlayButton = false,  // Add this with default value
+  onPlay,  // Add this
 }: FeaturedPlaylistProps) => {
+  
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onPlay) {
+      onPlay(e);
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
@@ -44,9 +56,17 @@ export const FeaturedPlaylist = ({
           <span className="text-xs text-muted-foreground">
             {songCount} songs
           </span>
-          <Button variant="glow" size="icon-sm">
-            <Play className="w-4 h-4 ml-0.5" />
-          </Button>
+          
+          {/* Conditionally render the play button */}
+          {!hidePlayButton && (
+            <Button 
+              variant="glow" 
+              size="icon-sm"
+              onClick={handlePlayClick}
+            >
+              <Play className="w-4 h-4 ml-0.5" />
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

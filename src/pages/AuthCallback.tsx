@@ -3,8 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 const getApiUrl = () => {
-  if (import.meta.env.DEV) return 'http://localhost:5000/api';
-  return import.meta.env.VITE_API_URL || 'https://your-backend.onrender.com/api';
+  // Check if we're in development mode (localhost)
+  const isLocalhost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
+  if (isLocalhost) return 'http://localhost:5000/api';
+  
+  // Use env variable or production fallback in production
+  return import.meta.env.VITE_API_URL || 'https://clockit-gvm2.onrender.com/api';
 };
 
 const AuthCallback = () => {

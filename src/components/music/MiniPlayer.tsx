@@ -38,6 +38,25 @@ export const MiniPlayer = () => {
               }}
             />
           </div>
+        <div className="relative mx-auto max-w-lg overflow-hidden">
+          {/* Animated Background Gradient */}
+          <motion.div
+            className="absolute inset-0 bg-black/80 rounded-2xl blur-xl"
+            animate={{
+              background: [
+                "linear-gradient(45deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2), rgba(59, 130, 246, 0.2))",
+                "linear-gradient(45deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2))",
+                "linear-gradient(45deg, rgba(236, 72, 153, 0.2), rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2))",
+                "linear-gradient(45deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2), rgba(59, 130, 246, 0.2))"
+              ]
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut"
+            }}
+          />
 
           <div className="flex items-center gap-3 p-3">
             {/* Album Art Thumbnail */}

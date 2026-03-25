@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Search, Play, Clock, User, TrendingUp, Headphones, Filter, Star, ArrowLeft } from "lucide-react";
@@ -6,54 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getFeaturedPodcasts, getPodcastCategories } from "@/services/api";
 
 const Podcasts = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [featuredPodcasts, setFeaturedPodcasts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock podcast data
-  const featuredPodcasts = [
-    {
-      id: "1",
-      title: "Tech Talk Daily",
-      host: "Sarah Chen",
-      description: "Daily insights into the latest technology trends and innovations",
-      episodes: 245,
-      duration: "45 min",
-      rating: 4.8,
-      category: "Technology",
-      image: "/api/placeholder/200/200",
-      isSubscribed: false,
-    },
-    {
-      id: "2",
-      title: "Mindful Moments",
-      host: "Dr. James Wilson",
-      description: "Guided meditations and mindfulness practices for busy professionals",
-      episodes: 120,
-      duration: "20 min",
-      rating: 4.9,
-      category: "Wellness",
-      image: "/api/placeholder/200/200",
-      isSubscribed: true,
-    },
-    {
-      id: "3",
-      title: "Business Breakthrough",
-      host: "Maria Rodriguez",
-      description: "Strategies and stories from successful entrepreneurs",
-      episodes: 89,
-      duration: "35 min",
-      rating: 4.7,
-      category: "Business",
-      image: "/api/placeholder/200/200",
-      isSubscribed: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchPodcastsData = async () => {
+      try {
+        const [podcastsRes, categoriesRes] = await Promise.all([
+          getFeaturedPodcasts(),
+          getPodcastCategories()
+        ]);
 
-  const categories = [
-    "All", "Technology", "Business", "Wellness", "News", "Comedy", "Education", "True Crime"
-  ];
+        if (podcastsRes?.podcasts) setFeaturedPodcasts(podcastsRes.podcasts);
+        if (categoriesRes?.categories) setCategories(categoriesRes.categories);
+      } catch (err) {
+        console.error("Failed to fetch podcasts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPodcastsData();
+  }, []);
 
   return (
     <Layout>
@@ -110,59 +90,77 @@ const Podcasts = () => {
               </div>
 
               <div className="grid gap-4">
-                {featuredPodcasts.map((podcast, index) => (
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="glass-card p-4 rounded-2xl animate-pulse flex gap-4">
+                      <div className="w-20 h-20 bg-white/10 rounded-xl" />
+                      <div className="flex-1 space-y-3">
+                        <div className="flex justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 bg-white/10 rounded w-1/3" />
+                            <div className="h-3 bg-white/10 rounded w-1/4" />
+                          </div>
+                        </div>
+                        <div className="h-3 bg-white/10 rounded w-full" />
+                        <div className="h-3 bg-white/10 rounded w-5/6" />
+                      </div>
+                    </div>
+                  ))
+                ) : featuredPodcasts.map((podcast, index) => (
                   <motion.div
                     key={podcast.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="glass-card p-4 rounded-2xl"
+                    className="bg-white/5 border border-white/10 backdrop-blur-md p-4 rounded-3xl hover:bg-white/10 transition-all group"
                   >
                     <div className="flex gap-4">
                       <img
                         src={podcast.image}
                         alt={podcast.title}
-                        className="w-20 h-20 rounded-xl object-cover"
+                        className="w-24 h-24 rounded-2xl object-cover shadow-lg shrink-0"
                       />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-foreground truncate">{podcast.title}</h3>
-                            <p className="text-sm text-muted-foreground truncate">{podcast.host}</p>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between mb-1">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">{podcast.title}</h3>
+                              <p className="text-xs text-muted-foreground truncate">{podcast.host}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-2 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                              <Star className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
+                              <span className="text-[10px] font-bold text-foreground">{podcast.rating}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 ml-2">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs text-muted-foreground">{podcast.rating}</span>
-                          </div>
+
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                            {podcast.description}
+                          </p>
                         </div>
 
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {podcast.description}
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               <span>{podcast.duration}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3" />
-                              <span>{podcast.episodes} episodes</span>
+                              <span>{podcast.episodes} eps</span>
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" className="gap-1">
-                              <Play className="w-3 h-3" />
+                          <div className="flex flex-row items-center gap-2">
+                            <Button size="sm" className="flex-1 h-9 rounded-xl gap-2 font-bold shadow-lg shadow-primary/20">
+                              <Play className="w-3.5 h-3.5 fill-current" />
                               Play
                             </Button>
                             <Button
                               size="sm"
-                              variant={podcast.isSubscribed ? "default" : "outline"}
-                              className="gap-1"
+                              variant={podcast.isSubscribed ? "secondary" : "outline"}
+                              className={`flex-1 h-9 rounded-xl gap-2 font-bold ${!podcast.isSubscribed ? "bg-white/5 border-white/10" : ""}`}
                             >
-                              {podcast.isSubscribed ? "Subscribed" : "Subscribe"}
+                              {podcast.isSubscribed ? "Saved" : "Save"}
                             </Button>
                           </div>
                         </div>
@@ -176,7 +174,14 @@ const Podcasts = () => {
             <TabsContent value="categories" className="space-y-6">
               <h2 className="text-xl font-semibold text-foreground">Browse by Category</h2>
               <div className="grid grid-cols-2 gap-3">
-                {categories.map((category, index) => (
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="glass-card p-4 rounded-xl animate-pulse space-y-3">
+                      <div className="h-4 bg-white/10 rounded w-2/3" />
+                      <div className="h-3 bg-white/10 rounded w-1/3" />
+                    </div>
+                  ))
+                ) : categories.map((category, index) => (
                   <motion.button
                     key={category}
                     initial={{ opacity: 0, scale: 0.9 }}
