@@ -1,19 +1,31 @@
-# Snap Page Enhancement Implementation
+# E2EE Chat Implementation TODO
 
-## Plan
-- [x] Modify Camera.tsx to show filters directly at bottom (no toggle button)
-- [x] Modify Snap.tsx to store snap history as objects with captions
-- [x] Add localStorage persistence for snap history
-- [x] Add Edit/Delete functionality to history snaps
-- [x] Add "Edit Snap" button on preview
+## Backend (4/7 complete)
+- [x] Create TODO.md
+- [x] 1. Read profileController.js
+- [x] 2. Edit backend/src/models/User.js: Add `publicKey: { type: String, default: null }`
+- [x] 3. Edit backend/src/controllers/profileController.js: Add GET `/profile/:id/publickey`, PATCH `/profile/publickey` functions
+- [x] Add routes in backend/src/routes/profile.js for publicKey APIs
+- [ ] 4. Test APIs: Generate keys → POST pubkey → GET pubkey (manual/backend restart)
 
-## Implementation Steps
-1. ✅ Update Camera.tsx - show filters directly at bottom without toggle button
-2. ✅ Update Snap.tsx - change snapHistory type to objects with image and caption
-3. ✅ Add useEffect to load snap history from localStorage on mount
-4. ✅ Update sendSnapAsStory to save snaps with captions as objects
-5. ✅ Update history click handler to load image and caption
-6. ✅ Update history map to use snap.image
-7. ✅ Add Edit Snap button on preview screen
-8. ✅ Add Delete and Edit Caption functionality on history cards
+## Frontend (0/4)
+- [ ] 5. Create src/utils/e2e.ts: generateKeys, encryptMessage, decryptMessage
+- [ ] 6. Edit src/contexts/AuthContext.tsx: Generate/upload keys post-auth if missing
+- [ ] 7. Edit src/pages/Chat.tsx: Load keys, encrypt before send, decrypt on receive, add banner
+- [ ] 8. Test end-to-end messaging
+
+## Final
+- [ ] 9. Update TODO.md to completed
+- [ ] 10. attempt_completion
+
+
+## Frontend (0/4)
+- [ ] 5. Create src/utils/e2e.ts: generateKeys, encryptMessage, decryptMessage
+- [ ] 6. Edit src/contexts/AuthContext.tsx: Generate/upload keys post-auth if missing
+- [ ] 7. Edit src/pages/Chat.tsx: Load keys, encrypt before send, decrypt on receive, add banner
+- [ ] 8. Test end-to-end messaging
+
+## Final
+- [ ] 9. Update TODO.md to completed
+- [ ] 10. attempt_completion
 

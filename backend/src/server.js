@@ -126,6 +126,7 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/theme', require('./routes/theme'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/live', require('./routes/live'));
+
 app.use('/api/verification', require('./routes/verification'));
 app.use('/api/learn', require('./routes/learn'));
 app.use('/api/podcasts', require('./routes/podcasts'));
@@ -190,6 +191,8 @@ io.on('connection', async (socket) => {
       { upsert: true, new: true }
     );
     socket.broadcast.emit('user_offline', { userId: socket.userId });
+    socket.broadcast.emit('last_seen', { userId: socket.userId, time: new Date().toISOString() });
+    socket.emit('presence_update', { users: [] });
   });
 
   // Handle messaging events

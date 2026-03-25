@@ -2,9 +2,14 @@ const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
 const Follow = require('../models/Follow');
+const UserPresence = require('../models/UserPresence');
 
 // Get conversations for a user
+
+
 const getConversations = async (req, res) => {
+
+
   try {
     // Handle both JWT structures
     const userId = req.user?.user?.id || req.user?.id || (req.user ? req.user.id : null);
@@ -22,10 +27,11 @@ const getConversations = async (req, res) => {
 
     // Format conversations for frontend
     const formattedConversations = conversations.map(conv => {
+
       const otherParticipant = conv.participants.find(p => p._id.toString() !== userId);
       const unreadCount = conv.lastMessage && conv.lastMessage.senderId.toString() !== userId && !conv.lastMessage.is_read ? 1 : 0;
 
-      return {
+      const formattedConv = {
         id: conv._id,
         otherUserId: otherParticipant?._id?.toString() || '',
         username: otherParticipant?.username || 'Unknown',
@@ -33,7 +39,22 @@ const getConversations = async (req, res) => {
         lastMessage: conv.lastMessage?.content || 'No messages yet',
         lastMessageTime: conv.lastMessage ? new Date(conv.lastMessage.createdAt || conv.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         unreadCount,
-        isOnline: false // TODO: Implement online status
+      };
+      
+      const otherUserId = otherParticipant?._id?.toString() || '';
+      const presence = await UserPresence.findOne({ userId: otherUserId });
+      
+      return {
+        ...formattedConv,
+        isOnline: presence ? presence.status === 'online' : false,
+        lastSeen: presence ? presence.lastSeen?.toISOString() : null
+      };
+
+      
+      return {
+        ...formattedConv,
+        isOnline: presence ? presence.status === 'online' : false,
+        lastSeen: presence ? presence.lastSeen?.toISOString() : null
       };
     });
 
