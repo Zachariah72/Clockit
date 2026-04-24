@@ -2,11 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const { protect } = require('../middlewares/auth'); // Ensure auth middleware exists
+const auth = require('../middlewares/auth');
 
 // GET /api/notifications
 // Retrieves notifications for the logged-in user
-router.get('/', protect, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const notifications = await Notification.find({ userId: req.user._id })
       .populate('senderId', 'username profileImage')
@@ -33,7 +33,7 @@ router.get('/', protect, async (req, res) => {
 
 // PUT /api/notifications/:id/read
 // Mark a specific notification as read
-router.put('/:id/read', protect, async (req, res) => {
+router.put('/:id/read', auth, async (req, res) => {
   try {
     const notification = await Notification.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
@@ -54,7 +54,7 @@ router.put('/:id/read', protect, async (req, res) => {
 
 // PUT /api/notifications/read-all
 // Mark all notifications as read
-router.put('/read-all', protect, async (req, res) => {
+router.put('/read-all', auth, async (req, res) => {
   try {
     await Notification.updateMany(
       { userId: req.user._id },
