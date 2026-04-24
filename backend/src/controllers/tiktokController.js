@@ -1,5 +1,78 @@
 const Video = require('../models/Video');
 
+// Sample videos fallback
+const sampleVideos = [
+  {
+    title: 'Beautiful sunset over ocean 🌅 #nature #sunset #ocean',
+    description: 'Watching the most amazing sunset ever #peaceful #nature #vibes',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    thumbnailUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg',
+    author: {
+      username: 'naturelover',
+      displayName: 'Nature Lover',
+      avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    stats: {
+      playCount: 2500000,
+      likeCount: 325000,
+      commentCount: 8900,
+      shareCount: 15600
+    },
+    music: {
+      title: 'Peaceful Nature',
+      author: 'Relaxing Sounds',
+      duration: 15
+    },
+    duration: 15
+  },
+  {
+    title: 'Epic car chase scene 🚗💨 #action #cars #speed',
+    description: 'Incredible high-speed chase #action #cars #speed',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    thumbnailUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerEscapes.jpg',
+    author: {
+      username: 'actionfan',
+      displayName: 'Action Fan',
+      avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
+    },
+    stats: {
+      playCount: 5600000,
+      likeCount: 678000,
+      commentCount: 23400,
+      shareCount: 45600
+    },
+    music: {
+      title: 'Speed Demon',
+      author: 'Action Beats',
+      duration: 18
+    },
+    duration: 18
+  },
+  {
+    title: 'Amazing fireworks display 🎆 #fireworks #celebration #night',
+    description: 'Beautiful fireworks show #celebration #night #amazing',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFireworks.mp4',
+    thumbnailUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerFireworks.jpg',
+    author: {
+      username: 'celebration',
+      displayName: 'Celebration Time',
+      avatarUrl: 'https://randomuser.me/api/portraits/men/52.jpg',
+    },
+    stats: {
+      playCount: 8900000,
+      likeCount: 945000,
+      commentCount: 34500,
+      shareCount: 67800
+    },
+    music: {
+      title: 'Celebration',
+      author: 'Party Beats',
+      duration: 14
+    },
+    duration: 14
+  }
+];
+
 /**
  * Get trending TikTok videos (Now unified with local database)
  */
