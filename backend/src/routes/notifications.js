@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const { protect } = require('../middleware/auth'); // Ensure auth middleware exists
+const { protect } = require('../middlewares/auth'); // Ensure auth middleware exists
 
 // GET /api/notifications
 // Retrieves notifications for the logged-in user
