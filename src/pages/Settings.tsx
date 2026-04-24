@@ -21,22 +21,15 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { settingsData, getSettingsSection, SettingItem } from "@/data/settingsData";
+// import { settingsData, getSettingsSection, SettingItem } from "@/data/settingsData";
 import { profileApi } from "@/services/profileApi";
 
 // Settings sections
 const settingsSections = [
   { id: 'account', title: 'Account', description: 'Manage your account settings and preferences', icon: User, color: 'text-blue-500' },
   { id: 'privacy', title: 'Privacy & Security', description: 'Control your privacy and security settings', icon: Shield, color: 'text-green-500' },
-  { id: 'messaging', title: 'Messaging & Calls', description: 'Configure messaging and calling preferences', icon: MessageCircle, color: 'text-purple-500' },
-  { id: 'music', title: 'Music & Audio', description: 'Customize your music listening experience', icon: Music, color: 'text-pink-500' },
-  { id: 'content', title: 'Content & Feed', description: 'Personalize your content and feed preferences', icon: Eye, color: 'text-orange-500' },
-  { id: 'analytics', title: 'Analytics & Insights', description: 'Manage your analytics and performance data', icon: BarChart3, color: 'text-cyan-500' },
   { id: 'notifications', title: 'Notifications', description: 'Control your notification preferences', icon: Bell, color: 'text-yellow-500' },
-  { id: 'appearance', title: 'Appearance & Themes', description: 'Customize your app appearance and themes', icon: Palette, color: 'text-indigo-500' },
-  { id: 'wellbeing', title: 'Screen Time & Wellbeing', description: 'Manage your screen time and digital wellbeing', icon: Clock, color: 'text-teal-500' },
-  { id: 'data', title: 'App & Data', description: 'Manage app data and storage settings', icon: HardDrive, color: 'text-gray-500' },
-  { id: 'legal', title: 'Legal & Support', description: 'Legal information and support resources', icon: FileText, color: 'text-slate-500' }
+  { id: 'appearance', title: 'Appearance & Themes', description: 'Customize your app appearance and themes', icon: Palette, color: 'text-indigo-500' }
 ];
 
 const Settings = () => {
@@ -302,6 +295,10 @@ const Settings = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-background">
+        <div className="p-4">
+          <h1>Settings Page Test</h1>
+          <p>Sections: {filteredSections.length}</p>
+        </div>
         {/* Header */}
         <div className="sticky top-0 z-20 glass-card rounded-b-3xl">
           <div className="p-4">
