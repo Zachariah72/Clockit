@@ -10,7 +10,7 @@ const { sendVerificationCode, verifyCode, isValidPhoneNumber, checkRateLimit, ge
 
 exports.register = [
    body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-   body('phone').exists().withMessage('Phone number is required'),
+    body('phone').optional({ nullable: true, checkFalsy: true }),
    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
    body('email').optional({ nullable: true, checkFalsy: true }).isEmail().withMessage('Invalid email'),
    body('gender').optional().isIn(['male', 'female', 'other', 'prefer_not_to_say']).withMessage('Invalid gender selection'),
@@ -48,9 +48,12 @@ exports.register = [
 
     try {
       // Check if phone number already exists
-      let existingUser = await User.findOne({ phone });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Phone number already registered' });
+      let existingUser;
+      if (phone) {
+        existingUser = await User.findOne({ phone });
+        if (existingUser) {
+          return res.status(400).json({ message: 'Phone number already registered' });
+        }
       }
 
       // Check if email exists (if provided)

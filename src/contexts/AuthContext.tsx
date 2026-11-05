@@ -187,16 +187,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, email, password }),
+          body: JSON.stringify({ username, email, password, phone: phone || undefined }),
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem('auth_token', data.token);
+        const data = await response.json();
+        if (!response.ok) {
+          return { error: new Error(data.message || data.errors?.[0]?.msg || 'Account registration failed') };
         }
+
+        localStorage.setItem('auth_token', data.token);
+        setUser({ id: data.user.id, email: data.user.email });
       } catch (backendError) {
         console.warn('Backend registration failed:', backendError);
-        // Don't fail the signup if backend registration fails
+        return { error: backendError instanceof Error ? backendError : new Error('Account registration failed') };
       }
     }
 
