@@ -77,6 +77,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // If session exists, ensure backend token is saved and get MongoDB user id
       if (session && session.user) {
+        const provider = session.user.app_metadata?.provider;
+        if (!provider || provider === 'email') {
+          return;
+        }
+
         try {
           // Always verify/refresh token for OAuth users
           console.log('Calling /auth/oauth-verify...');
@@ -120,7 +125,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('getSession result:', session ? 'has session' : 'no session');
       setSession(session);
       
-      if (session && session.user) {
+      const provider = session?.user?.app_metadata?.provider;
+      if (session && session.user && provider && provider !== 'email') {
         try {
           const response = await fetch(`${getApiUrl()}/auth/oauth-verify`, {
             method: 'POST',
@@ -143,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (e) {
           setUser({ id: session.user.id, email: session.user.email });
         }
-      } else {
+      } else if (!session) {
         setUser(null);
       }
       setLoading(false);
@@ -220,16 +226,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ identifier: email, password }),
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem('auth_token', data.token);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          return { error: new Error(data.message || data.errors?.[0]?.msg || 'Authentication failed') };
         }
+
+        localStorage.setItem('auth_token', data.token);
+        setUser({ id: data.user.id, email: data.user.email });
       } catch (backendError) {
         console.warn('Backend authentication failed:', backendError);
-        // Don't fail the login if backend auth fails
+        return { error: backendError instanceof Error ? backendError : new Error('Authentication failed') };
       }
     }
 

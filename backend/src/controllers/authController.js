@@ -108,14 +108,15 @@ exports.register = [
 ];
 
 exports.login = [
-  body('identifier').exists().withMessage('Phone number or email is required'),
+  body('identifier').custom((value, { req }) => Boolean(value || req.body.email)).withMessage('Phone number or email is required'),
   body('password').exists().withMessage('Password is required'),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { identifier, password } = req.body;
+    const { password } = req.body;
+    const identifier = req.body.identifier || req.body.email;
     try {
       // Try to find user by phone first, then by email
       let user = await User.findOne({ phone: identifier });
