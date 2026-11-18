@@ -228,6 +228,7 @@ const ChatList = ({
   isLoading: boolean;
   onStartNewChat: (userId: string, username: string) => void;
 }) => {
+  const navigate = useNavigate();
   const [showNewChat, setShowNewChat] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -276,7 +277,7 @@ const ChatList = ({
   );
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-[linear-gradient(145deg,#082f49_0%,#075985_55%,#0e7490_100%)]">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -617,7 +618,7 @@ const ChatView = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-[linear-gradient(145deg,#082f49_0%,#075985_55%,#0e7490_100%)]">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -682,9 +683,9 @@ const ChatView = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
         <PatternBackground />
-        <GradientBlob size={300} color="#8B5CF6" opacity={15} blur={80} position={{ top: "-50px", right: "-50px" }} />
-        <GradientBlob size={250} color="#EC4899" opacity={12} blur={60} position={{ bottom: "50px", left: "-30px" }} />
-        <GradientBlob size={200} color="#3B82F6" opacity={10} blur={50} position={{ top: "30%", left: "-20px" }} />
+        <GradientBlob size={300} color="#22D3EE" opacity={12} blur={80} position={{ top: "-50px", right: "-50px" }} />
+        <GradientBlob size={250} color="#38BDF8" opacity={10} blur={60} position={{ bottom: "50px", left: "-30px" }} />
+        <GradientBlob size={200} color="#67E8F9" opacity={8} blur={50} position={{ top: "30%", left: "-20px" }} />
         <AnimatePresence>
           {isLoadingMessages ? (
             <div className="flex items-center justify-center py-8">
@@ -717,7 +718,7 @@ const ChatView = ({
                   }`}
                 >
                   <div className="relative">
-                    <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
+                    <div className="w-32 h-32 bg-gradient-to-br from-sky-500 to-cyan-4rounded-2xl flex items-center justify-center">
                       <span className="text-white font-bold text-lg">📸</span>
                     </div>
                     {message.snapData?.viewed && (
@@ -737,8 +738,8 @@ const ChatView = ({
                 <div
                   className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
                     isOutgoing(message)
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-br-sm"
-                      : "bg-muted/80 text-foreground rounded-bl-sm"
+                      ? "bg-gradient-to-r from-sky-500 to-cyan-500 text-white rounded-br-sm"
+                      : "bg-white/12 text-white border border-cyan-100/10 backdrop-blur-md rounded-bl-sm"
                   }`}
                 >
                   <p className="text-sm leading-relaxed break-words">{message.content}</p>
@@ -760,7 +761,7 @@ const ChatView = ({
       </div>
 
       {/* Input */}
-      <div className="p-4 glass-card rounded-t-3xl">
+      <div className="p-4 border-t border-cyan-100/10 bg-[#082f49]/95 backdrop-blur-xl rounded-t-3xl">
         {/* Attachment buttons */}
         <div className="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide">
           <Button variant="ghost" size="icon" className="flex-shrink-0 rounded-full hover:bg-muted">
@@ -782,7 +783,7 @@ const ChatView = ({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              className="pr-12 h-12 rounded-2xl bg-muted/50 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              className="pr-12 h-12 rounded-2xl bg-cyan-950/40 border-cyan-100/10 text-white placeholder:text-cyan-100/50 focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20 transition-all"
             />
             {newMessage.trim() && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -797,7 +798,7 @@ const ChatView = ({
             disabled={!newMessage.trim()}
             className={`h-12 w-12 rounded-2xl transition-all duration-200 ${
               newMessage.trim()
-                ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25'
+                ? 'bg-gradient-to-r from-sky-500 to-cyan-400 text-white hover:from-sky-400 hover:to-cyan-300 shadow-lg shadow-cyan-500/25'
                 : 'bg-muted'
             }`}
             size="icon"

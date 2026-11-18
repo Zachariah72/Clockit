@@ -70,7 +70,12 @@ export function MessageBubble({ text, isOutgoing = false, timestamp }: MessageBu
 
 export function PatternBackground() {
   return (
-    <div className="absolute inset-0" style={{ backgroundColor: '#0F172A' }}>
+    <div
+      className="absolute inset-0"
+      style={{
+        background: 'linear-gradient(145deg, #082F49 0%, #075985 55%, #0E7490 100%)',
+      }}
+    >
       {/* SVG Pattern Definition */}
       <svg width="0" height="0" className="absolute">
         <defs>
@@ -192,6 +197,48 @@ export function PatternBackground() {
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <rect width="100%" height="100%" fill="url(#iconPattern)" />
         </svg>
+      </div>
+
+      <style>
+        {`
+          @keyframes ocean-icon-drift {
+            0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+            50% { transform: translate3d(8px, -12px, 0) rotate(4deg); }
+          }
+          @keyframes ocean-icon-glow {
+            0%, 100% { opacity: 0.055; }
+            50% { opacity: 0.12; }
+          }
+        `}
+      </style>
+
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {[
+          { Icon: MessageCircle, left: '7%', top: '12%', size: 24, delay: '0s', duration: '9s' },
+          { Icon: Music, left: '79%', top: '8%', size: 18, delay: '-3s', duration: '11s' },
+          { Icon: Heart, left: '19%', top: '34%', size: 20, delay: '-6s', duration: '13s' },
+          { Icon: Camera, left: '67%', top: '27%', size: 22, delay: '-2s', duration: '10s' },
+          { Icon: Star, left: '87%', top: '46%', size: 16, delay: '-7s', duration: '12s' },
+          { Icon: Radio, left: '11%', top: '61%', size: 20, delay: '-4s', duration: '14s' },
+          { Icon: Sparkles, left: '55%', top: '52%', size: 18, delay: '-8s', duration: '10s' },
+          { Icon: Circle, left: '73%', top: '73%', size: 15, delay: '-5s', duration: '12s' },
+          { Icon: MessageCircle, left: '31%', top: '78%', size: 17, delay: '-9s', duration: '15s' },
+          { Icon: Music, left: '47%', top: '16%', size: 15, delay: '-1s', duration: '11s' },
+        ].map(({ Icon, left, top, size, delay, duration }, index) => (
+          <Icon
+            key={index}
+            size={size}
+            strokeWidth={1.25}
+            className="absolute text-cyan-100"
+            style={{
+              left,
+              top,
+              opacity: 0.08,
+              filter: 'drop-shadow(0 0 8px rgba(103, 232, 249, 0.35))',
+              animation: `ocean-icon-drift ${duration} ease-in-out ${delay} infinite, ocean-icon-glow ${duration} ease-in-out ${delay} infinite`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
