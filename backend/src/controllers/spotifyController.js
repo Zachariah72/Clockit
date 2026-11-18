@@ -36,7 +36,7 @@ const getClientCredentialsToken = async () => {
 
 // Get Spotify authorization URL
 const getSpotifyAuthUrl = (req, res) => {
-  const scope = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing streaming playlist-read-private playlist-read-collaborative';
+  const scope = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing streaming playlist-read-private playlist-read-collaborative user-top-read';
   const authUrl = `https://accounts.spotify.com/authorize?${querystring.stringify({
     response_type: 'code',
     client_id: SPOTIFY_CLIENT_ID,
@@ -207,9 +207,14 @@ const getPlaylistTracks = async (req, res) => {
 // Get user's top tracks
 const getTopTracks = async (req, res) => {
   const { accessToken } = req.body;
+  const { limit = 50, time_range = 'medium_term' } = req.query;
 
   try {
-    const response = await axios.get('https://api.spotify.com/v1/me/top/tracks?limit=50', {
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 50);
+    const response = await axios.get(`https://api.spotify.com/v1/me/top/tracks?${querystring.stringify({
+      limit: safeLimit,
+      time_range
+    })}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
